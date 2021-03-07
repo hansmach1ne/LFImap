@@ -1,0 +1,7 @@
+requests
+subprocess
+random
+argparse
+socket
+base64
+urllib
