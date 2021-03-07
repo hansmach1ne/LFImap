@@ -1,7 +1,4 @@
 requests
-subprocess
-random
 argparse
-socket
-base64
-urllib
+pybase64
+urllib3
