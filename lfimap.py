@@ -202,6 +202,9 @@ if(__name__ == "__main__"):
     r'(?::\d+)?' # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
+    if(not cookie):
+        print("WARNING: Cookie argument ('-c') is not provided. If web app requires it lfimap will not find any vulerabilities")
+    
     if("DESTROY" not in url):
         print("Please use DESTROY as a vulnerable parameter value that you want to exploit")
         sys.exit(-1)
