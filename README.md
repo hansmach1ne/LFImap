@@ -18,6 +18,7 @@ pip3 install -r requirements.txt
 ## Usage
 
 ```
+
 usage: ./lfimap.py [--test-php-filter] [--test-php-input] [--test-data] [--test-expect] [-a] [-c <cookie>]
                  [-w <wordlist>] [-h]
                  URL
