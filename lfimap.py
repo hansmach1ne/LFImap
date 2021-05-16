@@ -134,24 +134,8 @@ def test_expect_wrapper(url):
 
 def main():
 
-    #Default behaviour
-    if(not test_all):
-        if(php_filter):
-            test_php_filter(url)
-        if(php_input):
-            test_php_input(url)
-        if(data_wrapper):
-            test_data_wrapper(url)
-        if(expect_wrapper):
-            test_expect_wrapper(url)
-        if(args.wordlist):
-            test_wordlist(url)
-        
-        print("Done.")
-        exit(0)
-
     #Perform all tests
-    else:
+    if(test_all):
         test_php_filter(url)
         test_php_input(url)
         test_data_wrapper(url)
@@ -160,6 +144,27 @@ def main():
         
         print("Done.")
         exit(0)
+    
+    elif(args.wordlist):
+        test_wordlist(url)
+    elif(php_filter):
+        test_php_filter(url)
+    elif(php_input):
+        test_php_input(url)
+    elif(data_wrapper):
+        test_data_wrapper(url)
+    elif(expect_wrapper):
+        test_expect_wrapper(url)
+
+    #Default behaviour
+    else:
+        test_php_filter(url)
+        test_php_input(url)
+        test_data_wrapper(url)
+        test_expect_wrapper(url)
+
+    print("Done.")
+    exit(0)
 
 
 if(__name__ == "__main__"):
@@ -196,6 +201,10 @@ if(__name__ == "__main__"):
     r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
     r'(?::\d+)?' # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    
+    if("DESTROY" not in url):
+        print("Please use DESTROY as a vulnerable parameter value that you want to exploit")
+        sys.exit(-1)
 
     if(re.match(urlRegex, url) is None):
         print("URL not valid, exiting...")
