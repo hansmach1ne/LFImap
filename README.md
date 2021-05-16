@@ -12,14 +12,15 @@
 git clone https://github.com/hansmach1ne/lfimap.git
 cd lfimap/
 pip3 install -r requirements.txt
-./lfimap.py -h
+python3 lfimap.py -h
+
 ```
 
 ## Usage
 
 ```
 
-usage: ./lfimap.py [--test-php-filter] [--test-php-input] [--test-data] [--test-expect] [-a] [-c <cookie>]
+usage: python3 lfimap.py [--test-php-filter] [--test-php-input] [--test-data] [--test-expect] [-a] [-c <cookie>]
                  [-w <wordlist>] [-h]
                  URL
 
