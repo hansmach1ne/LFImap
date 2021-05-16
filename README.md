@@ -1,9 +1,5 @@
 # lfimap
-## Local file inclusion discovery and exploitation tool
-
-
-### lfimap is program for testing Local File Inclusions in web applications
-
+## Local file inclusion discovery tool
 
 
 ## Install
