@@ -11,9 +11,12 @@ pip3 install -r requirements.txt
 python3 lfimap.py -h
 
 ```
-#Currently reverse shell functionality is working with data,expect and input wrappers on LINUX only, in future windows support will be added
 
-#Also, I plan to implement exploitation with different reverse shell types (bash, python, php and more...)
+# In future I plan to: implement rev shell functionality with different shell types (bash, python, php, powershell and more...)
+
+#					   implement log poison truncation attack using http access and error logs, ftp and ssh logs
+
+#					   implement enumeration options (OS, users, network, installed software, files) if LFI/RCE is found
 
 
 ## Usage
