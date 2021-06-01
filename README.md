@@ -12,11 +12,9 @@ python3 lfimap.py -h
 
 ```
 
-# In future I plan to: implement rev shell functionality with different shell types (bash, python, php, powershell and more...)
-
-#					   implement log poison truncation attack using http access and error logs, ftp and ssh logs
-
-#					   implement enumeration options (OS, users, network, installed software, files) if LFI/RCE is found
+In future I plan to: implement rev shell functionality with different shell types (bash, python, php, powershell and more...)
+					 implement log poison truncation attack using http access and error logs, ftp and ssh logs
+					 implement enumeration options (OS, users, network, installed software, files) if LFI/RCE is found
 
 
 ## Usage
