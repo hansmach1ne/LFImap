@@ -1,5 +1,5 @@
 # lfimap
-## Local file inclusion discovery tool
+## Local file inclusion discovery and exploitation tool
 
 
 ## Install
