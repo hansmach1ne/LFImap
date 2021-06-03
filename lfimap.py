@@ -226,7 +226,9 @@ def test_php_input(url):
     for i in range(len(testL)):
         if("DESTROY" in url):
             u = url.replace("DESTROY", testL[i])
-    
+        
+        os = ""
+        
         for j in range(len(posts)):
             try:
                 res = requests.post(u, headers = headers, data=posts[j], proxies = proxies)
