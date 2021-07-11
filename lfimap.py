@@ -740,7 +740,7 @@ if(__name__ == "__main__"):
     r'(?::\d+)?' # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
-data wrapper..    if(re.match(urlRegex, url) is None):
+    if(re.match(urlRegex, url) is None):
         print("URL not valid, exiting...")
         sys.exit(-1)
     
