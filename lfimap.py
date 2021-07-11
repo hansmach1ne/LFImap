@@ -684,20 +684,20 @@ if(__name__ == "__main__"):
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer")
     
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
-    attackGroup.add_argument('--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper")
-    attackGroup.add_argument('--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper")
-    attackGroup.add_argument('--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper")
-    attackGroup.add_argument('--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
-    attackGroup.add_argument('--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion")
+    attackGroup.add_argument('-pf', '--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper")
+    attackGroup.add_argument('-pi', '--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper")
+    attackGroup.add_argument('-pd', '--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper")
+    attackGroup.add_argument('-pe', '--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
+    attackGroup.add_argument('-r', '--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion")
     attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack")
-    attackGroup.add_argument('-aa', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
+    attackGroup.add_argument('-a', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
 
     #postExpGroup = parser.add_argument_group('ENUMERATE')
     
     payloadGroup = parser.add_argument_group('PAYLOAD')
     payloadGroup.add_argument('-x', '--send-revshell',action="store_true", dest="revshell", help="\t\t Send reverse shell connection if possible (Setup reverse handler first.)")
-    payloadGroup.add_argument('--lhost', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify localhost IP address for reverse connection")
-    payloadGroup.add_argument('--lport', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local PORT number for reverse connection")
+    payloadGroup.add_argument('-lh', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify localhost IP address for reverse connection")
+    payloadGroup.add_argument('-lp', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local PORT number for reverse connection")
 
     otherGroup = parser.add_argument_group('OTHER')
     otherGroup.add_argument('-v', '--verbose', action="store_true", dest="verbose", help="\t\t Print more detailed output when performing attacks\n")
