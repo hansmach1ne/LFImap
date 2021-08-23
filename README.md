@@ -25,7 +25,7 @@ usage: lfimap.py [-c <cookie>] [-p <proxy>] [--useragent <agent>] [--referer <re
 lfimap, LFI discovery and exploitation tool
 
 GENERAL:
-  URL                            Specify url, Ex: "http://example.org/vuln.php?param=DESTROY" 
+  URL                            Specify url, Ex: "http://example.org/vuln.php?param=PWN"
   -c <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
   -p <proxy>                     Specify Proxy IP address. Ex: '10.10.10.10:8080'
   --useragent <agent>            Specify HTTP user agent
