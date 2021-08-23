@@ -72,8 +72,8 @@ def test_wordlist(url):
     
     for line in f:
         line = line[:-1]
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", line)
+        if("PWN" in url):
+            u = url.replace("PWN", line)
 
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -117,8 +117,8 @@ def test_php_filter(url):
     
     #Linux
     for i in range(len(testL)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testL[i])
+        if("PWN" in url):
+            u = url.replace("PWN", testL[i])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -134,7 +134,7 @@ def test_php_filter(url):
 
     #Windows
     for i in range(len(testW)):
-        u = url.replace("DESTROY", testW[i])
+        u = url.replace("PWN", testW[i])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -159,8 +159,8 @@ def test_php_data(url):
     
     #Linux
     for i in range(len(testL)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testL[i])
+        if("PWN" in url):
+            u = url.replace("PWN", testL[i])
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
         except:
@@ -175,8 +175,8 @@ def test_php_data(url):
 
     #Windows
     for i in range(len(testW)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testW[i])
+        if("PWN" in url):
+            u = url.replace("PWN", testW[i])
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
         except:
@@ -209,8 +209,8 @@ def test_php_input(url):
     
     #Linux
     for i in range(len(testL)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testL[i])
+        if("PWN" in url):
+            u = url.replace("PWN", testL[i])
         
         os = ""
         
@@ -231,8 +231,8 @@ def test_php_input(url):
     if(os != 'LINUX'):
         #Windows
         for k in range(len(testW)):
-            if("DESTROY" in url):
-                u = url.replace("DESTROY", testW[k])
+            if("PWN" in url):
+                u = url.replace("PWN", testW[k])
         
             for l in range(len(posts)):
                 try:
@@ -263,8 +263,8 @@ def test_php_expect(url):
 
     #Linux
     for i in range(len(testL)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testL[i])
+        if("PWN" in url):
+            u = url.replace("PWN", testL[i])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -280,8 +280,8 @@ def test_php_expect(url):
 
     #Windows
     for j in range(len(testW)):
-        if("DESTROY" in url):
-            u = url.replace("DESTROY", testW[j])
+        if("PWN" in url):
+            u = url.replace("PWN", testW[j])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -303,9 +303,9 @@ def test_rfi(url):
         print("Testing for RFI ...")
 
     #Internet RFI test
-    if("DESTROY" in url):
+    if("PWN" in url):
         pyld = "https%3a//www.google.com/"
-        u = url.replace("DESTROY", pyld)
+        u = url.replace("PWN", pyld)
     try:
         res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
         if(checkPayload(res)):
@@ -685,7 +685,7 @@ if(__name__ == "__main__"):
     parser = argparse.ArgumentParser(description="lfimap, LFI discovery and exploitation tool", formatter_class=RawTextHelpFormatter, add_help=False)
 
     optionsGroup = parser.add_argument_group('GENERAL')
-    optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=DESTROY" """)
+    optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=PWN" """)
     optionsGroup.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
     optionsGroup.add_argument('-p', type=str, metavar = "<proxy>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080'")
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent")
@@ -754,8 +754,8 @@ if(__name__ == "__main__"):
                 sys.exit(-1)
 
     #Checks if any parameter is selected for testing
-    if("DESTROY" not in url):
-        print("Please use DESTROY as a vulnerable parameter value that you want to exploit\n")
+    if("PWN" not in url):
+        print("Please use 'PWN' as a vulnerable parameter value that you want to test\n")
         sys.exit(-1)
     
     #Warning if cookie is not provided
