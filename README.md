@@ -12,9 +12,8 @@ python3 lfimap.py -h
 
 ```
 
-In future I plan to: implement rev shell functionality with different shell types (bash, python, php, powershell and more...)
-					 implement log poison truncation attack using http access and error logs, ftp and ssh logs
-					 implement enumeration options (OS, users, network, installed software, files) if LFI/RCE is found
+In future I plan to: implement log poison truncation attack using http access and error logs, ftp and ssh logs
+	             implement enumeration options (OS, users, network, installed software, files) if LFI/RCE is found
 
 
 ## Usage
@@ -43,8 +42,8 @@ ATTACK TECHNIQUE:
 
 PAYLOAD:
   -x, --send-revshell            Send reverse shell connection if possible (Setup reverse handler first.)
-  -lh <lhost>                    Specify localhost IP address for reverse connection
-  -lp <lport>                    Specify local PORT number for reverse connection
+  --lhost <lhost>                Specify localhost IP address for reverse connection
+  --lport <lport>                Specify local PORT number for reverse connection
 
 OTHER:
   -v, --verbose                  Print more detailed output when performing attacks
