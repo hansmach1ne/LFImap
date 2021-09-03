@@ -31,6 +31,8 @@ GENERAL:
   -p <proxy>                     Specify Proxy IP address. Ex: '10.10.10.10:8080'
   --useragent <agent>            Specify HTTP user agent
   --referer <referer>            Specify HTTP referer
+  --param <name>                 Specify parameter name (default 'PWN')
+  --no-stop                      Don't stop using same method upon findings
 
 ATTACK TECHNIQUE:
   -pf, --php-filter              Attack using php filter wrapper
@@ -38,7 +40,7 @@ ATTACK TECHNIQUE:
   -pd, --php-data                Attack using php data wrapper
   -pe, --php-expect              Attack using php expect wrapper
   -r, --rfi                      Attack using remote file inclusion
-  -w <wordlist>                  Specify wordlist for truncation attack
+  -w <wordlist>                  Specify wordlist for truncation attack (default 'wordlist.txt')
   -a, --attack-all               Use all available methods to attack
 
 PAYLOAD:
