@@ -157,10 +157,6 @@ def test_php_filter(url):
                 continue
             else: break
         
-        else:
-            print("This methods have  failed ...")
-            #print(res.text)
-
     #Windows
     for i in range(len(testW)):
         u = url.replace(args.param, testW[i])
