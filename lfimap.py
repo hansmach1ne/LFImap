@@ -809,18 +809,24 @@ if(__name__ == "__main__"):
             sys.exit(-1)
     
     #Checks if '--lhost' and '--lport' are provided with '-x'
+
     if(args.revshell):
-        if(not args.lhost or not args.lport):
-            print("[-] Please, specify localhost IP and PORT number for reverse shell! Exiting...")
+        if(not args.lhost):
+            print("[-] Please, specify localhost IP ('--lhost') for reverse shell. Exiting...")
             sys.exit(-1)
+
+        if(not args.lport):
+            print("[-] Please, specify localhost PORT number ('--lport') for reverse shell. Exiting...")
+            sys.exit(-1)
+
         else:
             reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
             if(not re.match(reg, args.lhost)):
                 print("[-] LHOST IP address is not valid. Exiting...")
                 sys.exit(-1)
 
-            if(args.lport<1 or args.lport>65534):
-                print("[-] LPORT must be between 0 and 65535. Exiting ...")
+            if(args.lport < 1 or args.lport > 65534):
+                print("[-] LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
 
     #Checks if any parameter is selected for testing
