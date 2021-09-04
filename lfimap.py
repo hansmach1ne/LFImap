@@ -113,12 +113,14 @@ def test_wordlist(url):
 
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'TRUNC', os)
             print("[+] LFI -> " + u)
-            f.close()
 
             if(args.revshell):
                 exploit(exploits, 'TRUNC')
             
-            return  #To prevent further unnecessary traffic
+            if(not args.no_stop):
+                f.close()
+                return
+            else: continue
 
 
 def test_php_filter(url):
@@ -774,6 +776,11 @@ if(__name__ == "__main__"):
     wordlist = args.wordlist
     agent = args.agent
     referer = args.referer
+    
+    if(args.test_all):
+        if(os.getuid() != 0):
+            print("[-] Please run lfimap as admin/root for all tests. Exiting...")
+            sys.exit()
 
     #Checks if provided URL is valid
     urlRegex = re.compile(
@@ -793,34 +800,37 @@ if(__name__ == "__main__"):
     #Checks if provided wordlist exists
     if(wordlist is not None):
         if(not os.path.isfile(wordlist)):
-            print("Specified wordlist doesn't exist. Exiting...")
+            print("[-] Specified wordlist doesn't exist. Exiting...")
             sys.exit(-1)
     else:
         wordlist = "wordlist.txt"
+        if(not os.path.exists(wordlist) and args.test_all):
+            print("[-] Cannot find 'wordlist.txt' list. Since '-a' was specified, lfimap will exit...")
+            sys.exit(-1)
     
     #Checks if '--lhost' and '--lport' are provided with '-x'
     if(args.revshell):
         if(not args.lhost or not args.lport):
-            print("Please, specify localhost IP and PORT number for reverse shell! Exiting...")
+            print("[-] Please, specify localhost IP and PORT number for reverse shell! Exiting...")
             sys.exit(-1)
         else:
             reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
             if(not re.match(reg, args.lhost)):
-                print("LHOST IP address is not valid. Exiting...")
+                print("[-] LHOST IP address is not valid. Exiting...")
                 sys.exit(-1)
 
             if(args.lport<1 or args.lport>65534):
-                print("LPORT must be between 0 and 65535. Exiting ...")
+                print("[-] LPORT must be between 0 and 65535. Exiting ...")
                 sys.exit(-1)
 
     #Checks if any parameter is selected for testing
     if(args.param not in url):
-        print("'" + args.param + "' is not found in the URL. Please specify it as a parameter value for testing. Exiting...\n")
+        print("[-] '" + args.param + "' is not found in the URL. Please specify it as a parameter value for testing. Exiting...\n")
         sys.exit(-1)
     
     #Warning if cookie is not provided
     if(not args.cookie):
-        print("[!]WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
+        print("[!] WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
         time.sleep(2)
 
     if(args.rfi and args.lhost):
@@ -828,10 +838,6 @@ if(__name__ == "__main__"):
             print("[-] Cannot run LHOST file inclusion test as non admin user. Please run lfimap as admin/root. Exiting...")
             sys.exit()
     
-    if(args.test_all):
-        if(os.getuid() != 0):
-            print("[-] Please run lfimap as admin/root for all tests. Exiting...")
-            sys.exit()
 
     #Everything is OK, preparing http request headers
     headers = prepareHeaders()
