@@ -16,9 +16,9 @@ python3 lfimap.py -h
 
 ```
 
-usage: lfimap.py [-c <cookie>] [-p <proxy>] [-w <wordlist>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-a] [-x] [--lhost <lhost>]
-                 [--lport <lport>] [-v] [-h]
-                 URL
+usage: lfimap.py [-c <cookie>] [-p <proxy>] [-w <wordlist>] [--useragent <agent>]
+		 [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] 
+		 [-d] [-e] [-t] [-r] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-v] [-h] URL
 
 lfimap, Local File Inclusion discovery and exploitation tool
 
