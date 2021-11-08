@@ -44,7 +44,7 @@ ATTACK TECHNIQUE:
   -a, --attack-all               Use all available methods to attack
 
 PAYLOAD:
-  -x, --send-revshell            Send reverse shell connection if possible (Setup reverse handler first)
+  -x, --send-revshell            Send reverse shell if possible (Setup reverse handler first)
   --lhost <lhost>                Specify localhost IP address for reverse connection
   --lport <lport>                Specify local PORT number for reverse connection
 
