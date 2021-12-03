@@ -15,8 +15,9 @@ python3 lfimap.py -h
 ## Usage
 
 ```
-usage: lfimap.py [-c <cookie>] [-p <proxy>] [-w <wordlist>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-a] [-x]
-                 [--lhost <lhost>] [--lport <lport>] [-v] [-h]
+
+usage: lfimap.py [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-a] [-x] [--lhost <lhost>] [--lport <lport>]
+                 [-wT <path>] [-v] [-h]
                  URL
 
 lfimap, Local File Inclusion discovery and exploitation tool
@@ -24,13 +25,13 @@ lfimap, Local File Inclusion discovery and exploitation tool
 MANDATORY:
   URL                            Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
 
-GENERAL:
-  -c <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
-  -p <proxy>                     Specify Proxy IP address. Ex: '10.10.10.10:8080'
-  -w <wordlist>                  Specify wordlist for truncation attack (default 'short.txt')
+GENERAL OPTIONS:
+  -H <header>                    Specify additional HTTP header(s). Ex: 'X-Forwarded-For:127.0.0.1'
+  -C <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
+  -P <proxy>                     Specify Proxy IP address. Ex: '127.0.0.1:8080'
   --useragent <agent>            Specify HTTP user agent
   --referer <referer>            Specify HTTP referer
-  --param <name>                 Specify parameter name (default 'PWN')
+  --param <name>                 Specify different test parameter value
   --no-stop                      Don't stop using same method upon findings
 
 ATTACK TECHNIQUE:
@@ -40,12 +41,15 @@ ATTACK TECHNIQUE:
   -e, --expect                   Attack using expect:// wrapper
   -t, --trunc                    Attack using path truncation with wordlist (default 'short.txt')
   -r, --rfi                      Attack using remote file inclusion
-  -a, --attack-all               Use all available methods to attack
+  -a, --all                      Use all available methods to attack
 
-PAYLOAD:
-  -x, --send-revshell            Send reverse shell if possible (Setup reverse handler first)
+PAYLOAD OPTIONS:
+  -x, --shell                    Send reverse shell if possible (Setup reverse handler first)
   --lhost <lhost>                Specify localhost IP address for reverse connection
   --lport <lport>                Specify local PORT number for reverse connection
+
+WORDLIST OPTIONS:
+  -wT <path>                     Specify wordlist for truncation test
 
 OTHER:
   -v, --verbose                  Print more detailed output when performing attacks
