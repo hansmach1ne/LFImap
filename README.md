@@ -16,8 +16,8 @@ python3 lfimap.py -h
 
 ```
 
-usage: lfimap.py [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-a] [-x] [--lhost <lhost>] [--lport <lport>]
-                 [-wT <path>] [-v] [-h]
+usage: lfimap.py [-D <request>] [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r]
+                 [--file] [--osinject] [--xss] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h]
                  URL
 
 lfimap, Local File Inclusion discovery and exploitation tool
@@ -26,6 +26,7 @@ MANDATORY:
   URL                            Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
 
 GENERAL OPTIONS:
+  -D <request>                   Do HTTP POST value test. Ex: 'param=PWN'
   -H <header>                    Specify additional HTTP header(s). Ex: 'X-Forwarded-For:127.0.0.1'
   -C <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
   -P <proxy>                     Specify Proxy IP address. Ex: '127.0.0.1:8080'
@@ -41,6 +42,9 @@ ATTACK TECHNIQUE:
   -e, --expect                   Attack using expect:// wrapper
   -t, --trunc                    Attack using path truncation with wordlist (default 'short.txt')
   -r, --rfi                      Attack using remote file inclusion
+  --file                         Attack using file:// wrapper
+  --osinject                     Attack using os command injection
+  --xss                          Cross site scripting test
   -a, --all                      Use all available methods to attack
 
 PAYLOAD OPTIONS:
@@ -50,6 +54,8 @@ PAYLOAD OPTIONS:
 
 WORDLIST OPTIONS:
   -wT <path>                     Specify wordlist for truncation test
+  -wX <path>                     Specify wordlist for xss test
+  -wC <path>                     Specify wordlist for command injection test
 
 OTHER:
   -v, --verbose                  Print more detailed output when performing attacks
