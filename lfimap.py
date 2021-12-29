@@ -866,7 +866,7 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('-t', '--trunc', action = "store_true", dest = "trunc", help="\t\t Attack using path truncation with wordlist (default 'short.txt')")
     attackGroup.add_argument('-r', '--rfi', action = "store_true", dest = 'rfi', help="\t\t Attack using remote file inclusion")
     attackGroup.add_argument('--file', action = "store_true", dest="file", help="\t\t Attack using file:// wrapper")
-    attackGroup.add_argument('--osinject', action = "store_true", dest = "cmd", help="\t\t Attack using os command injection #TODO")
+    attackGroup.add_argument('--osinject', action = "store_true", dest = "cmd", help="\t\t Attack using os command injection")
     attackGroup.add_argument('--xss', action = "store_true", dest = "xss", help="\t\t Cross site scripting test")
     attackGroup.add_argument('-a', '--all', action = "store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
     
@@ -879,7 +879,7 @@ if(__name__ == "__main__"):
     wordlistGroup = parser.add_argument_group('WORDLIST OPTIONS')
     wordlistGroup.add_argument('-wT', type=str, metavar = "<path>", dest="truncWordlist", help="\t\t Specify wordlist for truncation test")
     wordlistGroup.add_argument('-wX', type=str, metavar= "<path>", dest="xssWordlist", help="\t\t Specify wordlist for xss test")
-    wordlistGroup.add_argument("-wC", type=str, metavar= "<path>", dest="cmdWordlist", help="\t\t Specify wordlist for command injection test #TODO")
+    wordlistGroup.add_argument("-wC", type=str, metavar= "<path>", dest="cmdWordlist", help="\t\t Specify wordlist for command injection test")
     
     otherGroup = parser.add_argument_group('OTHER')
     otherGroup.add_argument('-v', '--verbose', action="store_true", dest="verbose", help="\t\t Print more detailed output when performing attacks\n")
