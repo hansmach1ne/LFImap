@@ -73,10 +73,9 @@ This project is made as a hobby and passion towards cyber security.
 If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. Note that I am by no means, an expert on programming and managing github repository. With that in mind, criticism and advice are very welcome. I am trying to make this program better each day!
 
 In future I will work on: 
-1) Option to test parameters from POST requests (maybe load POST request from a file?)
-2) Option to test multiple urls and parameters from .txt file
-3) Truncation reverse shell exploits - /proc/self/environ, /proc/self/fd, log poisoning
-4) SSL support
-5) Option to output stdout to multiple formats
-6) Create encrypted reverse shell/encoding to avoid detection
-7) Option for custom reverse shell if RCE is found, with options to download and upload files easily
+1) Option to test multiple urls and parameters from .txt file
+2) Truncation reverse shell exploits - /proc/self/environ, /proc/self/fd
+3) SSL support
+4) Option to output stdout to multiple formats
+5) Create encrypted reverse shell/encoding to avoid detection
+6) Option for custom reverse shell if RCE is found, with options to download and upload files easily
