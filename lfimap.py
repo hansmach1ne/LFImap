@@ -275,6 +275,8 @@ def test_filter(url):
     
     script = os.path.splitext(os.path.basename(urlparse.urlsplit(url).path))
     scriptName = script[0]
+    
+    #If '/?=' in url
     if(scriptName == ""):
         scriptName = "index"
 
@@ -486,7 +488,8 @@ def checkPayload(webResponse):
                 "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x",
-                "window.google=", "961bb08a95dbc34397248d92352da799", "Pz4"]
+                "window.google=", "961bb08a95dbc34397248d92352da799", "PCFET0NUWVBFIGh0b",
+                "PGh0bW"]
 
     for word in KEY_WORDS:
         if word in webResponse.text and "PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K" not in webResponse.text and ("Warning" not in webResponse.text and "include(" not in webResponse.text):
