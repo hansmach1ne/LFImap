@@ -2,8 +2,7 @@
 ## Local file inclusion discovery and exploitation tool
 
 
-## Install
-
+### Install
 ```
 git clone https://github.com/hansmach1ne/lfimap.git
 cd lfimap/
@@ -11,14 +10,13 @@ pip3 install -r requirements.txt
 python3 lfimap.py -h
 
 ```
-
-## Usage
+### Usage
 
 ```
 
-usage: lfimap.py [-D <request>] [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r]
-                 [--file] [--osinject] [--xss] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h]
-                 URL
+usage: lfimap.py [-D <request>] [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] 
+[--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t][-r] [-c] [--file] 
+[--xss] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h] URL
 
 lfimap, Local File Inclusion discovery and exploitation tool
 
@@ -42,15 +40,15 @@ ATTACK TECHNIQUE:
   -e, --expect                   Attack using expect:// wrapper
   -t, --trunc                    Attack using path truncation with wordlist (default 'short.txt')
   -r, --rfi                      Attack using remote file inclusion
+  -c, --cmd                      Attack using command injection
   --file                         Attack using file:// wrapper
-  --osinject                     Attack using os command injection
   --xss                          Cross site scripting test
   -a, --all                      Use all available methods to attack
 
 PAYLOAD OPTIONS:
-  -x, --shell                    Send reverse shell if possible (Setup reverse handler first)
-  --lhost <lhost>                Specify localhost IP address for reverse connection
-  --lport <lport>                Specify local PORT number for reverse connection
+  -x, --exploit                  Exploit to reverse shell if possible (Setup reverse listener first)
+  --lhost <lhost>                Specify local ip address for reverse connection
+  --lport <lport>                Specify local port number for reverse connection
 
 WORDLIST OPTIONS:
   -wT <path>                     Specify wordlist for truncation test
@@ -63,14 +61,18 @@ OTHER:
 
 ```
 
-## Example 1)
+### Examples 
 
+#### 1) All attacks with '-a' (filter, data, expect and file wrappers, remote file inclusion, command injection, XSS and error disclosure).
 
 ![Capture](https://user-images.githubusercontent.com/57464251/152049407-7c8d5293-a8e6-4c0d-ad08-ae5b95da78a2.PNG)
 
+#### 2) php://input remote command execution attack with '-i' and '-x'.
+
+![rev_shell](https://user-images.githubusercontent.com/57464251/152051221-0f1eab38-69d6-470b-98e2-8345557ebd82.PNG)
+
+
+If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. Pull requests are welcome.
 
 [!] Disclaimer: Lfimap usage for attacking web applications without consent of the application owner is illegal. Developers assume no liability and are 
 not responsible for any misuse and damage caused by using this program.
-
-
-If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it.
