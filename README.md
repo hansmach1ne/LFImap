@@ -63,19 +63,14 @@ OTHER:
 
 ```
 
+## Example 1)
+
+
+![Capture](https://user-images.githubusercontent.com/57464251/152049407-7c8d5293-a8e6-4c0d-ad08-ae5b95da78a2.PNG)
+
 
 [!] Disclaimer: Lfimap usage for attacking web applications without consent of the application owner is illegal. Developers assume no liability and are 
 not responsible for any misuse and damage caused by using this program.
 
 
-This project is made as a hobby and passion towards cyber security.
-
-If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. Note that I am by no means, an expert on programming and managing github repository. With that in mind, criticism and advice are very welcome. I am trying to make this program better each day!
-
-In future I will work on: 
-1) Option to test multiple urls and parameters from .txt file
-2) Truncation reverse shell exploits - /proc/self/environ, /proc/self/fd
-3) SSL support
-4) Option to output stdout to multiple formats
-5) Create encrypted reverse shell/encoding to avoid detection
-6) Option for custom reverse shell if RCE is found, with options to download and upload files easily
+If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it.
