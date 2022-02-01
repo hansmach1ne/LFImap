@@ -71,6 +71,9 @@ OTHER:
 
 ![rev_shell](https://user-images.githubusercontent.com/57464251/152051221-0f1eab38-69d6-470b-98e2-8345557ebd82.PNG)
 
+#### 3) Post argument testing with '-D'
+![Capture](https://user-images.githubusercontent.com/57464251/152058166-d33b85dd-426c-4a93-9a32-a8367c372d6c.PNG)
+
 
 If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. Pull requests are welcome.
 
