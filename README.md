@@ -1,16 +1,6 @@
 # lfimap
 ## Local file inclusion discovery and exploitation tool
 
-
-### Install
-```
-git clone https://github.com/hansmach1ne/lfimap.git
-cd lfimap/
-pip3 install -r requirements.txt
-python3 lfimap.py -h
-
-```
-
 ### Main features
 - data:// for remote code execution
 - expect:// for remote code execution
@@ -27,9 +17,8 @@ python3 lfimap.py -h
 - Option for automated reverse shell attack upon RCE detection
 
 ### Documentation
-- [Usage](https://github.com/hansmach1ne/lfimap/wiki/Usage)
-- [Documentation](https://github.com/hansmach1ne/lfimap/wiki)
-
+- [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
+- [Usage](https://github.com/hansmach1ne/lfimap/wiki)
 
 ### Examples 
 
