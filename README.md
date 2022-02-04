@@ -60,6 +60,20 @@ OTHER:
   -h, --help                     Print this help message
 
 ```
+### Main features
+- data:// for remote code execution
+- expect:// for remote code execution
+- input:// for remote code execution
+- filter:// for arbitrary file inclusion
+- file:// for arbitrary file inclusion
+- Remote file inclusion for code execution
+- Reflected XSS testing
+- Absolute and relative path truncation for file inclusion
+- Option to test POST arguments
+- Option to specify custom http headers
+- Option to specify cookies for authenticated requests
+- Option to specify a web proxy to send requests through
+- Option for automated reverse shell attack upon RCE detection
 
 ### Examples 
 
