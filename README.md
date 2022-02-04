@@ -10,56 +10,7 @@ pip3 install -r requirements.txt
 python3 lfimap.py -h
 
 ```
-### Usage
 
-```
-
-usage: lfimap.py [-D <request>] [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] 
-[--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t][-r] [-c] [--file] [--xss] 
-[-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h] URL
-
-lfimap, Local File Inclusion discovery and exploitation tool
-
-MANDATORY:
-  URL                            Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
-
-GENERAL OPTIONS:
-  -D <request>                   Do HTTP POST value test. Ex: 'param=PWN'
-  -H <header>                    Specify additional HTTP header(s). Ex: 'X-Forwarded-For:127.0.0.1'
-  -C <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
-  -P <proxy>                     Specify Proxy IP address. Ex: '127.0.0.1:8080'
-  --useragent <agent>            Specify HTTP user agent
-  --referer <referer>            Specify HTTP referer
-  --param <name>                 Specify different test parameter value
-  --no-stop                      Don't stop using same method upon findings
-
-ATTACK TECHNIQUE:
-  -f, --filter                   Attack using filter:// wrapper
-  -i, --input                    Attack using input:// wrapper
-  -d, --data                     Attack using data:// wrapper
-  -e, --expect                   Attack using expect:// wrapper
-  -t, --trunc                    Attack using path truncation with wordlist (default 'short.txt')
-  -r, --rfi                      Attack using remote file inclusion
-  -c, --cmd                      Attack using command injection
-  --file                         Attack using file:// wrapper
-  --xss                          Cross site scripting test
-  -a, --all                      Use all available methods to attack
-
-PAYLOAD OPTIONS:
-  -x, --exploit                  Exploit to reverse shell if possible (Setup reverse listener first)
-  --lhost <lhost>                Specify local ip address for reverse connection
-  --lport <lport>                Specify local port number for reverse connection
-
-WORDLIST OPTIONS:
-  -wT <path>                     Specify wordlist for truncation test
-  -wX <path>                     Specify wordlist for xss test
-  -wC <path>                     Specify wordlist for command injection test
-
-OTHER:
-  -v, --verbose                  Print more detailed output when performing attacks
-  -h, --help                     Print this help message
-
-```
 ### Main features
 - data:// for remote code execution
 - expect:// for remote code execution
@@ -74,6 +25,10 @@ OTHER:
 - Option to specify cookies for authenticated requests
 - Option to specify a web proxy to send requests through
 - Option for automated reverse shell attack upon RCE detection
+
+### Documentation
+- [Usage](https://github.com/hansmach1ne/lfimap/wiki/Usage)
+
 
 ### Examples 
 
