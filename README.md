@@ -28,6 +28,7 @@ python3 lfimap.py -h
 
 ### Documentation
 - [Usage](https://github.com/hansmach1ne/lfimap/wiki/Usage)
+- [Documentation](https://github.com/hansmach1ne/lfimap/wiki)
 
 
 ### Examples 
