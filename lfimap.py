@@ -1158,11 +1158,12 @@ if(__name__ == "__main__"):
             sys.exit(-1)
 
     if(args.test_all or args.rfi):
-        if(os.getuid() != 0):
-            print("[-] Please run lfimap as admin/root for RFI test. Exiting...")
-            sys.exit()
-        if(not args.lhost):
-            print("[!] Lfimap will try to test RFI using remote site. If target is in your network, specify '--lhost' parameter for local web server file inclusion.\n")
+        if("nt" not in os.name and "win" not in sys.platform):
+            if(os.getuid() != 0):
+                print("[-] Please run lfimap as admin/root for RFI test. Exiting...")
+                sys.exit()
+            if(not args.lhost):
+                print("[!] Lfimap will try to test RFI using remote site. If target is in your network, specify '--lhost' parameter for local web server file inclusion.\n")
 
     
     #If testing using GET this checks if provided URL is valid
