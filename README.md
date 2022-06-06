@@ -23,19 +23,20 @@
 ### -h, --help
 ```
 
-usage: lfimap.py [-D <request>] [-H <header>] [-C <cookie>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file]
-                 [--xss] [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h]
-                 URL
+usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <request>] [-H <header>] [-P <proxy>] [--useragent <agent>] 
+                 [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] 
+                 [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h]
 
 lfimap, Local File Inclusion discovery and exploitation tool
 
 MANDATORY:
-  URL                            Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
+  -U [url]                       Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
+  -F [urlfile]                   Specify url wordlist (every line should have --param|'PWN'.)
 
 GENERAL OPTIONS:
+  -C <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
   -D <request>                   Do HTTP POST value test. Ex: "param=PWN"
   -H <header>                    Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"
-  -C <cookie>                    Specify session cookie, Ex: "PHPSESSID=1943785348b45"
   -P <proxy>                     Specify Proxy IP address. Ex: "http://127.0.0.1:8080"
   --useragent <agent>            Specify HTTP user agent
   --referer <referer>            Specify HTTP referer
@@ -67,8 +68,7 @@ WORDLIST OPTIONS:
 
 OTHER:
   -v, --verbose                  Print more detailed output when performing attacks
-  -h, --help                     Print this help message
-                       
+  -h, --help                     Print this help message                   
 
 ```
 ### Examples 
