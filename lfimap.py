@@ -918,10 +918,10 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:
             #This redirects stdout to a file, replacing the ip and port values as needed
-            print(line.replace("IP_ADDRESS", ip), end='')
+            print(line.replace("IP_ADDRESS", ip))
     with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:
-            print(line.replace("PORT_NUMBER", str(port)), end='')
+            print(line.replace("PORT_NUMBER", str(port)))
 
 def exploit_rfi(exploit, method, ip, port):
     if(args.f):
@@ -1270,6 +1270,11 @@ if(__name__ == "__main__"):
     agent = args.agent
     referer = args.referer
     
+    # Check if mandatory args are provided
+    if(not args.f and not args.url):
+        print("[-] Error. Please make sure to specify url(-U) or wordlist(-F). For help specify -h or --help.")
+        sys.exit(-1)
+
     # if '-F' is provided, set mode to file
     if(args.f): mode="file"
     # if '-D' is provided, set mode to post
