@@ -1781,5 +1781,3 @@ if(__name__ == "__main__"):
             else:
                 addHeader(args.httpheaders[i].split(":",1)[0].replace(" ",""), args.httpheaders[i].split(":",1)[1].replace(" ", ""))
     main()
-
-┌
