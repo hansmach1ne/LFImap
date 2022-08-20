@@ -685,7 +685,7 @@ def test_sqli(url):
             if("lfimap-injected-string" in req.text.lower()):
                 if(args.postreq): print("[+] SQLI with " + str(i+1) + " columns -> " + url + " HTTP POST -> " + args.postreq.replace(args.param,pyld))
                 else: print("[+] SQLI with " + str(i+1)+ " columns -> " + url.replace(args.param,pyld))
-                
+                stats["vulns"] += 1
                 # If '--no-stop' is set, then union based sqli is stopped, because none of the following payloads will be valid
                 # because number of columns won't match. Break out of the loop, and test for blind sql injection.
                 if(not args.no_stop): return
@@ -1350,6 +1350,9 @@ def main():
             # To remove duplicates
             wordlistSet = set()
             for line in lines:
+                if(args.param not in line):
+                    continue
+
                 wordlistSet.add(line.replace("\n", ""))
 
             for line in wordlistSet:
