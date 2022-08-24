@@ -742,7 +742,7 @@ def test_sqli(url):
     # GET baseline response time
     for i in range(2):
         if(args.postreq):
-            baselineReq = POST(url, headers, args.postreq, proxies, "SQLI", "SQLI")
+            baselineReq, _ = POST(url, headers, args.postreq, proxies, "SQLI", "SQLI")
         else:
             baselineReq, _ = GET(url, headers, proxies, "SQLI", "SQLI")
         
@@ -752,7 +752,7 @@ def test_sqli(url):
     
     for test in sqli:
         if(args.postreq):
-            r, br = POST(url, headers, args.postreq.replace(args.param, test), "SQLI", "SQLI")
+            r, br = POST(url, headers, args.postreq.replace(args.param, test), proxies, "SQLI", "SQLI")
         else:
             r, br = GET(url.replace(args.param, test), headers, proxies, "SQLI", "SQLI")
         
