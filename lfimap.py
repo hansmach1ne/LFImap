@@ -21,8 +21,11 @@ import fileinput
 import urllib.parse as urlparse
 import urllib3
 
+
 from contextlib import closing
 from argparse import RawTextHelpFormatter
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
 
 exploits = []
 proxies = {}
@@ -39,6 +42,7 @@ stats["info"] = 0
 stats["vulns"] = 0
 stats["urls"] = 0
 
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 scriptDirectory = os.path.dirname(__file__)
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
@@ -108,25 +112,22 @@ class ICMPThread(threading.Thread):
 #Used to validate URL(s), before testing happens
 def HEAD(url, headersData, proxy):
     stats["headRequests"] += 1
-    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy)
-    else: r = requests.head(url, headers = headersData, proxies = proxy, timeout = 5)
+    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy, verify = False)
+    else: r = requests.head(url, headers = headersData, proxies = proxy, timeout = 5, verify = False)
+    
+    if(args.delay): time.sleep(args.delay)
     return r
 
 def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
     res = None
-
-    #if(args.verbose and not exploit):
-        #print("-> Trying: " + str(url), end="\r")
-        #time.sleep(1)
-        #print("\033[1A", end = "\x1b[2K")
     
     try:
         if(exploit):
-            res = requests.get(url, headers = headers, proxies = proxy)
+            res = requests.get(url, headers = headers, proxies = proxy, verify = False)
         else:
             stats["getRequests"] += 1
-            res = requests.get(url, headers = headers, proxies = proxy)
+            res = requests.get(url, headers = headers, proxies = proxy, verify = False)
             if(init(res, "GET", exploitType, url, "", headers, exploitMethod)):
                 doContinue = False
     except KeyboardInterrupt:
@@ -137,7 +138,8 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     except:
         print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
         raise
-
+    
+    if(args.delay): time.sleep(args.delay)
     return res, doContinue
 
 
@@ -145,15 +147,12 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     doContinue = True
     res = None
 
-    #if(args.verbose and not exploit):
-    #    print("[i] Testing " + str(url))
-    #    sys.stdout.write("\033[K")
     try:
         if(exploit):
-            res = requests.post(url, data=postData, headers = headersData, proxies = proxy)
+            res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
         else:
             stats["postRequests"] += 1
-            res = requests.post(url, data=postData, headers = headersData, proxies = proxy)
+            res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
             if(init(res, "POST", exploitType, url, postData, headersData, exploitMethod)):
                 doContinue = False
     except KeyboardInterrupt:
@@ -164,7 +163,8 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     except:
         print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
         raise
-
+    
+    if(args.delay): time.sleep(args.delay)
     return res, doContinue
 
 
@@ -1574,10 +1574,13 @@ def main():
             print("[-] Url '" + args.url + "' timed out. Skipping...")
         except ConnectionRefusedError:
             print("[-] Failed to establish connection to " + args.url)
+            raise
         except urllib3.exceptions.NewConnectionError:
             print("[-] Failed to establish connection to " + args.url)
+            raise
         except OSError:
             print("[-] Failed to establish connection to " + args.url)
+            raise
         except KeyboardInterrupt:
             print("\nKeyboard interrupt detected. Exiting...")
             lfimap_cleanup()
@@ -1606,6 +1609,7 @@ if(__name__ == "__main__"):
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest='agent', help='\t\t Specify HTTP user agent')
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help='\t\t Specify HTTP referer')
     optionsGroup.add_argument('--param', type=str, metavar='<name>', dest='param', help='\t\t Specify different test parameter value')
+    optionsGroup.add_argument('--delay', type=int, metavar = '<seconds>', dest='delay', help='\t\t Specify delay in seconds in-between requests')
     optionsGroup.add_argument('--no-stop', action='store_true', dest = 'no_stop', help='\t\t Don\'t stop using same method upon findings')
 
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
@@ -1748,15 +1752,6 @@ if(__name__ == "__main__"):
             if(args.lport < 1 or args.lport > 65534):
                 print("[-] LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
-
-    #if(args.test_all or args.sqli):
-    #    #Warn user for sqli testing
-    #    print("[!] WARNING. SQL injection test could easily generate hundreds of request per endpoint!")
-    #    option = input("[?] Are you sure you want to continue? y/n: ")
-    #    print()
-    #    if(not (option == "y" or option == "Y")): 
-    #        print("[i] Lfimap will skip sqli testing...")
-    #        skipsqli = True
 
     #Check if proxy is correct
     if(args.proxyAddr):
