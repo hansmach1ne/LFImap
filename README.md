@@ -10,17 +10,34 @@
 - Remote file inclusion for code execution
 - Path truncation for arbitrary file inclusion
 - Command injection for remote command execution
-- Generic blind and union based sql injection testing
+- Generic time based blind sql injection testing
 - Reflected XSS testing
 - Option to test POST arguments
 - Option to specify custom http headers
 - Option to specify cookies for authenticated requests
 - Option to specify a web proxy to send requests through
-- Option for automated reverse shell attack upon code execution detection
+- Option to specify delay in between requests
+- Option for automated reverse shell access upon successful remote code execution
 
 ### Documentation
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
 - [Usage](https://github.com/hansmach1ne/lfimap/wiki)
+
+###
+What features are working currently
+- Scan parameters for path traversal (different bypasses, nullbyte, path normalization, string stripping injection, single and double URL encoding, etc..)
+- Scan parameters for local file inclusion using wrappers (filter, input, data, expect, file)
+- Scan parameters for remote file inclusion (remote internet facing website, if LHOST address is provided test by hosting a file on local web server)
+- Scan parameters for results-based and blind command injection (different injection sequences, $IFS, ${IFS%??})
+- Scan parameters for basic blind sql injection (currently supports only MySQL)
+- Scan parameters for unsanitized reflection (Basic reflected XSS test using img onerror JavaScript event handler)
+- Inline check for arbitrary open redirection
+- Supports scans for GET and POST request parameters
+- Supports scans through a proxy
+- Supports scans with custom session cookies, user-agent, referer and/or HTTP headers
+- Supports scans and exploitation with delay in between requests
+- Supports scans and exploitation for windows and linux web servers
+- Supports automated reverse shell upon RCE detection (Current methods that support this are: data, input and expect wrappers, remote file inclusion, command injection, http access log poisoning)
 
 ### -h, --help
 ```                  
