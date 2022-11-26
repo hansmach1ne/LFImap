@@ -23,8 +23,7 @@
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
 - [Usage](https://github.com/hansmach1ne/lfimap/wiki)
 
-###
-What features are working currently
+### What features are working currently
 - Scan parameters for path traversal (different bypasses, nullbyte, path normalization, string stripping injection, single and double URL encoding, etc..)
 - Scan parameters for local file inclusion using wrappers (filter, input, data, expect, file)
 - Scan parameters for remote file inclusion (remote internet facing website, if LHOST address is provided test by hosting a file on local web server)
@@ -38,6 +37,20 @@ What features are working currently
 - Supports scans and exploitation with delay in between requests
 - Supports scans and exploitation for windows and linux web servers
 - Supports automated reverse shell upon RCE detection (Current methods that support this are: data, input and expect wrappers, remote file inclusion, command injection, http access log poisoning)
+
+### What features will work in future
+- RCE attack using /self/fd, /self/environ techniques and http error log poisoning
+- Better Generic blind SQLi test support for Oracle, MsSQL and PostgreSQL database engines
+- Better XSS test using different tags (that will try to bypass waf with more obscure payloads)
+- Better RFI test using different file extensions, nullbyte...
+- Automatic parameter recognition, select parameters to test with * (star) value or with '-p' parameter
+- Request retry system for dropped requests
+- Support testing with raw http request from a file
+- Support for different transport protocols in POST request (xml and json)
+- Support to test and exploit HTTP header values
+- Enumeration category of options that will use found vulnerabilities to find out more about the system
+- Output results to a file
+- False positive check
 
 ### -h, --help
 ```                  
