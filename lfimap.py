@@ -21,11 +21,8 @@ import fileinput
 import urllib.parse as urlparse
 import urllib3
 
-
 from contextlib import closing
 from argparse import RawTextHelpFormatter
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
 
 exploits = []
 proxies = {}
@@ -42,7 +39,6 @@ stats["info"] = 0
 stats["vulns"] = 0
 stats["urls"] = 0
 
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 scriptDirectory = os.path.dirname(__file__)
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
@@ -112,22 +108,25 @@ class ICMPThread(threading.Thread):
 #Used to validate URL(s), before testing happens
 def HEAD(url, headersData, proxy):
     stats["headRequests"] += 1
-    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy, verify = False)
-    else: r = requests.head(url, headers = headersData, proxies = proxy, timeout = 5, verify = False)
-    
-    if(args.delay): time.sleep(args.delay)
+    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy)
+    else: r = requests.head(url, headers = headersData, proxies = proxy, timeout = 5)
     return r
 
 def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
     res = None
+
+    #if(args.verbose and not exploit):
+        #print("-> Trying: " + str(url), end="\r")
+        #time.sleep(1)
+        #print("\033[1A", end = "\x1b[2K")
     
     try:
         if(exploit):
-            res = requests.get(url, headers = headers, proxies = proxy, verify = False)
+            res = requests.get(url, headers = headers, proxies = proxy)
         else:
             stats["getRequests"] += 1
-            res = requests.get(url, headers = headers, proxies = proxy, verify = False)
+            res = requests.get(url, headers = headers, proxies = proxy)
             if(init(res, "GET", exploitType, url, "", headers, exploitMethod)):
                 doContinue = False
     except KeyboardInterrupt:
@@ -138,8 +137,7 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     except:
         print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
         raise
-    
-    if(args.delay): time.sleep(args.delay)
+
     return res, doContinue
 
 
@@ -147,12 +145,15 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     doContinue = True
     res = None
 
+    #if(args.verbose and not exploit):
+    #    print("[i] Testing " + str(url))
+    #    sys.stdout.write("\033[K")
     try:
         if(exploit):
-            res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
+            res = requests.post(url, data=postData, headers = headersData, proxies = proxy)
         else:
             stats["postRequests"] += 1
-            res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
+            res = requests.post(url, data=postData, headers = headersData, proxies = proxy)
             if(init(res, "POST", exploitType, url, postData, headersData, exploitMethod)):
                 doContinue = False
     except KeyboardInterrupt:
@@ -163,8 +164,7 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     except:
         print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
         raise
-    
-    if(args.delay): time.sleep(args.delay)
+
     return res, doContinue
 
 
@@ -1385,11 +1385,27 @@ def main():
                 
                 #Check if URL line is accessible
                 try:
-                    r = HEAD(line, headers, proxies)
+                    if(args.postreq):
+                        r,_ = POST(line, headers, proxies, "test", "test")
+                    else:
+                        r,_ = GET(line, headers, proxies, "test", "test")
                     
-                    if(r.status_code == 404):
-                        print("[-] " + line + " is not accessible. HTTP status code " + str(r.status_code) + ". Skipping...")
-                        continue
+                    okCode = False
+                    if(args.http_valid):
+                        for http_code in args.http_valid:
+                            if(http_code == r.status_code):
+                                okCode = True
+                        
+                        if(not okCode):
+                            print("[-] " + line + " is not accessible. Specified valid status code != " + str(r.status_code) + ". Skipping...")
+                            print("[i] Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                            continue
+                    
+                    else:
+                        if(r.status_code == 404):
+                            print("[-] " + line + " is not accessible. HTTP status code " + str(r.status_code) + ". Skipping...")
+                            print("[i] Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                            continue
                     
                     if("Location" in r.headers):
                         if(r.headers["Location"] == args.param):
@@ -1412,7 +1428,6 @@ def main():
                     print("\nKeyboard interrupt detected. Exiting...")
                     lfimap_cleanup()
                 except:
-                    print("[-] Unknown exception caught. Please open up an issue on github with this error trace. Thanks!")
                     raise
 
                 stats["urls"] += 1
@@ -1489,103 +1504,113 @@ def main():
                 print("No scheme provided in '" + url + "'. Defaulting to http://")
             args.url = "http://" + args.url
         
-        #Check if url is accessible
-        try:
-            r = HEAD(args.url, headers, proxies)
-            # PUT ALL BELOW CODE HERE
-            
-            if(r.status_code != 404):
-                if("Location" in r.headers):
-                    if(r.headers["Location"] == args.param):
-                        print("[+] Open redirection -> " + args.url.replace("FUZZ", "https://google.com"))
-                        stats["vulns"] += 1
-                        lfimap_cleanup()
-
-                stats["urls"] += 1
-                url = args.url
-                #Perform all tests
-                if(args.test_all):
-                    test_heuristics(url)
-                    test_filter(url)
-                    test_input(url)
-                    test_data(url)
-                    test_expect(url)
-                    test_rfi(url)
-                    test_file_trunc(url)
-                    test_trunc(url)
-                    test_cmd_injection(url)
-                    test_sqli(url)
-                    test_xss(url)
-                    
-                    lfimap_cleanup()
-                
-                default = True
-    
-                if(args.heuristics):
-                    default = False
-                    test_heuristics(url)
-                if(args.php_filter):
-                    default = False
-                    test_filter(url)
-                if(args.php_input):
-                    default = False
-                    test_input(url)
-                if(args.php_data):
-                    default = False
-                    test_data(url)
-                if(args.php_expect):
-                    default = False
-                    test_expect(url)
-                if(args.rfi):
-                    default = False
-                    test_rfi(url)
-                if(args.file):
-                    default = False
-                    test_file_trunc(url)
-                if(args.trunc):
-                    default = False
-                    test_trunc(url)
-                if(args.cmd):
-                    default=False
-                    test_cmd_injection(url)
-                if(args.sqli):
-                    default = False
-                    test_sqli(url)
-                if(args.xss):
-                    default = False
-                    test_xss(url)
-    
-                #Default behaviour
-                if(default):
-                    test_filter(url)
-                    test_input(url)
-                    test_data(url)
-                    test_expect(url)
-                    test_rfi(url)
-                    test_file_trunc(url)
-                    test_trunc(url)
-
-            #If url is not accessible
+       
+        try:     
+            #Check if url is accessible
+            if(args.postreq):
+                r,_ = POST(args.url, headers, proxies, "test", "test")
             else:
-                print("[-] Url '" + args.url + "' is not accessible. HTTP status code " + str(r.status_code) + ". Skipping...")
+                r,_ = GET(args.url, headers, proxies, "test", "test")
+           
+            okCode = False
+            if(args.http_valid):
+                for http_code in args.http_valid:
+                    if(http_code == r.status_code):
+                        okCode = True
+
+                if(not okCode):
+                    print("[-] " + args.url + " is not accessible. HTTP code " + str(r.status_code) + ".")
+                    print("[i] Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                    sys.exit(-1)
+
+            else:
+                if(r.status_code == 404):
+                    print("[-] " + args.url + " is not accessible. HTTP code " + str(r.status_code) + ". Exiting...")
+                    print("[i] Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                    sys.exit(-1)
+            
+            if("Location" in r.headers):
+                if(r.headers["Location"] == args.param):
+                    print("[+] Open redirection -> " + args.url.replace("FUZZ", "https://google.com"))
+                    stats["vulns"] += 1
+                    lfimap_cleanup()
+
+            stats["urls"] += 1
+            url = args.url
+            #Perform all tests
+            if(args.test_all):
+                test_heuristics(url)
+                test_filter(url)
+                test_input(url)
+                test_data(url)
+                test_expect(url)
+                test_rfi(url)
+                test_file_trunc(url)
+                test_trunc(url)
+                test_cmd_injection(url)
+                test_sqli(url)
+                test_xss(url)
+                    
+                lfimap_cleanup()
+                
+            default = True
+    
+            if(args.heuristics):
+                default = False
+                test_heuristics(url)
+            if(args.php_filter):
+                default = False
+                test_filter(url)
+            if(args.php_input):
+                default = False
+                test_input(url)
+            if(args.php_data):
+                default = False
+                test_data(url)
+            if(args.php_expect):
+                default = False
+                test_expect(url)
+            if(args.rfi):
+                default = False
+                test_rfi(url)
+            if(args.file):
+                default = False
+                test_file_trunc(url)
+            if(args.trunc):
+                default = False
+                test_trunc(url)
+            if(args.cmd):
+                default=False
+                test_cmd_injection(url)
+            if(args.sqli):
+                default = False
+                test_sqli(url)
+            if(args.xss):
+                default = False
+                test_xss(url)
+    
+            #Default behaviour
+            if(default):
+                test_filter(url)
+                test_input(url)
+                test_data(url)
+                test_expect(url)
+                test_rfi(url)
+                test_file_trunc(url)
+                test_trunc(url)
         
-        #HEAD request timed out
         except requests.exceptions.ConnectTimeout:
             print("[-] Url '" + args.url + "' timed out. Skipping...")
         except ConnectionRefusedError:
             print("[-] Failed to establish connection to " + args.url)
-            raise
         except urllib3.exceptions.NewConnectionError:
             print("[-] Failed to establish connection to " + args.url)
-            raise
         except OSError:
             print("[-] Failed to establish connection to " + args.url)
-            raise
         except KeyboardInterrupt:
             print("\nKeyboard interrupt detected. Exiting...")
             lfimap_cleanup()
         except:
-            print("[-] Unknown exception caught. Please open up an issue on github with this error trace. Thanks!")
             raise
 
         lfimap_cleanup()
@@ -1609,8 +1634,8 @@ if(__name__ == "__main__"):
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest='agent', help='\t\t Specify HTTP user agent')
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help='\t\t Specify HTTP referer')
     optionsGroup.add_argument('--param', type=str, metavar='<name>', dest='param', help='\t\t Specify different test parameter value')
-    optionsGroup.add_argument('--delay', type=int, metavar = '<seconds>', dest='delay', help='\t\t Specify delay in seconds in-between requests')
     optionsGroup.add_argument('--no-stop', action='store_true', dest = 'no_stop', help='\t\t Don\'t stop using same method upon findings')
+    optionsGroup.add_argument('--http-ok', type=int, action='append', metavar='<number>', dest='http_valid', help='\t\t Specify http response code(s) to treat as valid')
 
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
     attackGroup.add_argument('-f', '--filter', action = 'store_true', dest = 'php_filter', help='\t\t Attack using filter:// wrapper')
