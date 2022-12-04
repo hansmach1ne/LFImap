@@ -23,6 +23,8 @@ import urllib3
 
 from contextlib import closing
 from argparse import RawTextHelpFormatter
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 exploits = []
 proxies = {}
@@ -108,7 +110,7 @@ class ICMPThread(threading.Thread):
 #Used to validate URL(s), before testing happens
 def HEAD(url, headersData, proxy):
     stats["headRequests"] += 1
-    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy)
+    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy, verify = False)
     else: r = requests.head(url, headers = headersData, proxies = proxy, timeout = 5)
     return r
 
@@ -116,17 +118,12 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
     res = None
 
-    #if(args.verbose and not exploit):
-        #print("-> Trying: " + str(url), end="\r")
-        #time.sleep(1)
-        #print("\033[1A", end = "\x1b[2K")
-    
     try:
         if(exploit):
-            res = requests.get(url, headers = headers, proxies = proxy)
+            res = requests.get(url, headers = headers, proxies = proxy, verify = False)
         else:
             stats["getRequests"] += 1
-            res = requests.get(url, headers = headers, proxies = proxy)
+            res = requests.get(url, headers = headers, proxies = proxy, verify = False)
             if(init(res, "GET", exploitType, url, "", headers, exploitMethod)):
                 doContinue = False
     except KeyboardInterrupt:
@@ -135,7 +132,6 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     except requests.exceptions.InvalidSchema:
         print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
     except:
-        print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
         raise
 
     return res, doContinue
@@ -145,15 +141,12 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     doContinue = True
     res = None
 
-    #if(args.verbose and not exploit):
-    #    print("[i] Testing " + str(url))
-    #    sys.stdout.write("\033[K")
     try:
         if(exploit):
-            res = requests.post(url, data=postData, headers = headersData, proxies = proxy)
+            res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
         else:
             stats["postRequests"] += 1
-            res = requests.post(url, data=postData, headers = headersData, proxies = proxy)
+            res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
             if(init(res, "POST", exploitType, url, postData, headersData, exploitMethod)):
                 doContinue = False
     except KeyboardInterrupt:
@@ -162,7 +155,6 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
     except requests.exceptions.InvalidSchema:
         print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
     except:
-        print("Unknown exception occured. Please open up an issue on lfimap's github. Printing trace...\n")
         raise
 
     return res, doContinue
@@ -1785,7 +1777,7 @@ if(__name__ == "__main__"):
                 if(args.verbose): print("[i] No proxy scheme provided. Defaulting to http.")
                 args.proxyAddr = "http://" + args.proxyAddr
 
-            r = requests.get(args.proxyAddr, timeout = 5)
+            r = requests.get(args.proxyAddr, timeout = 5, verify = False)
             if(r.status_code >= 500):
                 print("[-] Proxy is available, but it returns server-side error code >=500. Exiting...")
                 sys.exit(-1)
