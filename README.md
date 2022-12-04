@@ -75,6 +75,7 @@ GENERAL OPTIONS:
   --param <name>       		 Specify different test parameter value
   --delay <seconds>    		 Specify delay in seconds in-between requests
   --no-stop            		 Don't stop using same method upon findings
+  --http-ok <number>   		 Specify http response code(s) to treat as valid
 
 ATTACK TECHNIQUE:
   -f, --filter         		 Attack using filter:// wrapper
