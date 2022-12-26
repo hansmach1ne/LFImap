@@ -1580,12 +1580,16 @@ def main():
                 test_trunc(url)
         
         except requests.exceptions.ConnectTimeout:
+            raise
             print("[-] Url '" + args.url + "' timed out. Skipping...")
         except ConnectionRefusedError:
+            raise
             print("[-] Failed to establish connection to " + args.url)
         except urllib3.exceptions.NewConnectionError:
+            raise
             print("[-] Failed to establish connection to " + args.url)
         except OSError:
+            raise
             print("[-] Failed to establish connection to " + args.url)
         except KeyboardInterrupt:
             print("\nKeyboard interrupt detected. Exiting...")
@@ -1804,5 +1808,5 @@ if(__name__ == "__main__"):
                 print("[-] Header name cannot start with ':' character. Exiting...")
                 sys.exit(-1)
             else:
-                addHeader(args.httpheaders[i].split(":",1)[0].replace(" ",""), args.httpheaders[i].split(":",1)[1].replace(" ", ""))
+                addHeader(args.httpheaders[i].split(":",1)[0].lstrip(), args.httpheaders[i].split(":",1)[1].lstrip())
     main()
