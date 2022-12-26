@@ -41,7 +41,6 @@
 ### What features will work in future
 - RCE attack using /self/fd, /self/environ techniques and http error log poisoning
 - Better Generic blind SQLi test support for Oracle, MsSQL and PostgreSQL database engines
-- Better XSS test using different tags (that will try to bypass waf with more obscure payloads)
 - Automatic parameter recognition, select parameters to test with * (star) value or with '-p' parameter
 - Request retry system for dropped requests
 - Support testing with raw http request from a file
@@ -52,11 +51,11 @@
 - False positive check
 
 ### -h, --help
+
 ```                  
-usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <request>] [-H <header>] [-P <proxy>] ć
-[--useragent <agent>] [--referer <referer>] [--param <name>] [--delay <seconds>] [--no-stop] [-f] [-i] 
-[-d] [-e] [-t] [-r] [-c] [--file] [--xss] [--sqli] [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] 
-[-wT <path>] [-wC <path>] [-v] [-h]
+usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <request>] [-H <header>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop]
+                 [--http-ok <number>] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] [--sqli] [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>]
+                 [--use-long] [-v] [-h]
 
 lfimap, Local File Inclusion discovery and exploitation tool
 
@@ -72,7 +71,6 @@ GENERAL OPTIONS:
   --useragent <agent>  		 Specify HTTP user agent
   --referer <referer>  		 Specify HTTP referer
   --param <name>       		 Specify different test parameter value
-  --delay <seconds>    		 Specify delay in seconds in-between requests
   --no-stop            		 Don't stop using same method upon findings
   --http-ok <number>   		 Specify http response code(s) to treat as valid
 
@@ -96,8 +94,8 @@ PAYLOAD OPTIONS:
   --lport <lport>      		 Specify local port number for reverse connection
 
 WORDLIST OPTIONS:
-  -wT <path>           		 Specify wordlist for truncation test
-  -wC <path>           		 Specify wordlist for command injection test
+  -wT <path>           		 Specify path to wordlist for truncation test modality
+  --use-long           		 Use "wordlists/long.txt" wordlist for truncation test modality
 
 OTHER:
   -v, --verbose        		 Print more detailed output when performing attacks

