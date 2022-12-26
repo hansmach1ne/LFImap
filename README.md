@@ -42,7 +42,6 @@
 - RCE attack using /self/fd, /self/environ techniques and http error log poisoning
 - Better Generic blind SQLi test support for Oracle, MsSQL and PostgreSQL database engines
 - Better XSS test using different tags (that will try to bypass waf with more obscure payloads)
-- Better RFI test using different file extensions, nullbyte...
 - Automatic parameter recognition, select parameters to test with * (star) value or with '-p' parameter
 - Request retry system for dropped requests
 - Support testing with raw http request from a file
