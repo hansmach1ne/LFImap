@@ -51,9 +51,9 @@
 ### -h, --help
 
 ```                  
-usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <request>] [-H <header>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>] [--no-stop]
-                 [--http-ok <number>] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] [--sqli] [--info] [-a] [-x] [--lhost <lhost>] [--lport <lport>] [-wT <path>]
-                 [--use-long] [-v] [-h]
+usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <data>] [-H <header>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>]
+                 [--http-ok <number>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] [--sqli] [--info] [-a] [-n <U|B>] [-x] [--lhost <lhost>]
+                 [--lport <lport>] [-wT <path>] [--use-long] [-v] [-h]
 
 lfimap, Local File Inclusion discovery and exploitation tool
 
@@ -63,30 +63,31 @@ MANDATORY:
 
 GENERAL OPTIONS:
   -C <cookie>          		 Specify session cookie, Ex: "PHPSESSID=1943785348b45"
-  -D <request>         		 Do HTTP POST value test. Ex: "param=PWN"
+  -D <data>            		 Do HTTP POST value test. Ex: "param=PWN"
   -H <header>          		 Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"
-  -P <proxy>           		 Specify Proxy IP address. Ex: "http://127.0.0.1:8080"
+  -P <proxy>           		 Specify proxy. Ex: "http://127.0.0.1:8080"
   --useragent <agent>  		 Specify HTTP user agent
   --referer <referer>  		 Specify HTTP referer
   --param <name>       		 Specify different test parameter value
-  --no-stop            		 Don't stop using same method upon findings
   --http-ok <number>   		 Specify http response code(s) to treat as valid
+  --no-stop            		 Don't stop using same method upon findings
 
 ATTACK TECHNIQUE:
-  -f, --filter         		 Attack using filter:// wrapper
-  -i, --input          		 Attack using input:// wrapper
-  -d, --data           		 Attack using data:// wrapper
-  -e, --expect         		 Attack using expect:// wrapper
+  -f, --filter         		 Attack using filter wrapper
+  -i, --input          		 Attack using input wrapper
+  -d, --data           		 Attack using data wrapper
+  -e, --expect         		 Attack using expect wrapper
   -t, --trunc          		 Attack using path truncation with wordlist (default "short.txt")
   -r, --rfi            		 Attack using remote file inclusion
   -c, --cmd            		 Attack using command injection
-  --file               		 Attack using file:// wrapper
+  --file               		 Attack using file wrapper
   --xss                		 Test for reflected XSS
   --sqli               		 Test for SQL injection
   --info               		 Test for basic information disclosures
   -a, --all            		 Use all available methods to attack
 
 PAYLOAD OPTIONS:
+  -n <U|B>             		 Specify payload encoding(s). "U" for URL, "B" for base64
   -x, --exploit        		 Exploit to reverse shell if possible (Setup reverse listener first)
   --lhost <lhost>      		 Specify local ip address for reverse connection
   --lport <lport>      		 Specify local port number for reverse connection
@@ -98,8 +99,9 @@ WORDLIST OPTIONS:
 OTHER:
   -v, --verbose        		 Print more detailed output when performing attacks
   -h, --help           		 Print this help message
-
+  
 ```
+
 ### Examples 
 
 #### 1) All attacks with '-a' (filter, input, data, expect and file wrappers, remote file inclusion, command injection, XSS, error disclosure).
