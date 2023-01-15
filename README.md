@@ -2,36 +2,36 @@
 ## Local file inclusion discovery and exploitation tool
 
 ### Main features
-- data:// for remote command execution
-- expect:// for remote command execution
-- input:// for remote command execution
-- filter:// for arbitrary file inclusion
-- file:// for arbitrary file inclusion
-- Remote file inclusion for code execution
+- Filter wrapper for arbitrary file inclusion
+- Data wrapper for remote command execution
+- Input wrapper for remote command execution
+- Expect wrapper for remote command execution
+- File wrapper for arbitrary file inclusion
 - Path truncation for arbitrary file inclusion
+- Remote file inclusion for code execution
 - Command injection for remote command execution
 - Generic time based blind sql injection testing
-- Reflected XSS testing
-- Option to test POST arguments
-- Option to specify custom http headers
-- Option to specify cookies for authenticated requests
-- Option to specify a web proxy to send requests through
-- Option to specify delay in between requests
-- Option for automated reverse shell access upon successful remote code execution
+- Basic reflected XSS testing
+- Support for POST argument testing
+- Support for custom http headers
+- Support for specifying cookies for authenticated requests
+- Support for specifying web proxy to send requests through
+- Support for specifying delay in between requests
+- Support for payload manipulation via url and base64 encoding(s)
+- Support for automated reverse shell access upon successful remote code execution
 
 ### Documentation
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
-- [Usage](https://github.com/hansmach1ne/lfimap/wiki)
 
-### What features are working currently
-- Scan parameters for path traversal (different bypasses, nullbyte, path normalization, string stripping injection, single and double URL encoding, etc..)
+### What features are working
 - Scan parameters for local file inclusion using wrappers (filter, input, data, expect, file)
+- Scan parameters for path traversal (different bypasses, nullbyte, path normalization, string stripping injection, single and double URL encoding, etc..)
 - Scan parameters for remote file inclusion (remote internet facing website, if LHOST address is provided test by hosting a file on local web server)
-- Scan parameters for results-based and blind command injection (different injection sequences, $IFS, ${IFS%??})
-- Scan parameters for basic blind sql injection (currently supports only MySQL)
-- Scan parameters for unsanitized reflection (Basic reflected XSS test using img onerror JavaScript event handler)
+- Scan parameters for results-based and blind command injection (different injection sequences, icmp exfil, shell variable usage to bypass character restrictions)
+- Scan parameters for basic blind sql injection (currently supports only MySQL and MsSQL)
+- Scan parameters for unsanitized reflection (Basic reflected XSS check)
 - Inline check for arbitrary open redirection
-- Supports scans for GET and POST request parameters
+- Supports scans for GET and POST parameters
 - Supports scans through a proxy
 - Supports scans with custom session cookies, user-agent, referer and/or HTTP headers
 - Supports scans and exploitation with delay in between requests
@@ -42,9 +42,7 @@
 - RCE attack using /self/fd, /self/environ techniques and http error log poisoning
 - Better Generic blind SQLi test support for Oracle, MsSQL and PostgreSQL database engines
 - Automatic parameter recognition, select parameters to test with * (star) value or with '-p' parameter
-- Request retry system for dropped requests
 - Support testing with raw http request from a file
-- Support for different transport protocols in POST request (xml and json)
 - Support to test and exploit HTTP header values
 - Enumeration category of options that will use found vulnerabilities to find out more about the system
 - Output results to a file

