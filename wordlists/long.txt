@@ -1,3 +1,5 @@
+/etc/passwd
+C:\Windows\System32\drivers\etc\hosts
 ../../../../../etc/passwd
 nonexistingdir../../../../../../../../../../../../../../../../../../../../etc/passwd/.
 nonexistingdir..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\Windows\System32\drivers\etc\hosts./
