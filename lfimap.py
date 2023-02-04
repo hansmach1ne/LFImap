@@ -34,14 +34,14 @@ scriptName = ""
 tempArg = ""
 webDir = ""
 skipsqli = False
+previousPrint = ""
 stats = {}
-stats["headRequests"] = 0
 stats["getRequests"] = 0
 stats["postRequests"] = 0
 stats["info"] = 0
 stats["vulns"] = 0
 stats["urls"] = 0
-    
+
 #Add them from the most complex one to the least complex. This is important.
 TO_REPLACE = ["<IMG sRC=X onerror=jaVaScRipT:alert`xss`>", "<img src=x onerror=javascript:alert`xss`>",
             "%3CIMG%20sRC%3DX%20onerror%3DjaVaScRipT%3Aalert%60xss%60%3E",
@@ -136,13 +136,6 @@ def encode(payload):
                 payload = urlencode(payload)
     return payload
 
-#Used to validate URL(s), before testing happens
-def HEAD(url, headersData, proxy):
-    stats["headRequests"] += 1
-    if(args.proxyAddr): r = requests.head(url, headers = headersData, proxies = proxy, verify = False)
-    else: r = requests.head(url, headers = headersData, proxies = proxy, timeout = 5)
-    return r
-
 def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
     doContinue = True
     res = None
@@ -156,14 +149,15 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
             res = requests.get(url, headers = headers, proxies = proxy, verify = False)
             if(init(res, "GET", exploitType, url, "", headers, exploitMethod)):
                 doContinue = False
+        if(args.delay):
+            time.sleep(args.delay/1000)
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...")
         lfimap_cleanup()
     except requests.exceptions.InvalidSchema:
         print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
     except:
-        raise
-
+        pass
     return res, doContinue
 
 def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False):
@@ -178,6 +172,8 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
             res = requests.post(url, data=postData, headers = headersData, proxies = proxy, verify = False)
             if(init(res, "POST", exploitType, url, postData, headersData, exploitMethod)):
                 doContinue = False
+        if(args.delay):
+            time.sleep(args.delay/1000)
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...")
         lfimap_cleanup()
@@ -424,6 +420,8 @@ def test_xss(url):
             res, br = POST(u, headers, args.postreq.replace(args.param, test), proxies, "XSS", "XSS")
         else:
             res, br = GET(u, headers, proxies, "XSS", "XSS")
+        if(res is None):
+            return
         if(unquote(test) in res.text and unquote(test) in KEY_WORDS):
             print("    Value '" + test + "' is reflected.")
 
@@ -629,7 +627,7 @@ def test_heuristics(url):
     
     tests = []
     # /?!%$$%!?/
-    tests.append("%2F%3F%21%25%24%24%25%21%3F%2F")
+    tests.append("%2F%3F%21%25%24%3C%24%3E%25%21%3F%2F")
     
     fiErrors = ["warning", "include(", "require(", "fopen(", "fpassthru(", "readfile(", "fread(", "fgets("]
     sqlErrors = ["you have an error in your sql syntax", "unclosed qutation mask after the character string",
@@ -684,31 +682,24 @@ def test_heuristics(url):
 
     if("Server" in res.headers):
         print("[+] Info disclosure -> Web server version: " + res.headers['Server'])
-        stats["info"] += 1
     
     resHeaders = "".join(res.headers).lower()
     if("x-powered-by" in resHeaders):
         print("[+] Info disclosure -> Underlying web server languages: " + res.headers['X-Powered-By'])
-        stats["info"] += 1
     if("phpsessid" in resHeaders):  
         print("[+] Discovered possible PHP signatures.")
-        stats["info"] += 1
     if("jsessid" in resHeaders or "jsessionid" in resHeaders):
         print("[+] Discovered possible JAVA signatures.")
-        stats["info"] += 1
     if("aspnet" in resHeaders):
         print("[+] Discovered possible .NET signatures.")
-        stats["info"] += 1
     if("lfimap<>ua" in res.text):
         print("[+] Possible XSS, reflected 'User-Agent' string discovered in response.")
-        stats["info"] += 1
     if("lfimap<>referer" in res.text):
         print("[+] Possible XSS, reflected 'Referer' string discovered in response.")
-        stats["info"] += 1
-    if("/?!%$$%!?/" in res.text):
+    if("/?!%$<$>%!?/" in res.text):
         if(args.test_all or args.xss):  
-            print("[+] Possible XSS -> '" + u + "' -> reflection of '/?!%$$%!?/' is discovered in response.")
-        else: print("[+] Possible XSS -> '" + u + "' -> reflection of '/?!%$$%!?/' is discovered in response. Rerun lfimap with '--xss' to test for XSS.")
+            print("[+] Possible XSS -> '" + u + "' -> reflection of '/?!%$<$>%!?/' is discovered in response.")
+        else: print("[+] Possible XSS -> '" + u + "' -> reflection of '/?!%$<$>%!?/' is discovered in response. Rerun lfimap with '--xss' to test for XSS.")
     return
 
 def test_sqli(url):
@@ -1331,7 +1322,7 @@ def lfimap_cleanup():
     print("\n" + '-'*40 + "\nLfimap finished with execution.")
     print("Endpoints tested: " + str(stats["urls"]))
 
-    totalRequests = stats["headRequests"] + stats["getRequests"] + stats["postRequests"]
+    totalRequests = stats["getRequests"] + stats["postRequests"]
     print("Requests sent: " + str(totalRequests))
     
     if(stats["info"] > 0):
@@ -1378,6 +1369,8 @@ def main():
                         r,_ = POST(line, headers, proxies, "test", "test")
                     else:
                         r,_ = GET(line, headers, proxies, "test", "test")
+                    
+                    if(r is None): continue
                     
                     okCode = False
                     if(args.http_valid):
@@ -1627,6 +1620,7 @@ if(__name__ == "__main__"):
     optionsGroup.add_argument('--useragent', type=str, metavar= '<agent>', dest='agent', help='\t\t Specify HTTP user agent')
     optionsGroup.add_argument('--referer', type=str, metavar = '<referer>', dest='referer', help='\t\t Specify HTTP referer')
     optionsGroup.add_argument('--param', type=str, metavar='<name>', dest='param', help='\t\t Specify different test parameter value')
+    optionsGroup.add_argument('--delay', type=int, metavar='<milis>', dest='delay', help='\t\t Specify delay in miliseconds after each request')
     optionsGroup.add_argument('--http-ok', type=int, action='append', metavar='<number>', dest='http_valid', help='\t\t Specify http response code(s) to treat as valid')
     optionsGroup.add_argument('--no-stop', action='store_true', dest = 'no_stop', help='\t\t Don\'t stop using same method upon findings')
 
