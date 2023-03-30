@@ -23,82 +23,63 @@
 ### Documentation
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
 
-### What features are working
-- Scan parameters for local file inclusion using wrappers (filter, input, data, expect, file)
-- Scan parameters for path traversal (different bypasses, nullbyte, path normalization, string stripping injection, single and double URL encoding, etc..)
-- Scan parameters for remote file inclusion (remote internet facing website, if LHOST address is provided test by hosting a file on local web server)
-- Scan parameters for results-based and blind command injection (different injection sequences, icmp exfil, shell variable usage to bypass character restrictions)
-- Scan parameters for basic blind sql injection (currently supports only MySQL and MsSQL)
-- Scan parameters for unsanitized reflection (Basic reflected XSS check)
-- Inline check for arbitrary open redirection
-- Supports scans for GET and POST parameters
-- Supports scans through a proxy
-- Supports scans with custom session cookies, user-agent, referer and/or HTTP headers
-- Supports scans and exploitation with delay in between requests
-- Supports scans and exploitation for windows and linux web servers
-- Supports automated reverse shell upon RCE detection (Current methods that support this are: data, input and expect wrappers, remote file inclusion, command injection, http access log poisoning)
-
-### What features will work in future
-- RCE attack using /self/fd, /self/environ techniques and http error log poisoning
-- Better Generic blind SQLi test support for Oracle, MsSQL and PostgreSQL database engines
-- Automatic parameter recognition, select parameters to test with * (star) value or with '-p' parameter
-- Support testing with raw http request from a file
-- Support to test and exploit HTTP header values
-- Enumeration category of options that will use found vulnerabilities to find out more about the system
-- Output results to a file
-- False positive check
-
 ### -h, --help
 
 ```                  
-usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <data>] [-H <header>] [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--param <name>]
-                 [--http-ok <number>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c] [--file] [--xss] [--sqli] [--info] [-a] [-n <U|B>] [-x] [--lhost <lhost>]
-                 [--lport <lport>] [-wT <path>] [--use-long] [-v] [-h]
+usage: lfimap.py [-U [url]] [-F [urlfile]] [-C <cookie>] [-D <data>] [-H <header>] [-M <method>]
+                 [-P <proxy>] [--useragent <agent>] [--referer <referer>] [--placeholder <name>]
+                 [--delay <milis>] [--http-ok <number>] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r]
+                 [-c] [-file] [-heur] [-a] [-n <U|B>] [-q] [-x] [--lhost <lhost>] [--lport <lport>]
+                 [-wT <path>] [--use-long] [--log <file>] [-v] [-h]
 
-lfimap, Local File Inclusion discovery and exploitation tool
+LFImap, Local File Inclusion discovery and exploitation tool
 
 MANDATORY:
-  -U [url]             		 Specify url, Ex: "http://example.org/vuln.php?param=PWN" 
-  -F [urlfile]         		 Specify url wordlist (every line should have --param|'PWN'.)
+  -U [url]              Specify url, Ex: "http://example.org/vuln.php?param=PWN"
+  -F [urlfile]          Specify url wordlist (every line should have --param|"PWN")
 
 GENERAL OPTIONS:
-  -C <cookie>          		 Specify session cookie, Ex: "PHPSESSID=1943785348b45"
-  -D <data>            		 Do HTTP POST value test. Ex: "param=PWN"
-  -H <header>          		 Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"
-  -P <proxy>           		 Specify proxy. Ex: "http://127.0.0.1:8080"
-  --useragent <agent>  		 Specify HTTP user agent
-  --referer <referer>  		 Specify HTTP referer
-  --param <name>       		 Specify different test parameter value
-  --http-ok <number>   		 Specify http response code(s) to treat as valid
-  --no-stop            		 Don't stop using same method upon findings
+  -C <cookie>           Specify session cookie, Ex: "PHPSESSID=1943785348b45"
+  -D <data>             Specify HTTP request form data
+  -H <header>           Specify additional HTTP header(s). Ex: "X-Forwarded-For:127.0.0.1"
+  -M <method>           Specify HTTP request method to use for testing
+  -P <proxy>            Specify proxy. Ex: "http://127.0.0.1:8080"
+  --useragent <agent>   Specify HTTP user agent header value
+  --referer <referer>   Specify HTTP referer header value
+  --placeholder <name>  Specify different testing placeholder value (default "PWN")
+  --delay <milis>       Specify delay in miliseconds after each request
+  --http-ok <number>    Specify http response code(s) to treat as valid
+  --no-stop             Don't stop using same method upon findings
 
 ATTACK TECHNIQUE:
-  -f, --filter         		 Attack using filter wrapper
-  -i, --input          		 Attack using input wrapper
-  -d, --data           		 Attack using data wrapper
-  -e, --expect         		 Attack using expect wrapper
-  -t, --trunc          		 Attack using path truncation with wordlist (default "short.txt")
-  -r, --rfi            		 Attack using remote file inclusion
-  -c, --cmd            		 Attack using command injection
-  --file               		 Attack using file wrapper
-  --xss                		 Test for reflected XSS
-  --sqli               		 Test for SQL injection
-  --info               		 Test for basic information disclosures
-  -a, --all            		 Use all available methods to attack
+  -f, --filter          Attack using filter wrapper
+  -i, --input           Attack using input wrapper
+  -d, --data            Attack using data wrapper
+  -e, --expect          Attack using expect wrapper
+  -t, --trunc           Attack using path truncation with wordlist (default "short.txt")
+  -r, --rfi             Attack using remote file inclusion
+  -c, --cmd             Attack using command injection
+  -file, --file         Attack using file wrapper
+  -heur, --heuristics   Test for miscellaneous vulns using heuristics
+  -a, --all             Use all available testing methods
 
 PAYLOAD OPTIONS:
-  -n <U|B>             		 Specify payload encoding(s). "U" for URL, "B" for base64
-  -x, --exploit        		 Exploit to reverse shell if possible (Setup reverse listener first)
-  --lhost <lhost>      		 Specify local ip address for reverse connection
-  --lport <lport>      		 Specify local port number for reverse connection
+  -n <U|B>              Specify additional payload encoding(s). "U" for URL, "B" for base64
+  -q, --quick           Perform quick testing with few payloads
+  -x, --exploit         Exploit to reverse shell if possible (Setup reverse listener first)
+  --lhost <lhost>       Specify local ip address for reverse connection
+  --lport <lport>       Specify local port number for reverse connection
 
 WORDLIST OPTIONS:
-  -wT <path>           		 Specify path to wordlist for truncation test modality
-  --use-long           		 Use "wordlists/long.txt" wordlist for truncation test modality
+  -wT <path>            Specify path to wordlist for truncation test modality
+  --use-long            Use "wordlists/long.txt" wordlist for truncation test modality
+
+OUTPUT OPTIONS:
+  --log <file>          Output all requests and responses to specified file
 
 OTHER:
-  -v, --verbose        		 Print more detailed output when performing attacks
-  -h, --help           		 Print this help message
+  -v, --verbose         Print more detailed output when performing attacks
+  -h, --help            Print this help message
   
 ```
 
