@@ -1,0 +1,15 @@
+/apache/logs/access.log
+/var/www/logs/access.log
+/usr/local/apache/logs/access.log 
+/var/log/apache2/access.log
+/var/log/apache/access.log
+/var/log/apache/access_log
+/var/log/apache2/access_log
+/var/log/apache2/access.log
+/var/www/logs/access_log
+/var/www/logs/access.log
+/usr/local/apache/logs/access.log
+/usr/local/apache/logs/access_log
+C:\ProgramFiles\ApacheGroup\Apache\conf\httpd.conf
+C:\ProgramFiles\ApacheGroup\Apache2\conf\httpd.conf
+C:\ProgramFiles\xampp\apache\conf\httpd.conf

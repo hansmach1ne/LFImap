@@ -1,0 +1,13 @@
+-----------START-----------
+-----------START-----------
+-----------START-----------
+-----------START-----------
+# Starting log: 18/07/2023 02:19:00
+# Arguments: ./lfimap.py -U http://192.168.56.103/vulnerabilities/fi/?page=PWN -C PHPSESSID=qd29cmhqcsh2afig4olfgqgel3; security=low -a -M AAA --log=log.txt
+---------------------------
+
+-----------START-----------
+# Starting log: 18/07/2023 02:29:02
+# Arguments: ./lfimap.py -U http://192.168.56.103/vulnerabilities/fi/?page=PWN -C PHPSESSID=qd29cmhqcsh2afig4olfgqgel3; security=low -a -P 127.0.0.1:8080 --log log.txt
+---------------------------
+
