@@ -1,9 +1,36 @@
 from urllib.parse import urlsplit, parse_qsl, parse_qs, urlparse
 from src.utils.arguments import args
 import json
+import re
 from src.configs import config
 
 import itertools
+
+# Check if there is a new line after the headers in reqfile. Return boolean.
+def is_file_ending_with_newline(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    # Find the index of the first empty line, which indicates the end of headers
+    index = content.find('\n\n')
+
+    if index != -1 and index < len(content) - 1:
+        return True
+    else:
+        return False
+
+def is_valid_url(url):
+	urlRegex = re.compile(
+		r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
+		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+		r'localhost|' #localhost...
+		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+		r'(?::\d+)?' # optional port
+		r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+	if(re.match(urlRegex, url)):
+		return True
+	else: return False
 
 def is_valid_json(data):
 	try:
@@ -32,29 +59,33 @@ def convert_http_formdata_to_json(formdata):
 	return json_data
 
 def parse_http_request_file(file_path):
-    try:
-        with open(file_path, "r") as file:
-            http_request = file.read()
-            headers, post_data = http_request.split("\n\n", 1)  # Split into headers and POST data
-            header_lines = headers.split("\n")
-            method, endpoint, protocol = header_lines[0].split(" ", 2)
+	try:
+		with open(file_path, "r") as file:
+			http_request = file.read()
+			headers, post_data = http_request.split("\n\n", 1)  # Split into headers and POST data
+			header_lines = headers.split("\n")
+			method, endpoint, protocol = header_lines[0].split(" ", 2)
 
-            # Parse headers
-            headers_dict = {}
-            for line in header_lines[1:]:
-                header_name, header_value = line.split(":", 1)
-                headers_dict[header_name.strip()] = header_value.strip()
+			# Parse headers
+			headers_dict = {}
+			for line in header_lines[1:]:
+				header_name, header_value = line.split(":", 1)
+				headers_dict[header_name.strip()] = header_value.strip()
 
-            config.postreq = post_data.strip()
-            form_data = parseFormDataLine(post_data.strip())
-            
-            return method, headers_dict, form_data
+			config.postreq = post_data.strip()
+			form_data = parseFormDataLine(post_data.strip())
+			
+			return method, headers_dict, form_data
 
-    except Exception as e:
-        print(f"Error parsing HTTP request: {e}")
-        return None
+	except Exception as e:
+		print(f"Error parsing HTTP request: {e}")
+		return None
 
-
+def is_string_in_dict(s, my_dict):
+    for key, value in my_dict.items():
+        if s in str(key) or s in str(value):
+            return True
+    return False
 
 def parse_url_parameters(url):
 	parsed_url = urlparse(url)
@@ -66,48 +97,48 @@ def parse_url_parameters(url):
 	return parameter_names_combined
 
 def parse_url_from_request_file(file_path, force_ssl=False):
-    try:
-        with open(file_path, "r") as file:
-            http_request = file.read()
-            lines = http_request.split("\n")
-            get_request_line = lines[0]
-            parts = get_request_line.split(" ", 2)
-            if len(parts) == 3:
-                method, endpoint, protocol = parts
-            else:
-                method, endpoint = parts
-                protocol = ""
-            url_parts = endpoint.split("?", 1)
-            path = url_parts[0]
-            query_string = url_parts[1] if len(url_parts) > 1 else ""
-            query_params = []
-            if query_string:
-                params = query_string.split("&")
-                for param in params:
-                    if "=" in param:
-                        name, value = param.split("=")
-                    else:
-                        name = param
-                        value = ""
-                    query_params.append(f"{name}={value}")
-            host_line = next((line for line in lines if line.startswith("Host:")), None)
-            if host_line:
-                host = host_line.split(": ", 1)[1]
-            else:
-                raise Exception("Host header not found in the request.")
+	try:
+		with open(file_path, "r") as file:
+			http_request = file.read()
+			lines = http_request.split("\n")
+			get_request_line = lines[0]
+			parts = get_request_line.split(" ", 2)
+			if len(parts) == 3:
+				method, endpoint, protocol = parts
+			else:
+				method, endpoint = parts
+				protocol = ""
+			url_parts = endpoint.split("?", 1)
+			path = url_parts[0]
+			query_string = url_parts[1] if len(url_parts) > 1 else ""
+			query_params = []
+			if query_string:
+				params = query_string.split("&")
+				for param in params:
+					if "=" in param:
+						name, value = param.split("=")
+					else:
+						name = param
+						value = ""
+					query_params.append(f"{name}={value}")
+			host_line = next((line for line in lines if line.startswith("Host:")), None)
+			if host_line:
+				host = host_line.split(": ", 1)[1]
+			else:
+				raise Exception("Host header not found in the request.")
 
-            if args.force_ssl:
-                url = f"https://{host}{path}"
-            else:
-                url = f"http://{host}{path}"
-            if query_params:
-                url += f"?{'&'.join(query_params)}"
+			if args.force_ssl:
+				url = f"https://{host}{path}"
+			else:
+				url = f"http://{host}{path}"
+			if query_params:
+				url += f"?{'&'.join(query_params)}"
 
-            return url
-    except FileNotFoundError:
-        raise Exception("File not found. Please provide a valid file path.")
-    except Exception as e:
-        raise Exception("An error occurred while parsing the request:", str(e))
+			return url
+	except FileNotFoundError:
+		raise Exception("File not found. Please provide a valid file path.")
+	except Exception as e:
+		raise Exception("An error occurred while parsing the request:", str(e))
 
 def parseGet(url):
 	placeholder = {}
@@ -226,15 +257,15 @@ def getHeadersToTest(dictionary):
  	return ', '.join(matching_keys)
 
 def compare_dicts(dict1, dict2):
-    # Check if the dictionaries have the same keys
-    if set(dict1.keys()) != set(dict2.keys()):
-        return False
-    
-    # Check if the values associated with each key are equal
-    for key in dict1:
-        if dict1[key] != dict2[key]:
-            return False
-    
-    # If all checks pass, the dictionaries are the same
-    return True
-    
+	# Check if the dictionaries have the same keys
+	if set(dict1.keys()) != set(dict2.keys()):
+		return False
+	
+	# Check if the values associated with each key are equal
+	for key in dict1:
+		if dict1[key] != dict2[key]:
+			return False
+	
+	# If all checks pass, the dictionaries are the same
+	return True
+	

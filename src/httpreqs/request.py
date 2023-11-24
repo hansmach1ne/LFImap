@@ -99,7 +99,7 @@ def prepareRequest(parameter, payload, url, postData):
     return reqUrl, reqHeaders, reqData
 
 
-def REQUEST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False):
+def REQUEST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False, followRedirect = True):
     doContinue = True
     res = None
     if(not postData): postData = ""
@@ -113,8 +113,8 @@ def REQUEST(url, headersData, postData, proxy, exploitType, exploitMethod, explo
 
         #TODO dunno about this if, myb timeout should be on all of them
         if(exploitMethod == "test" or exploitMethod == "RFI"): 
-            res = requests.request(args.method, url, data=postData, headers=headersData, proxies=proxy, verify=False, timeout = timeout)
-        else: res = requests.request(args.method, url, data=postData, headers=headersData, proxies=proxy, verify=False)
+            res = requests.request(args.method, url, data=postData, headers=headersData, proxies=proxy, verify=False, timeout = timeout, allow_redirects = followRedirect)
+        else: res = requests.request(args.method, url, data=postData, headers=headersData, proxies=proxy, verify=False, allow_redirects = followRedirect)
 
         #TODO exploitMethod and exploitType are not being used?
         if(not exploit):

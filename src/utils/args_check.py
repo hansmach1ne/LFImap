@@ -15,6 +15,11 @@ from src.utils.parseurl import parseFormDataLine
 from src.utils.parseurl import parse_url_from_request_file
 from src.utils.parseurl import parse_http_request_file
 from src.utils.parseurl import convert_http_formdata_to_json
+from src.utils.parseurl import is_valid_url
+from src.utils.parseurl import get_all_params
+from src.utils.parseurl import parse_url_parameters
+from src.utils.parseurl import is_file_ending_with_newline
+from src.utils.parseurl import is_string_in_dict
 
 scriptDirectory = os.path.dirname(__file__ + os.sep + ".." + os.sep + ".." + os.sep + ".." + os.sep)
 scriptDirectory = os.path.abspath(scriptDirectory)
@@ -61,16 +66,22 @@ def checkArgs():
 
     # -R specified
     if(args.reqfile):
-        if(os.path.exists(args.reqfile)):
+        if(not os.path.exists(args.reqfile)):
+            print(colors.red("[-]") + " Specified request file '" + args.reqfile + "' doesn't exist. Exiting...")
+            sys.exit(-1)
+        # RFC states that new line should be at the end, some servers might not even accept the request without it.
+        if(not is_file_ending_with_newline(args.reqfile)):
+            print(colors.red("[-]") + " Request file '" + args.reqfile +"' doesn't contain empty space after the headers. Please add it and try again...")
+            sys.exit(-1)
+        elif(os.path.exists(args.reqfile)):
             args.url = parse_url_from_request_file(args.reqfile, args.force_ssl)
             config.url = args.url
             args.method, args.httpheaders, args.postreq = parse_http_request_file(args.reqfile)
         else: 
-            print(colors.red("[-]" + " Specified request file '" + args.reqfile + "' doesn't exist. Exiting..."))
+            print(colors.red("[-]") + " Specified request file '" + args.reqfile + "' doesn't exist. Exiting...")
             sys.exit(-1)
 
     #args.mode is needed for exploitation modules to better understand in what context the vulnerability lies
-    # is it inside a GET, FORM-line
     
     # if '-F' is provided, set mode to file
     if(args.f): args.mode = "file"
@@ -97,16 +108,8 @@ def checkArgs():
                 config.url = "http://" + tempUrl
 
         #Check if URL is valid
-        urlRegex = re.compile(
-        r'^(?:http|ftp)s?://' # http:// or https:// or ftp://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
-        if(re.match(urlRegex, tempUrl) is None):
-            print(colors.red("[-]") + " URL not valid, exiting...")
+        if(not is_valid_url(tempUrl)):
+            print(tempUrl + " is not valid URL.")
             sys.exit(-1)
     #file mode
     else:
@@ -116,24 +119,37 @@ def checkArgs():
             sys.exit(-1)
         else: 
             # Check if every line has defined protocol, if not modify the file and prepend it
+            # Also check if every line has at least one parameter to test
             with open(args.f, "r") as rf:
                 lines = rf.readlines()
-            for line in lines:
-                line = line.replace("\n", "")
+            for index, line in enumerate(lines):
+                line = line.strip()
                 protocol = 'https://' if args.force_ssl else 'http://'
-                if line.startswith('http:'): config.urls.append(line)
+
+                #Ignore empty lines from urlfile
+                if(line == ""): continue
+
+                #If first key of the dictionary is empty, there are no parameters to test, skip
+                first_key = next(iter(get_all_params(line)),None)
+                if first_key == "":
+                    if(args.verbose): print(colors.blue("[i]") + " URL line #" + str(index+1) + ". " + "'" + line + "' contains no parameters to test. Ignoring this entry...")
+                    continue
+                elif line.startswith('http'): config.urls.append(line)
                 else: config.urls.append(protocol + line)
 
     #-F specified, parse URL one by one
     if(args.f):
+        parsedList = []
         for l in config.urls:
             l = l.replace("\n", "")
-            if(args.param not in l): 
-                config.parsedUrls.append(parseGet(l))
+            if(args.param not in l):
+                if(parse_url_parameters(l) not in parsedList and parseGet(l) not in config.parsedUrls): 
+                    config.parsedUrls.append(parseGet(l))
                 args.automaticGetParams = True
             else: 
                 args.automaticGetParams = False
-                config.parsedUrls.append(l.strip())
+                if(parse_url_parameters(l.strip()) not in parsedList and l.strip() not in config.parsedUrls): 
+                    config.parsedUrls.append(l.strip())
 
         # Convert each parsed URL to a single list of URLs
         result_list = []
@@ -166,8 +182,9 @@ def checkArgs():
 
     if(not args.f):
         if(tempUrl == "".join(args.url) and not args.postreq and args.param not in tempUrl):
-            print(colors.red("[-]") + " No parameters to test. Exiting...")
-            sys.exit(-1)
+            if(args.reqfile and not is_string_in_dict(args.param, args.httpheaders)):
+                print(colors.red("[-]") + " No parameters to test. Exiting...")
+                sys.exit(-1)
     
     # If -M is not specified, set the method to test manually
     if(not args.method and not args.reqfile):

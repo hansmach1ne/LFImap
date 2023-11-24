@@ -12,11 +12,13 @@ def test_heuristics(url, post):
     o = urlparse.urlparse(url)
 
     if(args.verbose):
-        print("\n" + colors.blue("[i]") + " Testing generic issues using heuristics...")
+        print("\n" + colors.blue("[i]") + " Preparing to test misc issues using heuristics...")
 
     tests = []
     # XSS check
     tests.append("lfi%3A31l%3Ef%3Cim%3B37%22%27ap")
+    # CRLF check
+    tests.append("%0d%0aLfi:13CRLF37%250d%250aLfi%3A13CRLF37%25%30D%25%30ALfi%3A13CRLF37")
 
     # (SSTI check - TODO research and make a polyglot
     #tests.append("%24%7B%7B1337%2A3113%7D%7D%27%24%7B1337%2A3113%7D")
@@ -30,19 +32,32 @@ def test_heuristics(url, post):
             "mysql_fetch_assoc(", "mysql_fetch_field(", "mysql_fetch_field_direct(", "mysql_fetch_lengths(", 
             "mysql_fetch_object(", "mysql_fetch_row(", "mysql_fetch_all(", "mysql_prepare(", "mysql_info(",
             "mysql_real_query(", "mysql_stmt_init(", "mysql_stmt_execute("]
-
+    
     for test in tests:
+        if(args.verbose and "lfi%3A31l%3Ef%3Cim%3B37%22%27ap" in test): print(colors.blue("[.]") + " Testing for XSS...")
+        if(args.verbose and "%0d%0a" in test): print(colors.blue("[.]") + " Testing for CRLF...")
+
         vuln = False
         u, tempHeaders, postTest = prepareRequest(args.param, test, url, post)
         res, _ = REQUEST(u, tempHeaders, postTest, proxies, "INFO", "INFO")
-        if("lfi:31l>f<im;37\"'ap" in res.text.lower()):
+
+        # HREF
+        if(res and "lfi:" in res.text.lower()):
+            pattern = r'href="LFI\:[^"]*'
+            matches = re.findall(pattern, res.text.lower())
+            if(len(matches) > 0 and vuln == False):
+                vuln = True
+                if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " XSS -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> reflection in HREF attribute value")
+                else: print(colors.green("[+]") + " XSS -> '" + u + "' -> reflection in HREF atribute value")
+
+        if(res and "lfi:31l>f<im;37\"'ap" in res.text.lower()):
             vuln = True
             if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " XSS -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> full reflection in response")
             else: print(colors.green("[+]") + " XSS -> '" + u + "' -> full reflection in response")
 
         else:
             # HREF
-            if("lfi:" in res.text.lower()):
+            if(res and "lfi:" in res.text.lower()):
                 pattern = r'href="LFI\:[^"]*'
                 matches = re.findall(pattern, res.text.lower())
                 if(len(matches) > 0 and vuln == False):
@@ -51,17 +66,16 @@ def test_heuristics(url, post):
                     else: print(colors.green("[+]") + " XSS -> '" + u + "' -> reflection in HREF atribute value")
 
             # ATTRIBUTE
-            if("37\"'ap" in res.text.lower()):
+            if(res and "37\"'ap" in res.text.lower()):
                 pattern = r'<[^>]+?\s*=\s*["\'][^"\']*?\b37"\'ap\b[^"\']*?["\'][^>]*>'
                 matches = re.findall(pattern, res.text.lower())
                 if(len(matches) > 0 and vuln == False):
                     vuln = True
                     if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " XSS -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> reflection in tag attribute")
                     else: print(colors.green("[+]") + " XSS -> '" + u + "' -> reflection in tag atribute")
-    
 
             #SCRIPT
-            if("im;37" in res.text.lower()):
+            if(res and "im;37" in res.text.lower()):
                 pattern = r'\<script[\s\S]*im\;37[\s\S]*\<\/script\>'
                 compiled_pattern = re.compile(pattern)
                 #match = compiled_pattern.search(text)
@@ -72,41 +86,39 @@ def test_heuristics(url, post):
                     else: print(colors.green("[+]") + " XSS -> '" + u + "' -> reflection in script context")
 
             # TAG
-            if("l>f<i" in res.text.lower() and vuln == False):
+            if(res and "l>f<i" in res.text.lower() and vuln == False):
                 vuln = True
                 if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " XSS -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> tag reflection in response")
                 else: print(colors.green("[+]") + " XSS -> '" + u + "' -> tag reflection in response")
-            
+        
+        # CRLF
+        if(res and any('13CRLF37' in value for value in res.headers.values()) and any('Lfi' in key for key in res.headers)):
+            vuln = True
+            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " CRLF -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> response splitting, 'lfi' header is present")
+            else: print(colors.green("[+]") + " CRLF -> '" + u + "' -> response splitting, 'Lfi' header is present")
+
         if(vuln): 
             stats["vulns"] += 1
             br = True
 
+            # Print CT, CSP details, because these could present another layer of security against XSS, CRLF
             if("Content-Type" in res.headers):
-                print("    Content-Type: '" + res.headers["Content-Type"] + "'")
+                print("    Content-Type: " + res.headers["Content-Type"])
             if("Content-Security-Policy" in res.headers):
-                if("Content-Type" in res.headers):
-                    print("\n")
-                else: print("    Content-Security-Policy: '" + res.headers["Content-Security-Policy"] + "'")
+                print("    Content-Security-Policy: " + res.headers["Content-Security-Policy"])
 
-        if("4162081" in res.text.lower()):
-            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " CSTI/SSTI -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> {{1337*3113}} seems evaluated to 4162081")
-            else: print(colors.green("[+]") + " CSTI/SSTI -> '" + u + "' -> expression {{1337*3113}} seems evaluated to 4162081")
+        # TODO check this and implement better testing
+        if(res and "4162081" in res.text.lower()):
+            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " SSTI -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> {{1337*3113}} seems evaluated to 4162081")
+            else: print(colors.green("[+]") + " SSTI -> '" + u + "' -> template expression 1337*3113 seems evaluated to 4162081")
             stats["vulns"] += 1
             br = True
 
-        # Open redirect can be tested with initial request, instead of here. #TODO
-        if(res.headers.get('Location') != None):
-            if(res.headers.get('Location') == "l>f<i"):
-                if(len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
-                else: print(colors.green("[+]") + " Open redirect -> '" + u + "'")
-                stats["vulns"] += 1
-                br= True
-
         if(args.quick or br): break
 
-    #if(o.netloc not in checkedHosts):
-    #checkedHosts.append(o.netloc)
-    if(fiErrors[0] in res.text.lower()):
+    if(args.verbose): print(colors.blue("[.]") + " Testing for error-based info leak...")
+
+    if(res and fiErrors[0] in res.text.lower()):
         for i in range(1,len(fiErrors)):
             if(fiErrors[i] in res.text.lower()):
                 if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Info disclosure -> '" + fiErrors[i] + "' error triggered -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
@@ -115,9 +127,31 @@ def test_heuristics(url, post):
 
         # Check for Sql errors
         for i in range(len(sqlErrors)):
-            if(sqlErrors[i] in res.text.lower()):
+            if(res and sqlErrors[i] in res.text.lower()):
                 if(len(args.postreq) > 1): print(colors.green("[+]") + " Info disclosure -> '" + sqlErrors[i] + "' error detected -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
                 else: print(colors.green("[+]") + " Info disclosure -> '" + sqlErrors[i] + "' error detected -> '" + u + "'")
                 stats["vulns"] += 1
 
+    # Open redirect check
+    if(args.verbose): print(colors.blue("[.]") + " Testing for open redirect...")
+
+    u, tempHeaders, postTest = prepareRequest(args.param, "%2Flfi%2F", url, post)
+    res, _ = REQUEST(u, tempHeaders, postTest, proxies, "INFO", "INFO", exploit = False, followRedirect = False)
+    loc = res.headers.get('Location')
+    if(res and loc != None and "/lfi/" in loc):
+        if(args.verbose): print(colors.blue("[i]") + " Reflection in the Location header detected...")
+        # Full reflection case
+        if(loc == "/lfi/"):
+            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
+            else: print(colors.green("[+]") + " Open redirect -> '" + u + "'")
+            stats["vulns"] += 1
+            br = True
+            # Full reflection after the protocol
+        elif(loc == "http://" + "/lfi/" or loc == "https://" + "/lfi/"):
+            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
+            else: print(colors.green("[+]") + " Open redirect -> '" + u + "'")
+        elif(loc == "/" + "/lfi/"):
+            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect slash bypass -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
+            else: print(colors.green("[+]") + " Open redirect slash bypass -> '" + u + "'")
+    #print()
     return

@@ -43,6 +43,7 @@ from src.utils.parseurl import post_params_with_param
 from src.utils.parseurl import parse_url_parameters
 from src.utils.parseurl import getHeadersToTest
 from src.utils.parseurl import compare_dicts
+from src.utils.parseurl import is_valid_url
 
 from urllib.parse import parse_qs, urlsplit
 
@@ -52,13 +53,19 @@ def main():
 
     # If multiple URLS are specified from a file
     if(args.f):
-        parsedList = []
+
         for iteration, url in enumerate(config.parsedUrls):
             if(not args.postreq or "".join(args.postreq[0]) == ""):
                 args.postreq = [""]
-                if(parse_url_parameters(url) not in parsedList):
-                    print("\n" + colors.lightblue("[i]") + " Parsing URL '" + url + "'")
-                    parsedList.append(parse_url_parameters(url))
+
+                # Just in case check if URL is correctly formatted, it should be always correct up to this point, though...
+                if(not is_valid_url(url)): 
+                    print("URL: " + url + " is not valid. Skipping...")
+                    continue
+
+                print("\n" + colors.lightblue("[i]") + " Parsing URL [" + str(iteration+1) + "/" + str(len(config.parsedUrls)) + "]: '" + url + "'")
+                    
+
 
             try:
                 #Check if url is accessible
@@ -97,7 +104,7 @@ def main():
 
                 if(not args.postreq or "".join(args.postreq[0]) == ""):
                     if(not args.verbose): print("")
-                    print(colors.yellow("[i]") + " Preparing to test '" + get_params_with_param(url) + "' parameter...")
+                    print(colors.yellow("[i]") + " Preparing to test GET '" + get_params_with_param(url) + "' parameter...")
 
                 #Perform all tests
                 if(args.test_all):
@@ -112,7 +119,7 @@ def main():
                     test_cmd_injection(url, "")
 
                     if(stats["vulns"] == relativeVulnCount):
-                        print(colors.red("[-]") + " Parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
+                        print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
                     continue
 
                 default = True
@@ -156,7 +163,7 @@ def main():
                     test_trunc(url, "")
                 
                 if(stats["vulns"] == relativeVulnCount):
-                    print(colors.red("[-]") + " Parameter '" + get_params_with_param(url, args.param) + "' doesn't seem to be vulnerable.\n") 
+                    print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url, args.param) + "' doesn't seem to be vulnerable.\n") 
 
             except ConnectTimeout:
                 print(colors.red("[-]") + " URL '" + url + "' timed out. Skipping...")
@@ -242,6 +249,8 @@ def main():
                     tposts.append(postTest)
         
         # Test request to see if the site is accessible
+        print(headers)
+        print("TempUrl: " + tempUrl)
         r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
         if(r == False):
             lfimap_cleanup(config.webDir, stats)

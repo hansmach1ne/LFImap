@@ -6,8 +6,8 @@ parser = argparse.ArgumentParser(description='LFImap, Local File Inclusion disco
 
 mandatoryGroup = parser.add_argument_group("TARGET OPTIONS")
 mandatoryGroup.add_argument('-U', type=str,nargs='?', metavar='url', dest='url', help='\t\t Specify single url to test')
-mandatoryGroup.add_argument('-F', type=str, nargs='?', metavar='urlfile', dest='f', help='\t\t Specify wordlist of urls to test')
-mandatoryGroup.add_argument('-R', type=str, nargs='?', metavar='reqfile', dest='reqfile', help='\t\t Specify single raw request from a file to test')
+mandatoryGroup.add_argument('-F', type=str, nargs='?', metavar='urlfile', dest='f', help='\t\t Specify multiple urls to test from a file')
+mandatoryGroup.add_argument('-R', type=str, nargs='?', metavar='reqfile', dest='reqfile', help='\t\t Specify single raw request to test from a file')
 
 optionsGroup = parser.add_argument_group('GENERAL OPTIONS')
 optionsGroup.add_argument('-C', type=str, metavar='<cookie>', dest='cookie', help='\t\t Specify session Cookie header')
@@ -30,7 +30,7 @@ attackGroup.add_argument('-f', '--filter', action = 'store_true', dest = 'php_fi
 attackGroup.add_argument('-i', '--input', action = 'store_true', dest = 'php_input', help='\t\t Attack using input wrapper')
 attackGroup.add_argument('-d', '--data', action = 'store_true', dest = 'php_data', help='\t\t Attack using data wrapper')
 attackGroup.add_argument('-e', '--expect', action = 'store_true', dest = 'php_expect', help='\t\t Attack using expect wrapper')
-attackGroup.add_argument('-t', '--trunc', action = 'store_true', dest = 'trunc', help='\t\t Attack using path truncation with wordlist (default "short.txt")')
+attackGroup.add_argument('-t', '--trunc', action = 'store_true', dest = 'trunc', help='\t\t Attack using path traversal with wordlist (default "short.txt")')
 attackGroup.add_argument('-r', '--rfi', action = 'store_true', dest = 'rfi', help='\t\t Attack using remote file inclusion')
 attackGroup.add_argument('-c', '--cmd', action = 'store_true', dest = 'cmd', help='\t\t Attack using command injection')
 attackGroup.add_argument('-file', '--file', action = 'store_true', dest='file', help='\t\t Attack using file wrapper')
@@ -52,13 +52,13 @@ payloadGroup.add_argument('-x', '--exploit',action='store_true', dest='revshell'
 payloadGroup.add_argument('--lhost', type=str, metavar='<lhost>', dest='lhost', help='\t\t Specify local ip address for reverse connection')
 payloadGroup.add_argument('--lport', type=int, metavar='<lport>', dest='lport', help='\t\t Specify local port number for reverse connection')
 payloadGroup.add_argument('--callback', type=str, metavar='<hostname>', dest='callback', help='\t\t Specify callback location for rfi and cmd detection')
-#payloadGroup.add_argument('--check-url', type=str, metavar='<path>', dest='getvuln', help='\t\t Specify url to check if stored payload worked')
+#payloadGroup.add_argument('--check-url', type=str, metavar='<path>', dest='getvuln', help='\t\t Specify url to check if stored payload triggered successfully')
 #payloadGroup.add_argument('--read-file', type=str, metavar='<file>', dest='readfile', help='\t\t Specify file path to leak if LFR is available')
 #payloadGroup.add_argument('--execute-cmd', type=str, metavar='<command>', dest='command', help='\t\t Specify command to execute if RCE is available')
 
 wordlistGroup = parser.add_argument_group('WORDLIST OPTIONS')
-wordlistGroup.add_argument('-wT', type=str, metavar = '<path>', dest='truncWordlist', help='\t\t Specify path to wordlist for truncation test modality')
-wordlistGroup.add_argument('--use-long', action='store_true', dest='uselong', help='\t\t Use "src/wordlists/long.txt" wordlist for truncation test modality')
+wordlistGroup.add_argument('-wT', type=str, metavar = '<path>', dest='truncWordlist', help='\t\t Specify path to wordlist for path traversal modality')
+wordlistGroup.add_argument('--use-long', action='store_true', dest='uselong', help='\t\t Use "src/wordlists/long.txt" wordlist for path traversal modality')
 
 outputOptions = parser.add_argument_group('OUTPUT OPTIONS')
 #outputOptions.add_argument('-oH', type=str, metavar='<htmlfile>', dest='htmlfile', help='\t\t Output findings to html file')
