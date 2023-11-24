@@ -249,8 +249,6 @@ def main():
                     tposts.append(postTest)
         
         # Test request to see if the site is accessible
-        print(headers)
-        print("TempUrl: " + tempUrl)
         r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
         if(r == False):
             lfimap_cleanup(config.webDir, stats)
