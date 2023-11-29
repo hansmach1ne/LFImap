@@ -157,28 +157,30 @@ def REQUEST(url, headersData, postData, proxy, exploitType, exploitMethod, explo
         print("\nKeyboard interrupt detected. Exiting...")
         lfimap_cleanup(config.webDir, stats)
     except requests.exceptions.InvalidSchema:
-        print(colors.red("[-]") + " InvalidSchema exception detected. Server cannot parse the parameter URI.")
+        if(args.verbose):
+            print(colors.red("[-]") + " InvalidSchema exception detected. Server cannot parse the parameter URI.")
         return False, False
     except requests.exceptions.ConnectionError:
         print(colors.red("[-]") + " ConnectionError occurred. Cannot connect to the server. Check if specified URL is correct. Skipping...")
         return False, False
     except socket.timeout:
-        if(exploitMethod == "RFI" and not args.callback and not args.lhost): print(colors.green("[?]") + " Socket timeout. This could be an indication for vulnerability. Try specifying '--lhost' or '--callback' to confirm...")
+        if(exploitMethod == "RFI" and not args.callback and not args.lhost): print(colors.green("[?]") + " Socket timeout. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm...")
         else: print(colors.red("[-]") + " Socket timeout. Try specifying bigger '--delay' or '--max-timeout'. Skipping...")
         return False, False
     except requests.exceptions.ReadTimeout:
-        if(exploitMethod == "RFI" and not args.callback and not args.lhost): print(colors.green("[?]") + " Read timeout. This could be an indication for vulnerability. Try specifying '--lhost' or '--callback' to confirm.")
+        if(exploitMethod == "RFI" and not args.callback and not args.lhost): print(colors.green("[?]") + " Read timeout. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm.")
         else: print(colors.red("[-]") + " Read timeout. Try specifying bigger '--delay' or '--max-timeout'. Skipping...")
         return False, False
     except urllib3.exceptions.ReadTimeoutError:
-        if(exploitMethod == "RFI" and not args.callback and not args.lhost): print(colors.green("[?]") + " Read timeout. This could be an indication for vulnerability. Try specifying '--lhost' or '--callback' to confirm.")
+        if(exploitMethod == "RFI" and not args.callback and not args.lhost): print(colors.green("[?]") + " Read timeout. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm.")
         else: print(colors.red("[-]") + " Read timeout. Try specifying bigger '--delay' or '--max-timeout'. Skipping...")
         return False, False
     except ConnectionRefusedError:
         print(colors.red("[-]") + " ConnectionRefusedError occurred. Skipping...")
         return False, False
     except:
-        print(colors.red("[-]") + " The uncaught exception has ocurred. Printing trace...")
+        if(args.verbose):
+            print(colors.red("[-]") + " The uncaught exception has ocurred. Printing trace...")
         raise
         return False, False
 

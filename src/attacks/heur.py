@@ -135,23 +135,33 @@ def test_heuristics(url, post):
     # Open redirect check
     if(args.verbose): print(colors.blue("[.]") + " Testing for open redirect...")
 
-    u, tempHeaders, postTest = prepareRequest(args.param, "%2Flfi%2F", url, post)
+    u, tempHeaders, postTest = prepareRequest(args.param, "/lfi/a/../", url, post)
     res, _ = REQUEST(u, tempHeaders, postTest, proxies, "INFO", "INFO", exploit = False, followRedirect = False)
     loc = res.headers.get('Location')
+
     if(res and loc != None and "/lfi/" in loc):
-        if(args.verbose): print(colors.blue("[i]") + " Reflection in the Location header detected...")
-        # Full reflection case
-        if(loc == "/lfi/"):
-            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
-            else: print(colors.green("[+]") + " Open redirect -> '" + u + "'")
+        # Full reflection + after the http|s protocol cases
+        if(loc == "/lfi/a/../" or loc == "http:///lfi/a/../" or loc == "https:///lfi/a/../"):
+            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect -> '" + u + "' -> HTTP POST -> '" + postTest.replace("/lfi/a/../", "evil.com") + "'")
+            else: print(colors.green("[+]") + " Open redirect -> '" + u.replace("/lfi/a/../", "evil.com") + "'")
             stats["vulns"] += 1
             br = True
-            # Full reflection after the protocol
-        elif(loc == "http://" + "/lfi/" or loc == "https://" + "/lfi/"):
-            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
-            else: print(colors.green("[+]") + " Open redirect -> '" + u + "'")
-        elif(loc == "/" + "/lfi/"):
-            if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " Open redirect slash bypass -> '" + u + "' -> HTTP POST -> '" + postTest + "'")
-            else: print(colors.green("[+]") + " Open redirect slash bypass -> '" + u + "'")
-    #print()
+
+        # Reflection after the relative path
+        elif(loc == "//lfi/a/../" or loc == "///lfi/a../"):
+            if(args.postreq and len(args.postreq) > 1): 
+                print(colors.green("[+]") + " Open redirect via relative double slash -> '" + u + "' -> HTTP POST -> '" + postTest.replace("/lfi/a/../", "/evil.com/") + "'")
+            else: 
+                print(colors.green("[+]") + " Open redirect via relative double slash -> '" + u.replace("/lfi/a/../", "/evil.com/") + "'")
+            stats["vulns"] += 1
+            br = True
+
+        elif("/a/../" in loc):
+            if(args.postreq and len(args.postreq) > 1):
+                print(colors.green("[+]") + " Client-Side path traversal redirect -> '" + u + "' -> HTTP POST -> '" + postTest.replace("/lfi/a/../", "/../arbitrary/endpoint") + "'")
+            else: 
+                print(colors.green("[+]") + " Client-Side path traversal redirect -> '" + u.replace("/lfi/a/../", "/../arbitrary/endpoint") + "'")
+            stats["vulns"] += 1
+            br = True
+
     return

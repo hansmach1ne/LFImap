@@ -65,8 +65,6 @@ def main():
 
                 print("\n" + colors.lightblue("[i]") + " Parsing URL [" + str(iteration+1) + "/" + str(len(config.parsedUrls)) + "]: '" + url + "'")
                     
-
-
             try:
                 #Check if url is accessible
                 tempUrl, headers, postTest = prepareRequest(args.param, "test", url, "")
@@ -282,8 +280,11 @@ def main():
                 
             if(args.param in url):
                 print("\n" + colors.yellow("[i]") + " Preparing to test GET '" + get_params_with_param(url) + "' parameter...")
+                args.is_tested_param_post = False # Needed to handle -i
+
             if(args.postreq and args.param in post): 
                 print("\n" + colors.yellow("[i]") + " Preparing to test form-line '" + post_params_with_param(post) + "' parameter...")
+                args.is_tested_param_post = True # Needed to handle -i
 
             relativeVulnCount = stats["vulns"]
             stats["urls"] += 1
