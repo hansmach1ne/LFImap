@@ -44,6 +44,8 @@ from src.utils.parseurl import parse_url_parameters
 from src.utils.parseurl import getHeadersToTest
 from src.utils.parseurl import compare_dicts
 from src.utils.parseurl import is_valid_url
+from src.httpreqs.request import extract_all_parameters
+from src.httpreqs.request import extract_input_fields
 
 from urllib.parse import parse_qs, urlsplit
 
@@ -60,11 +62,19 @@ def main():
 
                 # Just in case check if URL is correctly formatted, it should be always correct up to this point, though...
                 if(not is_valid_url(url)): 
-                    print("URL: " + url + " is not valid. Skipping...")
+                    print(colors.red("\n[-]") + " URL '" + url + "'' is not valid. Skipping...")
                     continue
 
                 print("\n" + colors.lightblue("[i]") + " Parsing URL [" + str(iteration+1) + "/" + str(len(config.parsedUrls)) + "]: '" + url + "'")
-                    
+
+
+            #CSRF token refresh with -F is not supported yet #TODO
+            args.updateCsrfToken = False
+            args.previouscsrf = False
+
+            #POST testing with -F is not supported
+            args.is_tested_param_post = False
+
             try:
                 #Check if url is accessible
                 tempUrl, headers, postTest = prepareRequest(args.param, "test", url, "")
@@ -102,7 +112,7 @@ def main():
 
                 if(not args.postreq or "".join(args.postreq[0]) == ""):
                     if(not args.verbose): print("")
-                    print(colors.yellow("[i]") + " Preparing to test GET '" + get_params_with_param(url) + "' parameter...")
+                    print(colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
 
                 #Perform all tests
                 if(args.test_all):
@@ -161,7 +171,7 @@ def main():
                     test_trunc(url, "")
                 
                 if(stats["vulns"] == relativeVulnCount):
-                    print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url, args.param) + "' doesn't seem to be vulnerable.\n") 
+                    print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
 
             except ConnectTimeout:
                 print(colors.red("[-]") + " URL '" + url + "' timed out. Skipping...")
@@ -181,16 +191,6 @@ def main():
 
     # If single URL is specified
     else:
-        # for DEBUG purposes
-        #print("Prepared: ")
-        #print(args.url)
-        #print(args.httpheaders)
-        #if(args.postreq): print(args.postreq)
-
-        #print("\nOriginal, stored inside config")
-        #print(config.url)
-        #if(config.postreq): print(config.postreq)
-
         turls = [] # list of strings
         tposts = [] # list of strings
         theaders = [] # list of dicts
@@ -207,6 +207,12 @@ def main():
 
         if found_in_headkeys or found_in_headvalues: pwnInHeadersExists = True
         else: pwnInHeadersExists = False
+
+        # Default val
+        args.updateCsrfToken = False
+        args.previouscsrf = False
+
+        tempUrl = ""
 
         # Test header
         if(pwnInHeadersExists):
@@ -246,10 +252,99 @@ def main():
                     theaders.append(headers)
                     tposts.append(postTest)
         
+        # No arguments found to test, if this is not set.
+        if(tempUrl == None or tempUrl == ""):
+            print(colors.red("[-]") + " No arguments to test. Exiting...")
+            sys.exit(-1)
+
         # Test request to see if the site is accessible
-        r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
-        if(r == False):
+        # r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
+        
+        #print(config.url)
+        #print(tempUrl)
+
+        #print(postTest)
+        #print(config.postreq)
+
+        # Check if csrf token is being used.
+        #print(args.csrfData)
+        #print(config.postreq)
+
+        # TODO edge case where the url is not specified, but the csrf token is inside the request.?
+        csrf_r = ""
+        if(args.csrfUrl):
+            # Send request to the csrf token endpoint
+            if(not args.csrfMethod): args.csrfMethod = "GET"
+            if(not args.csrfData): 
+                if(args.postreq): args.csrfData = args.postreq[0]
+                else: args.csrfData = ""
+            csrf_r,_ = REQUEST(args.csrfUrl, headers, args.csrfData, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = True)
+
+        r,_ = REQUEST(config.url, headers, config.postreq, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = False)
+
+        if(not args.http_valid): args.http_valid = [200, 204, 301, 302, 303]
+
+        if(not r):
+            print(colors.red("[-]") + " Something unexpected has happened, initial testing response is not clearly received. Please check your switches and url endpoint(s). Exiting...")
+            sys.exit(-1)
+
+        if(r and r.status_code >= 500):
+            if(r.status_code not in args.http_valid):
+                print(colors.red("[-]") + " Initial request yielded " + str(r.status_code) + " response. Application might not be available. To force-continue specify '--http-ok " + str(r.status_code) + "' to treat it as valid.")
+                sys.exit(-1)
+
+        if("no&#32;response&#32;received&#32;from&#32;remote&#32;server&#46;" in r.text.lower()):
+            print(colors.red("[-]") + " No response received from remote server. This could be proxy's response due to unresponsive application server.")
+            inp = input("\n" + colors.yellow("[?]") + " Web application might not be available. Do you still want to force-continue [y/N] ")
+            if(inp == "n" or inp == "N" or inp == ""):
+                print("User interrupt, exiting...") 
+                sys.exit(-1)
+
+        if(r == False and not args.no_stop):
             lfimap_cleanup(config.webDir, stats)
+        
+        if(csrf_r):
+            input_fields = extract_input_fields(csrf_r.text)
+            # Post request[0] is enough, because it's a list of permutations anyways, we need parameter names
+
+            parameters = extract_all_parameters(config.url, config.postreq)
+        else:
+            input_fields = extract_input_fields(r.text)
+            parameters = extract_all_parameters(config.url, config.postreq)
+
+        inp = "Initial"
+        # Check if csrf token is present in the request.
+        if(args.csrfParameter):
+            if(args.csrfParameter not in parameters.keys()):
+                print(colors.red("[-]") + " Specified csrf parameter '" + args.csrfParameter + "' not found in the initial request. LFImap will not be able to refresh the csrf token.")
+                args.updateCsrfToken = False
+            elif(args.csrfParameter not in input_fields.keys()):
+                print(colors.red("[-]") + " Specified csrf parameter '" + args.csrfParameter + "' not found in the initial response. LFImap will not be able to refresh the csrf token.")
+                args.updateCsrfToken = False
+            elif(parameters[args.csrfParameter] != input_fields[args.csrfParameter]):
+                inp = input("\n" + colors.yellow("[?]") + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] ")
+            else:
+                print(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
+        else:
+            for param_name in parameters.keys():
+                if(param_name in config.csrf_params):
+                    args.csrfParameter = param_name
+                    # If there is the same key value pair in both dicts
+                    if(any(item in input_fields.items() for item in parameters.items())):
+                        print(colors.blue("[i]") + " Parameter '" + param_name + "' appears to be anti-forgery token, but it hasn't been refreshed by the web application. LFImap will not auto-refresh csrf token value")
+                        args.updateCsrfToken = False
+                    elif(len(input_fields) == 0):
+                        if(not args.csrfUrl):
+                            print(colors.blue("[i]") + " Parameter '" + param_name + "' appears to be anti-forgery token, however the csrf token is not present in the response. Please specify the  '--csrf-url' to auto-refresh the token.")
+                            args.updateCsrfToken = False
+                    elif(parameters[args.csrfParameter] != input_fields[args.csrfParameter]):
+                        inp = input("\n" + colors.yellow("[?]") + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] ")
+                    else:
+                        print(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
+        
+        if(inp == "y" or inp == "Y" or inp == ""): args.updateCsrfToken = True
+        else: 
+            args.updateCsrfToken  = False
 
         okCode = False
         if(args.http_valid):
@@ -257,16 +352,16 @@ def main():
                 if(http_code == r.status_code):
                     okCode = True
 
-            if(not okCode):
+            if(r and not okCode):
                 print(colors.red("[-] ") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ".")
                 print(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
-                sys.exit(-1)
+                if(not args.no_stop): sys.exit(-1)
 
         else:
-            if(r.status_code != 200 and r.status_code != 204):
-                print(colors.red("[-]") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ". Exiting...")
+            if(r and r.status_code != 200 and r.status_code != 204):
+                print(colors.red("[-]") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ".  Exiting...")
                 print(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
-                sys.exit(-1)
+                if(not args.no_stop): sys.exit(-1)
 
         # Main loop that will perform testing
         for iteration, url in enumerate(turls):
@@ -275,17 +370,24 @@ def main():
 
             if(pwnInHeadersExists):
                 # Handle plural
-                if("," in getHeadersToTest(headers)): print("\n" + colors.yellow("[i]") + " Preparing to test headers '" + getHeadersToTest(headers) + "'")
-                else: print("\n" + colors.yellow("[i]") + " Preparing to test header '" + getHeadersToTest(headers) + "'") 
+                if("," in getHeadersToTest(headers)): print("\n" + colors.yellow("[i]") + " Testing headers '" + getHeadersToTest(headers) + "'")
+                else: print("\n" + colors.yellow("[i]") + " Testing header '" + getHeadersToTest(headers) + "'") 
                 
             if(args.param in url):
-                print("\n" + colors.yellow("[i]") + " Preparing to test GET '" + get_params_with_param(url) + "' parameter...")
+                print("\n" + colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
                 args.is_tested_param_post = False # Needed to handle -i
 
-            if(args.postreq and args.param in post): 
-                print("\n" + colors.yellow("[i]") + " Preparing to test form-line '" + post_params_with_param(post) + "' parameter...")
+            elif(args.postreq and args.param in post): 
+                print("\n" + colors.yellow("[i]") + " Testing form-line '" + post_params_with_param(post) + "' parameter...")
                 args.is_tested_param_post = True # Needed to handle -i
+            else:
+                is_tested_param_post = False
 
+            # Skip CSRF parameter testing..
+            if(args.csrfParameter):
+                if(args.csrfParameter + "=" + args.param in url or args.csrfParameter + "=" + args.param in post): 
+                    print(colors.blue("[-]") + " Skipping testing of anti-forgery token")
+                    continue
             relativeVulnCount = stats["vulns"]
             stats["urls"] += 1
 

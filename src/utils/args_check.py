@@ -141,20 +141,22 @@ def checkArgs():
     if(args.f):
         parsedList = []
         for l in config.urls:
-            l = l.replace("\n", "")
+            l = l.strip()
             if(args.param not in l):
                 if(parse_url_parameters(l) not in parsedList and parseGet(l) not in config.parsedUrls): 
                     config.parsedUrls.append(parseGet(l))
                 args.automaticGetParams = True
             else: 
                 args.automaticGetParams = False
-                if(parse_url_parameters(l.strip()) not in parsedList and l.strip() not in config.parsedUrls): 
-                    config.parsedUrls.append(l.strip())
+                if(parse_url_parameters(l) not in parsedList and l.strip() not in config.parsedUrls): 
+                    config.parsedUrls.append(l)
 
         # Convert each parsed URL to a single list of URLs
         result_list = []
         for sublist in config.parsedUrls:
-            result_list.extend(sublist)
+            if isinstance(sublist, list):
+                result_list.extend(sublist)
+            else: result_list.append(sublist)
         config.parsedUrls = result_list.copy()
 
     # -F is not specified, parse single URL
@@ -259,11 +261,32 @@ def checkArgs():
                 print(colors.red("[-]") + " LPORT must be between 1 and 65534. Exiting ...")
                 sys.exit(-1)
 
-    #Check if proxy is correct
+    # Check if CSRF URL is correctly specified
+    if(args.csrfUrl):
+        if(not args.csrfUrl.startswith("http")):
+            if(args.verbose): print(colors.blue("[i]") + " No URL scheme provided in csrf extraction endpoint. Defaulting to http...")
+            args.csrfUrl = "http://" + args.csrfUrl
+
+    if(args.csrfUrl and not is_valid_url(args.csrfUrl)):
+        print(colors.red("[-]") + " Specified csrf extraction URL '"+ args.csrfUrl + "' is not valid. Exiting...")
+        sys.exit(-1)
+
+    # Check if second order URL is correctly specified
+    if(args.checkUrl):
+        if(not args.checkUrl.startswith("http")):
+            if(args.verbose): print(colors.blue("[i]") + " No URL scheme provided in second order check endpoint. Defaulting to http...")
+            args.checkUrl = "http://" + args.checkUrl
+        print(colors.blue("[i]") + " Second order endpoint is specified. After each payload, lookup is done to check if payload triggered interesting behaviour.")
+
+    if(args.checkUrl and not is_valid_url(args.checkUrl)):
+        print(colors.red("[-]") + " Specified second order check URL '"+ args.checkUrl + "' is not valid. Exiting...")
+        sys.exit(-1)
+
+    # Check if proxy is correct
     if(args.proxyAddr):
         try:
             if("http" not in args.proxyAddr and "socks" not in args.proxyAddr):
-                if(args.verbose): print(colors.blue("[i]") + " No proxy scheme provided. Defaulting to http.")
+                if(args.verbose): print(colors.blue("[i]") + " No proxy scheme provided. Defaulting to http...")
                 args.proxyAddr = "http://" + args.proxyAddr
 
             r = requests.get(args.proxyAddr, timeout = 5, verify = False)

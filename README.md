@@ -1,4 +1,4 @@
-# lfimap
+# LFImap
 ## Local file inclusion discovery and exploitation tool
 
 ### Main features
@@ -17,9 +17,9 @@
     - Error-based info leak
 
 - Testing modes
-    - '-U' -> specify single URL to test
-    -  '-F' -> specify wordlist of URLs to test
-    - '-R' -> specify raw http from a file to test
+    - -U -> specify single URL to test
+    - -F -> specify wordlist of URLs to test
+    - -R -> specify raw http from a file to test
 
 - Full control over the HTTP request
     - Specification of parameters to test (GET, FORM-line, Header, custom injection point)
@@ -31,7 +31,8 @@
     - Support for payload manipulation via url and base64 encoding(s)
     - Support to output all requests and responses to a file
     - Quick mode (-q), where LFImap uses fewer carefully selected payloads
-    - 
+    - Second order (stored) vulnerability check support
+    - Beta/Testing phase CSRF handling support
 
 ### Documentation
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
@@ -42,62 +43,73 @@
  usage: lfimap.py [-U [url]] [-F [urlfile]] [-R [reqfile]] [-C <cookie>] [-D <data>] [-H <header>]
                  [-M <method>] [-P <proxy>] [--useragent <agent>] [--referer <referer>]
                  [--placeholder <name>] [--delay <milis>] [--max-timeout <seconds>]
-                 [--http-ok <number>] [--force-ssl] [--no-stop] [-f] [-i] [-d] [-e] [-t] [-r] [-c]
-                 [-file] [-heur] [-a] [-n <U|B>] [-q] [-x] [--lhost <lhost>] [--lport <lport>]
-                 [--callback <hostname>] [-wT <path>] [--use-long] [--log <logfile>] [-v] [-h]
+                 [--http-ok <number>] [--csrf-param <param>] [--csrf-method <method>]
+                 [--csrf-url <url>] [--csrf-data <data>] [--second-method <method>]
+                 [--second-url <url>] [--second-data <data>] [--force-ssl] [--no-stop] [-f] [-i]
+                 [-d] [-e] [-t] [-r] [-c] [-file] [-heur] [-a] [-n <U|B>] [-q] [-x]
+                 [--lhost <lhost>] [--lport <lport>] [--callback <hostname>] [-wT <path>]
+                 [--use-long] [--log <file>] [-v] [-h]
 
 LFImap, Local File Inclusion discovery and exploitation tool
 
 TARGET OPTIONS:
-  -U [url]                 Specify single url to test
-  -F [urlfile]             Specify multiple urls to test from a file
-  -R [reqfile]             Specify single raw request to test from a file
+  -U [url]                  Single url to test
+  -F [urlfile]              Load multiple urls to test from a file
+  -R [reqfile]              Load single request to test from a file
 
-GENERAL OPTIONS:
-  -C <cookie>              Specify session Cookie header
-  -D <data>                Specify request FORM-data
-  -H <header>              Specify additional HTTP header(s)
-  -M <method>              Specify request method to use for testing
-  -P <proxy>               Specify proxy URL:PORT
-  --useragent <agent>      Specify HTTP user-agent header value
-  --referer <referer>      Specify HTTP referer header value
-  --placeholder <name>     Specify custom testing placeholder name (default is "PWN")
-  --delay <milis>          Specify delay in miliseconds after each request
-  --max-timeout <seconds>  Specify number of seconds after giving up on a URL (default 5)
-  --http-ok <number>       Specify http response code(s) to treat as valid
-  --force-ssl              Force usage of HTTPS/SSL if otherwise not specified
-  --no-stop                Don't stop using the same testing technique upon findings
+REQUEST OPTIONS:
+  -C <cookie>               HTTP session Cookie header
+  -D <data>                 HTTP request FORM-data
+  -H <header>               Additional HTTP header(s)
+  -M <method>               Request method to use for testing
+  -P <proxy>                Use a proxy to connect to the target endpoint
+  --useragent <agent>       HTTP user-agent header value
+  --referer <referer>       HTTP referer header value
+  --placeholder <name>      Custom testing placeholder name (default is "PWN")
+  --delay <milis>           Delay in miliseconds after each request
+  --max-timeout <seconds>   Number of seconds after giving up on a response (default 5)
+  --http-ok <number>        Http response code(s) to treat as valid
+  --csrf-param <param>      Parameter used to hold anti-CSRF token
+  --csrf-method <method>    HTTP method to use during anti-CSRF token page visit
+  --csrf-url <url>          URL address to visit for extraction of anti-CSRF token
+  --csrf-data <data>        POST data to send during anti-CSRF token page visit
+  --second-method <method>  Specify method for second order request
+  --second-url <url>        Url for second order request
+  --second-data <data>      FORM-line data for second-order request
+  --force-ssl               Force usage of HTTPS/SSL if otherwise not specified
+  --no-stop                 Don't stop using the same testing technique upon findings
 
 ATTACK TECHNIQUE:
-  -f, --filter             Attack using filter wrapper
-  -i, --input              Attack using input wrapper
-  -d, --data               Attack using data wrapper
-  -e, --expect             Attack using expect wrapper
-  -t, --trunc              Attack using path traversal with wordlist (default "short.txt")
-  -r, --rfi                Attack using remote file inclusion
-  -c, --cmd                Attack using command injection
-  -file, --file            Attack using file wrapper
-  -heur, --heuristics      Test for miscellaneous issues using heuristics
-  -a, --all                Use all supported attack methods
+  -f, --filter              Attack using filter wrapper
+  -i, --input               Attack using input wrapper
+  -d, --data                Attack using data wrapper
+  -e, --expect              Attack using expect wrapper
+  -t, --trunc               Attack using path traversal with wordlist (default "short.txt")
+  -r, --rfi                 Attack using remote file inclusion
+  -c, --cmd                 Attack using command injection
+  -file, --file             Attack using file wrapper
+  -heur, --heuristics       Test for miscellaneous issues using heuristics
+  -a, --all                 Use all supported attack methods
 
 PAYLOAD OPTIONS:
-  -n <U|B>                 Specify payload encoding(s). "U" for URL, "B" for base64
-  -q, --quick              Perform quick testing with fewer payloads
-  -x, --exploit            Exploit and send reverse shell if RCE is available
-  --lhost <lhost>          Specify local ip address for reverse connection
-  --lport <lport>          Specify local port number for reverse connection
-  --callback <hostname>    Specify callback location for rfi and cmd detection
+  -n <U|B>                  Specify payload encoding(s). "U" for URL, "B" for base64
+  -q, --quick               Perform quick testing with fewer payloads
+  -x, --exploit             Exploit and send reverse shell if RCE is available
+  --lhost <lhost>           Local ip address for reverse connection
+  --lport <lport>           Local port number for reverse connection
+  --callback <hostname>     Callback location for rfi and cmd detection
 
 WORDLIST OPTIONS:
-  -wT <path>               Specify path to wordlist for path traversal modality
-  --use-long               Use "src/wordlists/long.txt" wordlist for path traversal modality
+  -wT <path>                Path to wordlist for path traversal modality
+  --use-long                Use "src/wordlists/long.txt" wordlist for path traversal modality
 
 OUTPUT OPTIONS:
-  --log <logfile>          Output all requests and responses to specified file
+  --log <file>              Output all requests and responses to specified file
 
 OTHER:
-  -v, --verbose            Print more detailed output when performing attacks
-  -h, --help               Print this help message 
+  -v, --verbose             Print more detailed output when performing attacks
+  -h, --help                Print this help message
+
 ```
 
 ### Examples 

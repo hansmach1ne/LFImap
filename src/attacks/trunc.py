@@ -10,12 +10,10 @@ def test_trunc(url, post):
     i = 0
     with open(args.truncWordlist, "r", encoding='utf-8') as f:
         for line in f:
-            line = line.replace("\n", "")
+            line = line.strip()
             u, reqHeaders, postTest = prepareRequest(args.param, line, url, post)
             # Because of some unicode tests that we do, (wide N for nodejs apps..)
-            #TODO
-            if(postTest):
-                postTest = postTest.encode("utf-8")
+            if(postTest): postTest = postTest.encode("utf-8")
             _, br = REQUEST(u, reqHeaders, postTest, proxies, "LFI", "TRUNC")
             if(not br): return
             if(i == 1 and args.quick): return

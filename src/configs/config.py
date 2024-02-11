@@ -12,7 +12,9 @@ previousPrint = ""
 urls = []
 parsedUrls = []
 maxTimeout = None
-
+csrf_params = ["csrf", "xsrf", "csrfmiddlewaretoken", "RequestVerificationToken", "_RequestVerificationToken", "antiForgeryToken", "authenticity_token", "csrf_token",
+              "_csrf", "_xsrf", "_csrf_token", "_xsrf_token"]
+              
 #Add them from the most complex one to the least complex. This is important.
 TO_REPLACE = [
             "Windows/System32/drivers/etc/hosts", "C%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts",
