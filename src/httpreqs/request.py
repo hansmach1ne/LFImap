@@ -71,30 +71,40 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
 
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(config.TO_REPLACE)):
+            
             if(postVal and isinstance(postVal, bytes)):
                 postVal = postVal.decode('utf-8')
-            if(getVal.find(config.TO_REPLACE[i]) > -1 or getVal.find("?c=" + config.TO_REPLACE[i]) > -1 or postVal.find(config.TO_REPLACE[i])):
-                u = getVal.replace(config.TO_REPLACE[i], config.tempArg)
-                if(postVal.find(config.TO_REPLACE[i]) > -1): 
-                    p = postVal.replace(config.TO_REPLACE[i], config.tempArg)
-                else: p= ""
-                if("windows" in config.TO_REPLACE[i].lower() or "ipconfig" in config.TO_REPLACE[i].lower() or "Windows IP Configuration" in req.text):
-                    os = "windows"
+
+            if(getVal.find(config.TO_REPLACE[i]) != -1 or getVal.find("?c=" + config.TO_REPLACE[i]) != -1 or postVal.find(config.TO_REPLACE[i]) != -1):
+                # Determine the os based on the payload that worked
+                # TODO improve this to reduce false positives.
+                if("ipconfig" in getVal.lower() or "Windows IP Configuration" in getVal.lower()): os = "windows"
                 else: os = "linux"
-                
+
+                u = getVal.replace(config.TO_REPLACE[i], config.tempArg)
+
+                if(postVal.find(config.TO_REPLACE[i])): 
+                    p = postVal.replace(config.TO_REPLACE[i], config.tempArg)
+                    # Determine the os based on the payload that worked
+                    # TODO improve this to reduce false positives.
+                    if("ipconfig" in postVal.lower() or "Windows IP Configuration" in postVal.lower()): os = "windows"
+                    else: os = "linux"
+
+                else: p = ""
+
                 exploit = addToExploits(req, reqType, explType, u, p, headers, attackType, os)
                 
                 #Print finding
-                if(postVal == ""):
+                if(postVal == "" and explType):
                     print(colors.green("[+]") + " " + explType + " -> '" + getVal + "'")
                     stats["vulns"] += 1
-                else:
+                elif(explType):
                     print(colors.green("[+]") + " " + explType + " -> '" + getVal + "' -> HTTP POST -> '" + postVal + "'")
                     stats["vulns"] += 1
-
+                
                 if(args.revshell):
                     pwn(exploit)
-                
+
                 if not args.no_stop:
                     return True
                 return False

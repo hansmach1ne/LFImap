@@ -281,7 +281,6 @@ def main():
             csrf_r,_ = REQUEST(args.csrfUrl, headers, args.csrfData, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = True)
 
         r,_ = REQUEST(config.url, headers, config.postreq, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = False)
-
         if(not args.http_valid): args.http_valid = [200, 204, 301, 302, 303]
 
         if(not r):

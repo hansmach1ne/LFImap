@@ -55,10 +55,10 @@ attackGroup.add_argument('-a', '--all', action = 'store_true', dest = 'test_all'
 payloadGroup = parser.add_argument_group('PAYLOAD OPTIONS')
 payloadGroup.add_argument('-n', type=str, action='append', metavar='<U|B>', dest='encodings', help='\t\t Specify payload encoding(s). "U" for URL, "B" for base64')
 payloadGroup.add_argument('-q','--quick', action='store_true', dest='quick', help='\t\t Perform quick testing with fewer payloads')
-payloadGroup.add_argument('-x', '--exploit',action='store_true', dest='revshell', help='\t\t Exploit and send reverse shell if RCE is available')
+payloadGroup.add_argument('-x', '--exploit',action='store_true', dest='revshell', help='\t\t Exploit and achieve reverse shell if RCE is available')
 payloadGroup.add_argument('--lhost', type=str, metavar='<lhost>', dest='lhost', help='\t\t Local ip address for reverse connection')
 payloadGroup.add_argument('--lport', type=int, metavar='<lport>', dest='lport', help='\t\t Local port number for reverse connection')
-payloadGroup.add_argument('--callback', type=str, metavar='<hostname>', dest='callback', help='\t\t Callback location for rfi and cmd detection')
+payloadGroup.add_argument('--callback', type=str, metavar='<hostname>', dest='callback', help='\t\t Callback location for out of band detection')
 #payloadGroup.add_argument('--read-file', type=str, metavar='<file>', dest='readfile', help='\t\t File path to leak if LFR is available')
 #payloadGroup.add_argument('--execute-cmd', type=str, metavar='<command>', dest='command', help='\t\t Command to execute if RCE is available')
 

