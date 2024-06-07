@@ -1,22 +1,21 @@
+"""REQUEST"""
+import socket
+import time
+import urllib.parse as urlparse
+from urllib.parse import urlparse, parse_qs
+import requests
+import requests.exceptions
+import urllib3
+
+from bs4 import BeautifulSoup
+
 from src.utils.arguments import args
 from src.utils.encodings import encode
 from src.utils.stats import stats
 from src.configs import config
-from src.attacks.pwn import *
+from src.attacks.pwn import pwn
 from src.utils import colors
 from src.utils.cleanup import lfimap_cleanup
-from src.utils.args_check import headers
-from src.utils.parseurl import is_valid_json
-from src.utils.parseurl import convert_http_formdata_to_json
-
-import requests
-import requests.exceptions
-import socket
-import time
-import urllib.parse as urlparse
-import urllib3
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
 
 
 def extract_all_parameters(url, form_data=""):
@@ -206,6 +205,7 @@ def REQUEST(
     followRedirect=True,
     isCsrfRequest=False,
 ):
+    """REQUEST"""
     doContinue = True
     res = None
     if not postData:
@@ -299,6 +299,7 @@ def REQUEST(
                     proxies=proxy,
                     verify=False,
                     allow_redirects=followRedirect,
+                    timeout=1,
                 )
 
             # Check if CSRF token is returned in the response, prepare it for the next request
@@ -328,6 +329,7 @@ def REQUEST(
                         proxies=proxy,
                         verify=False,
                         allow_redirects=True,
+                        timeout=1,
                     )
                 else:
                     res = requests.get(
@@ -337,6 +339,7 @@ def REQUEST(
                         proxies=proxy,
                         verify=False,
                         allow_redirects=True,
+                        timeout=1,
                     )
 
         # TODO exploitMethod and exploitType are not being used
@@ -345,7 +348,7 @@ def REQUEST(
                 doContinue = False
 
         if args.log:
-            with open(args.log, "a+") as fp:
+            with open(args.log, "a+", encoding="latin1") as fp:
                 # Log request
                 splitted = url.split("/")
                 fp.write(
@@ -390,7 +393,7 @@ def REQUEST(
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...")
-        lfimap_cleanup(config.webDir, stats)
+        lfimap_cleanup(config.webDir)
     except requests.exceptions.InvalidSchema:
         if not args.no_stop:
             print(

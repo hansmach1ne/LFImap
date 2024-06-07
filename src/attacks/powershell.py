@@ -1,10 +1,10 @@
+"""Powershell payload"""
 from src.httpreqs import request
 from src.utils.info import printInfo
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 
 
 def exploit_powershell(exploit, method, ip, port):

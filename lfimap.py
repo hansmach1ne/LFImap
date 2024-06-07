@@ -10,9 +10,6 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from src.configs import config
 
 # Import utilities
-from src.servers.HTTPServer import ServerHandler
-from src.servers.ICMPServer import ICMPThread
-from src.utils.encodings import encode
 from src.utils.arguments import args
 from src.utils.args_check import checkArgs
 from src.utils.cleanup import lfimap_cleanup
@@ -38,17 +35,12 @@ from src.attacks.cmdi import test_cmd_injection
 from src.attacks.file import test_file_trunc
 from src.attacks.trunc import test_trunc
 from src.utils import colors
-from src.utils.parseurl import get_all_params
 from src.utils.parseurl import get_params_with_param
 from src.utils.parseurl import post_params_with_param
-from src.utils.parseurl import parse_url_parameters
 from src.utils.parseurl import getHeadersToTest
-from src.utils.parseurl import compare_dicts
 from src.utils.parseurl import is_valid_url
 from src.httpreqs.request import extract_all_parameters
 from src.httpreqs.request import extract_input_fields
-
-from urllib.parse import parse_qs, urlsplit
 
 
 def main():
@@ -243,11 +235,11 @@ def main():
                 print(colors.red("[-]") + " Failed to establish connection to " + url)
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt detected. Exiting...")
-                lfimap_cleanup(config.webDir, stats)
+                lfimap_cleanup(config.webDir)
             except:
                 raise
 
-        lfimap_cleanup(config.webDir, stats)
+        lfimap_cleanup(config.webDir)
 
     # If single URL is specified
     else:
@@ -422,7 +414,7 @@ def main():
                 sys.exit(-1)
 
         if r == False and not args.no_stop:
-            lfimap_cleanup(config.webDir, stats)
+            lfimap_cleanup(config.webDir)
 
         if csrf_r:
             input_fields = extract_input_fields(csrf_r.text)
@@ -724,7 +716,7 @@ def main():
                         + "' doesn't seem to be vulnerable...."
                     )
 
-        lfimap_cleanup(config.webDir, stats)
+        lfimap_cleanup(config.webDir)
 
 
 if __name__ == "__main__":

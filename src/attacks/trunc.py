@@ -1,7 +1,8 @@
+"""Trunc payload"""
 from src.utils.arguments import args
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-from src.configs.config import *
+from src.configs.config import proxies
 from src.utils import colors
 
 

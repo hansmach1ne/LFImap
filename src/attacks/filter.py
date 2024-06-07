@@ -1,8 +1,8 @@
+"""Filter"""
 import os
 import urllib.parse as urlparse
 from src.utils.arguments import args
-from src.configs.config import *
-from src.utils.stats import stats
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils import colors
@@ -54,12 +54,12 @@ def test_filter(url, post):
         + "%2500"
     )
 
-    for i in range(len(tests)):
-        u, reqHeaders, postTest = prepareRequest(args.param, tests[i], url, post)
+    for idx_test, test in enumerate(tests):
+        u, reqHeaders, postTest = prepareRequest(args.param, test, url, post)
         _, br = REQUEST(u, reqHeaders, postTest, proxies, "LFI", "FILTER")
         if not br:
             return
-        if i == 1 and args.quick:
+        if idx_test == 1 and args.quick:
             return
 
     return

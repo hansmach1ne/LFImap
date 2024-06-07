@@ -1,6 +1,7 @@
+"""Heuristics"""
 import urllib.parse as urlparse
 from src.utils.arguments import args
-from src.configs.config import *
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils.stats import stats
@@ -12,7 +13,7 @@ import string
 
 def test_heuristics(url, post):
     br = False
-    o = urlparse.urlparse(url)
+    # o = urlparse.urlparse(url)
 
     if args.verbose:
         print("\n" + colors.blue("[i]") + " Testing misc issues using heuristics...")
@@ -94,7 +95,7 @@ def test_heuristics(url, post):
 
         # HREF
         if res and rProtocol + ":" in res.text.lower():
-            pattern = r'href="' + rProtocol + '\\:[^"]*'
+            pattern = r'href="' + rProtocol + r'\\:[^"]*'
             matches = re.findall(pattern, res.text.lower())
             if len(matches) > 0 and vuln == False:
                 print("    Positive regex match found in response: " + pattern)
@@ -210,7 +211,6 @@ def test_heuristics(url, post):
                 pattern = (
                     r"" + rLetter3 + ";" + rNumb2 + '["\'"][\\s\\S]*\\<\\/script\\>'
                 )
-                compiled_pattern = re.compile(pattern)
 
                 matches = re.findall(pattern, res.text.lower())
                 if len(matches) > 0 and vuln == False:
@@ -301,14 +301,14 @@ def test_heuristics(url, post):
                     )
                 stats["vulns"] += 1
 
-        # Check for Sql errors
-        for i in range(len(sqlErrors)):
-            if res and sqlErrors[i] in res.text.lower():
+        # Check for SQL errors
+        for _, sql_error in enumerate(sqlErrors):
+            if res and sql_error in res.text.lower():
                 if len(args.postreq) > 1:
                     print(
                         colors.green("[+]")
                         + " Info disclosure -> '"
-                        + sqlErrors[i]
+                        + sql_error
                         + "' error detected -> '"
                         + u
                         + "' -> HTTP POST -> '"
@@ -319,7 +319,7 @@ def test_heuristics(url, post):
                     print(
                         colors.green("[+]")
                         + " Info disclosure -> '"
-                        + sqlErrors[i]
+                        + sql_error
                         + "' error detected -> '"
                         + u
                         + "'"

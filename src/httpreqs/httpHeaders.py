@@ -1,6 +1,6 @@
+"""HTTP Headers"""
 import random
 from src.utils.arguments import args
-import src.utils.args_check
 
 
 def addHeader(headers, newKey, newVal):

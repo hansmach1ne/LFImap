@@ -1,7 +1,6 @@
-import urllib.parse as urlparse
+"""Expect Payload"""
 from src.utils.arguments import args
-from src.configs.config import *
-from src.utils.stats import stats
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils import colors

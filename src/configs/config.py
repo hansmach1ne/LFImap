@@ -12,6 +12,8 @@ previousPrint = ""
 urls = []
 parsedUrls = []
 maxTimeout = None
+url = ""
+postreq = ""
 csrf_params = [
     "csrf",
     "xsrf",

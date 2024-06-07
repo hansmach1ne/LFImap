@@ -1,3 +1,4 @@
+"""PHP payload"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode

