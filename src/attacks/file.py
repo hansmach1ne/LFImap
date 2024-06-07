@@ -4,8 +4,9 @@ from src.httpreqs.request import REQUEST
 from src.configs.config import *
 from src.utils import colors
 
+
 def test_file_trunc(url, post):
-    if(args.verbose):
+    if args.verbose:
         print(colors.blue("[i]") + " Testing with file wrapper...")
 
     tests = []
@@ -17,6 +18,8 @@ def test_file_trunc(url, post):
 
     for i in range(len(tests)):
         u, reqHeaders, postTest = prepareRequest(args.param, tests[i], url, post)
-        _,br = REQUEST(u, reqHeaders, postTest, proxies, "LFI", "FILE")
-        if(not br): return
-        if(i == 1 and args.quick): return
+        _, br = REQUEST(u, reqHeaders, postTest, proxies, "LFI", "FILE")
+        if not br:
+            return
+        if i == 1 and args.quick:
+            return

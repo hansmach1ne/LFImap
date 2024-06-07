@@ -1,5 +1,6 @@
 import argparse
 
+
 # Custom HelpFormatter
 class BannerHelpFormatter(argparse.HelpFormatter):
     def __init__(self, prog):
@@ -10,7 +11,7 @@ class BannerHelpFormatter(argparse.HelpFormatter):
         help_text = super().format_help()
 
         # Define a banner message
-        banner = '''
+        banner = """
   _      ______ _____                       
  | |    |  ____|_   _|                      
  | |    | |__    | |  _ __ ___   __ _ _ __  
@@ -20,7 +21,7 @@ class BannerHelpFormatter(argparse.HelpFormatter):
                                      | |    
                                      |_|    
 
-                                - by @h4nsmach1ne\n\n\n'''
+                                - by @h4nsmach1ne\n\n\n"""
 
         # Add the banner to the help message
         return banner + help_text
