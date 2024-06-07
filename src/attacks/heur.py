@@ -34,7 +34,7 @@ def test_heuristics(url, post):
 
     # Custom CRLF polyglot
     tests.append("%0d%0aLfi:13CRLF37%250d%250aLfi%3A13CRLF37%25%30D%25%30ALfi%3A13CRLF37")
-    
+
     #TODO store these in a separate file and make it bigger
     fiErrors = ["warning", "include(", "require(", "fopen(", "fpassthru(", "readfile(", "fread(", "fgets("]
     sqlErrors = ["you have an error in your sql syntax", "unclosed qutation mark after the character string",
@@ -42,7 +42,7 @@ def test_heuristics(url, post):
             "mysql_fetch_assoc(", "mysql_fetch_field(", "mysql_fetch_field_direct(", "mysql_fetch_lengths(", 
             "mysql_fetch_object(", "mysql_fetch_row(", "mysql_fetch_all(", "mysql_prepare(", "mysql_info(",
             "mysql_real_query(", "mysql_stmt_init(", "mysql_stmt_execute("]
-    
+
     for test in tests:
         if(args.verbose and xssTest in test): print(colors.blue("[i]") + " Testing for XSS...")
         if(args.verbose and "%0d%0a" in test): print(colors.blue("[i]") + " Testing for CRLF...")
@@ -98,7 +98,7 @@ def test_heuristics(url, post):
                     vuln = True
                     if(args.postreq and len(args.postreq) > 1): print(colors.green("[+]") + " XSS -> '" + u + "' -> HTTP POST -> '" + postTest + "' -> reflection in script context")
                     else: print(colors.green("[+]") + " XSS -> '" + u + "' -> reflection in script context")
-        
+
         # CRLF
         if(res and any('13CRLF37' in value for value in res.headers.values()) and any('Lfi' in key for key in res.headers)):
             vuln = True

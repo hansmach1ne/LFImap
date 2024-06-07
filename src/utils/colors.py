@@ -6,7 +6,7 @@ def green(text):
     GREEN = '\033[92m'
     RESET = '\033[0m'
     return GREEN + text + RESET
-    
+
 def red(text):
     if os.name == 'nt':
         os.system('')

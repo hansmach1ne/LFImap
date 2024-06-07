@@ -22,19 +22,19 @@ def extract_all_parameters(url, form_data = ""):
     # Extract parameters from the URL
     parsed_url = urlparse(url)
     url_parameters = parse_qs(parsed_url.query)
-    
+
     # Convert the values from a list to a single value (if applicable)
     cleaned_url_parameters = {key: value[0] if len(value) == 1 else value for key, value in url_parameters.items()}
-    
+
     # Extract parameters from the form data
     if(form_data != ""): form_parameters = parse_qs(form_data)
-    
+
     # Convert the values from a list to a single value (if applicable)
     cleaned_form_parameters = {key: value[0] if len(value) == 1 else value for key, value in form_parameters.items()}
 
     # Merge the URL parameters and form parameters into a single dictionary
     all_parameters = {**cleaned_url_parameters, **cleaned_form_parameters}
-    
+
     return all_parameters
 
 def extract_input_fields(html_content):
@@ -71,7 +71,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
 
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(config.TO_REPLACE)):
-            
+
             if(postVal and isinstance(postVal, bytes)):
                 postVal = postVal.decode('utf-8')
 
@@ -93,7 +93,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
                 else: p = ""
 
                 exploit = addToExploits(req, reqType, explType, u, p, headers, attackType, os)
-                
+
                 #Print finding
                 if(postVal == "" and explType):
                     print(colors.green("[+]") + " " + explType + " -> '" + getVal + "'")
@@ -101,7 +101,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
                 elif(explType):
                     print(colors.green("[+]") + " " + explType + " -> '" + getVal + "' -> HTTP POST -> '" + postVal + "'")
                     stats["vulns"] += 1
-                
+
                 if(args.revshell):
                     pwn(exploit)
 
@@ -124,7 +124,7 @@ def checkPayload(webResponse):
 def prepareRequest(parameter, payload, url, postData):
     if(parameter in url): reqUrl = url.replace(parameter, encode(payload))
     else: reqUrl = url
-    
+
     #if postData and args.json and not is_valid_json(args.json):
     #    reqData = convert_http_formdata_to_json(postData.replace(parameter, encode(payload)).lstrip())
     if postData:
@@ -138,7 +138,7 @@ def prepareRequest(parameter, payload, url, postData):
         for key, value in args.httpheaders.items():
             if(parameter in value): reqHeaders[key.strip()] = value.replace(parameter, encode(payload)).encode('utf-8')
             else: reqHeaders[key] = value
-    
+
     else: return reqUrl, args.httpheaders, reqData
     return reqUrl, reqHeaders, reqData
 
@@ -161,9 +161,9 @@ def REQUEST(url, headersData, postData, proxy, exploitType, exploitMethod, explo
         else: method = "GET"
 
         if(args.csrfUrl and isCsrfRequest): url = args.csrfUrl
-            
+
         if(args.csrfData and isCsrfRequest): postData = args.csrfData
-        
+
         #Handle CSRF refresh before sending the payload.
         if(args.updateCsrfToken):
             if(args.previouscsrf):

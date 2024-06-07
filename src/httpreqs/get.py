@@ -26,5 +26,5 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
         if(args.verbose): print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
     except:
         pass
-        
+
     return res, doContinue

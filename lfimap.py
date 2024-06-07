@@ -105,7 +105,7 @@ def main():
                     raise
                     continue
 
- 
+
 
                 relativeVulnCount = stats["vulns"]
                 stats["urls"] += 1
@@ -159,7 +159,7 @@ def main():
                 if(args.cmd):
                     default=False
                     test_cmd_injection(url, "")
-            
+
                 #Default behaviour
                 if(default):
                     test_filter(url, "")
@@ -169,7 +169,7 @@ def main():
                     test_rfi(url, "")
                     test_file_trunc(url, "")
                     test_trunc(url, "")
-                
+
                 if(stats["vulns"] == relativeVulnCount):
                     print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
 
@@ -251,7 +251,7 @@ def main():
                     turls.append(tempUrl)
                     theaders.append(headers)
                     tposts.append(postTest)
-        
+
         # No arguments found to test, if this is not set.
         if(tempUrl == None or tempUrl == ""):
             print(colors.red("[-]") + " No arguments to test. Exiting...")
@@ -259,7 +259,7 @@ def main():
 
         # Test request to see if the site is accessible
         # r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
-        
+
         #print(config.url)
         #print(tempUrl)
 
@@ -301,7 +301,7 @@ def main():
 
         if(r == False and not args.no_stop):
             lfimap_cleanup(config.webDir, stats)
-        
+
         if(csrf_r):
             input_fields = extract_input_fields(csrf_r.text)
             # Post request[0] is enough, because it's a list of permutations anyways, we need parameter names
@@ -340,7 +340,7 @@ def main():
                         inp = input("\n" + colors.yellow("[?]") + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] ")
                     else:
                         print(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
-        
+
         if(inp == "y" or inp == "Y" or inp == ""): args.updateCsrfToken = True
         else: 
             args.updateCsrfToken  = False
@@ -371,7 +371,7 @@ def main():
                 # Handle plural
                 if("," in getHeadersToTest(headers)): print("\n" + colors.yellow("[i]") + " Testing headers '" + getHeadersToTest(headers) + "'")
                 else: print("\n" + colors.yellow("[i]") + " Testing header '" + getHeadersToTest(headers) + "'") 
-                
+
             if(args.param in url):
                 print("\n" + colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
                 args.is_tested_param_post = False # Needed to handle -i

