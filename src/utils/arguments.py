@@ -1,7 +1,10 @@
+import logging
+
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO)
+
 import argparse
 from src.utils.banner import BannerHelpFormatter
 
-print("")
 parser = argparse.ArgumentParser(description='LFImap, Local File Inclusion discovery and exploitation tool', formatter_class=BannerHelpFormatter, add_help=False)
 
 mandatoryGroup = parser.add_argument_group("TARGET OPTIONS")

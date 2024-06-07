@@ -1,6 +1,6 @@
 import time
 import requests
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 import src.httpreqs.httpHeaders
 
 def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False):
@@ -18,10 +18,10 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit 
         if(args.delay):
             time.sleep(args.delay/1000)
     except KeyboardInterrupt:
-        print("\nKeyboard interrupt detected. Exiting...")
+        logging.info("\nKeyboard interrupt detected. Exiting...")
         lfimap_cleanup()
     except requests.exceptions.InvalidSchema:
-        if(args.verbose): print("InvalidSchema exception detected. Server doesn't understand the parameter value.")
+        if(args.verbose): logging.info("InvalidSchema exception detected. Server doesn't understand the parameter value.")
     except:
         raise
 

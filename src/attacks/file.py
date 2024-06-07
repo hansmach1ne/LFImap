@@ -1,4 +1,4 @@
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.configs.config import *
@@ -6,7 +6,7 @@ from src.utils import colors
 
 def test_file_trunc(url, post):
     if(args.verbose):
-        print(colors.blue("[i]") + " Testing with file wrapper...")
+        logging.info(colors.blue("[i]") + " Testing with file wrapper...")
 
     tests = []
     tests.append("file%3A%2F%2F%2Fetc%2Fpasswd")

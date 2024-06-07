@@ -1,5 +1,5 @@
 import urllib.parse as urlparse
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.configs.config import *
 from src.utils.stats import stats
 from src.httpreqs.request import prepareRequest
@@ -8,7 +8,7 @@ from src.utils import colors
 
 def test_input(url, post):
     if(args.verbose):
-        print(colors.blue("[i]") + " Testing with input wrapper...")
+        logging.info(colors.blue("[i]") + " Testing with input wrapper...")
 
     tests = []
     posts = []

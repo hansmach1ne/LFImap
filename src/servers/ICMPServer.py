@@ -1,7 +1,7 @@
 import threading
 import socket
 from src.utils import colors
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 
 class ICMPThread(threading.Thread):
     def __init__(self):
@@ -20,7 +20,7 @@ class ICMPThread(threading.Thread):
                     self.result = True
         except PermissionError:
             if(args.verbose):
-                print(colors.red("[-]") + " Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'")
+                logging.info(colors.red("[-]") + " Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'")
 
     def getResult(self):
         return self.result

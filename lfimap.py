@@ -13,7 +13,7 @@ from src.configs import config
 from src.servers.HTTPServer import ServerHandler
 from src.servers.ICMPServer import ICMPThread
 from src.utils.encodings import encode
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.utils.args_check import checkArgs
 from src.utils.cleanup import lfimap_cleanup
 from src.utils.stats import stats
@@ -62,10 +62,10 @@ def main():
 
                 # Just in case check if URL is correctly formatted, it should be always correct up to this point, though...
                 if(not is_valid_url(url)): 
-                    print(colors.red("\n[-]") + " URL '" + url + "'' is not valid. Skipping...")
+                    logging.info(colors.red("\n[-]") + " URL '" + url + "'' is not valid. Skipping...")
                     continue
 
-                print("\n" + colors.lightblue("[i]") + " Parsing URL [" + str(iteration+1) + "/" + str(len(config.parsedUrls)) + "]: '" + url + "'")
+                logging.info("\n" + colors.lightblue("[i]") + " Parsing URL [" + str(iteration+1) + "/" + str(len(config.parsedUrls)) + "]: '" + url + "'")
 
 
             #CSRF token refresh with -F is not supported yet #TODO
@@ -92,16 +92,16 @@ def main():
                                 okCode = True
 
                         if(not okCode):
-                            print(colors.red("[-] ") + " URL '" + tempUrl + "' is not accessible. HTTP code " + str(r.status_code) + ".")
-                            print(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                            logging.info(colors.red("[-] ") + " URL '" + tempUrl + "' is not accessible. HTTP code " + str(r.status_code) + ".")
+                            logging.info(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
                             continue
                     else:
                         if(r.status_code != 200 and r.status_code != 204):
-                            print(colors.red("[-]") + " URL '" + tempUrl + "' is not accessible. HTTP code " + str(r.status_code) + ". Skipping...")
-                            print(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                            logging.info(colors.red("[-]") + " URL '" + tempUrl + "' is not accessible. HTTP code " + str(r.status_code) + ". Skipping...")
+                            logging.info(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
                             continue
                 except:
-                    print(colors.red("[-]") + " Exception occurred while accessing '" + tempUrl + "'. Skipping...")
+                    logging.info(colors.red("[-]") + " Exception occurred while accessing '" + tempUrl + "'. Skipping...")
                     raise
                     continue
 
@@ -111,8 +111,8 @@ def main():
                 stats["urls"] += 1
 
                 if(not args.postreq or "".join(args.postreq[0]) == ""):
-                    if(not args.verbose): print("")
-                    print(colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
+                    if(not args.verbose): logging.info("")
+                    logging.info(colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
 
                 #Perform all tests
                 if(args.test_all):
@@ -127,7 +127,7 @@ def main():
                     test_cmd_injection(url, "")
 
                     if(stats["vulns"] == relativeVulnCount):
-                        print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
+                        logging.info(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
                     continue
 
                 default = True
@@ -171,18 +171,18 @@ def main():
                     test_trunc(url, "")
                 
                 if(stats["vulns"] == relativeVulnCount):
-                    print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
+                    logging.info(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable.\n") 
 
             except ConnectTimeout:
-                print(colors.red("[-]") + " URL '" + url + "' timed out. Skipping...")
+                logging.info(colors.red("[-]") + " URL '" + url + "' timed out. Skipping...")
             except ConnectionRefusedError:
-                print(colors.red("[-]") + " Failed to establish connection to " + url)
+                logging.info(colors.red("[-]") + " Failed to establish connection to " + url)
             except NewConnectionError:
-                print(colors.red("[-]") + " Failed to establish connection to " + url)
+                logging.info(colors.red("[-]") + " Failed to establish connection to " + url)
             except OSError:
-                print(colors.red("[-]") + " Failed to establish connection to " + url)
+                logging.info(colors.red("[-]") + " Failed to establish connection to " + url)
             except KeyboardInterrupt:
-                print("\nKeyboard interrupt detected. Exiting...")
+                logging.info("\nKeyboard interrupt detected. Exiting...")
                 lfimap_cleanup(config.webDir, stats)
             except:
                 raise
@@ -254,21 +254,21 @@ def main():
         
         # No arguments found to test, if this is not set.
         if(tempUrl == None or tempUrl == ""):
-            print(colors.red("[-]") + " No arguments to test. Exiting...")
+            logging.info(colors.red("[-]") + " No arguments to test. Exiting...")
             sys.exit(-1)
 
         # Test request to see if the site is accessible
         # r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
         
-        #print(config.url)
-        #print(tempUrl)
+        #logging.info(config.url)
+        #logging.info(tempUrl)
 
-        #print(postTest)
-        #print(config.postreq)
+        #logging.info(postTest)
+        #logging.info(config.postreq)
 
         # Check if csrf token is being used.
-        #print(args.csrfData)
-        #print(config.postreq)
+        #logging.info(args.csrfData)
+        #logging.info(config.postreq)
 
         # TODO edge case where the url is not specified, but the csrf token is inside the request.?
         csrf_r = ""
@@ -284,19 +284,19 @@ def main():
         if(not args.http_valid): args.http_valid = [200, 204, 301, 302, 303]
 
         if(not r):
-            print(colors.red("[-]") + " Something unexpected has happened, initial testing response is not clearly received. Please check your switches and url endpoint(s). Exiting...")
+            logging.info(colors.red("[-]") + " Something unexpected has happened, initial testing response is not clearly received. Please check your switches and url endpoint(s). Exiting...")
             sys.exit(-1)
 
         if(r and r.status_code >= 500):
             if(r.status_code not in args.http_valid):
-                print(colors.red("[-]") + " Initial request yielded " + str(r.status_code) + " response. Application might not be available. To force-continue specify '--http-ok " + str(r.status_code) + "' to treat it as valid.")
+                logging.info(colors.red("[-]") + " Initial request yielded " + str(r.status_code) + " response. Application might not be available. To force-continue specify '--http-ok " + str(r.status_code) + "' to treat it as valid.")
                 sys.exit(-1)
 
         if("no&#32;response&#32;received&#32;from&#32;remote&#32;server&#46;" in r.text.lower()):
-            print(colors.red("[-]") + " No response received from remote server. This could be proxy's response due to unresponsive application server.")
+            logging.info(colors.red("[-]") + " No response received from remote server. This could be proxy's response due to unresponsive application server.")
             inp = input("\n" + colors.yellow("[?]") + " Web application might not be available. Do you still want to force-continue [y/N] ")
             if(inp == "n" or inp == "N" or inp == ""):
-                print("User interrupt, exiting...") 
+                logging.info("User interrupt, exiting...") 
                 sys.exit(-1)
 
         if(r == False and not args.no_stop):
@@ -315,31 +315,31 @@ def main():
         # Check if csrf token is present in the request.
         if(args.csrfParameter):
             if(args.csrfParameter not in parameters.keys()):
-                print(colors.red("[-]") + " Specified csrf parameter '" + args.csrfParameter + "' not found in the initial request. LFImap will not be able to refresh the csrf token.")
+                logging.info(colors.red("[-]") + " Specified csrf parameter '" + args.csrfParameter + "' not found in the initial request. LFImap will not be able to refresh the csrf token.")
                 args.updateCsrfToken = False
             elif(args.csrfParameter not in input_fields.keys()):
-                print(colors.red("[-]") + " Specified csrf parameter '" + args.csrfParameter + "' not found in the initial response. LFImap will not be able to refresh the csrf token.")
+                logging.info(colors.red("[-]") + " Specified csrf parameter '" + args.csrfParameter + "' not found in the initial response. LFImap will not be able to refresh the csrf token.")
                 args.updateCsrfToken = False
             elif(parameters[args.csrfParameter] != input_fields[args.csrfParameter]):
                 inp = input("\n" + colors.yellow("[?]") + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] ")
             else:
-                print(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
+                logging.info(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
         else:
             for param_name in parameters.keys():
                 if(param_name in config.csrf_params):
                     args.csrfParameter = param_name
                     # If there is the same key value pair in both dicts
                     if(any(item in input_fields.items() for item in parameters.items())):
-                        print(colors.blue("[i]") + " Parameter '" + param_name + "' appears to be anti-forgery token, but it hasn't been refreshed by the web application. LFImap will not auto-refresh csrf token value")
+                        logging.info(colors.blue("[i]") + " Parameter '" + param_name + "' appears to be anti-forgery token, but it hasn't been refreshed by the web application. LFImap will not auto-refresh csrf token value")
                         args.updateCsrfToken = False
                     elif(len(input_fields) == 0):
                         if(not args.csrfUrl):
-                            print(colors.blue("[i]") + " Parameter '" + param_name + "' appears to be anti-forgery token, however the csrf token is not present in the response. Please specify the  '--csrf-url' to auto-refresh the token.")
+                            logging.info(colors.blue("[i]") + " Parameter '" + param_name + "' appears to be anti-forgery token, however the csrf token is not present in the response. Please specify the  '--csrf-url' to auto-refresh the token.")
                             args.updateCsrfToken = False
                     elif(parameters[args.csrfParameter] != input_fields[args.csrfParameter]):
                         inp = input("\n" + colors.yellow("[?]") + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] ")
                     else:
-                        print(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
+                        logging.info(colors.blue("[i]") + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests")
         
         if(inp == "y" or inp == "Y" or inp == ""): args.updateCsrfToken = True
         else: 
@@ -352,14 +352,14 @@ def main():
                     okCode = True
 
             if(r and not okCode):
-                print(colors.red("[-] ") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ".")
-                print(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                logging.info(colors.red("[-] ") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ".")
+                logging.info(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
                 if(not args.no_stop): sys.exit(-1)
 
         else:
             if(r and r.status_code != 200 and r.status_code != 204):
-                print(colors.red("[-]") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ".  Exiting...")
-                print(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
+                logging.info(colors.red("[-]") + tempUrl + " is not accessible. HTTP code " + str(r.status_code) + ".  Exiting...")
+                logging.info(colors.blue("[i]") + " Try specifying parameter --http-ok " + str(r.status_code) + "\n")
                 if(not args.no_stop): sys.exit(-1)
 
         # Main loop that will perform testing
@@ -369,15 +369,15 @@ def main():
 
             if(pwnInHeadersExists):
                 # Handle plural
-                if("," in getHeadersToTest(headers)): print("\n" + colors.yellow("[i]") + " Testing headers '" + getHeadersToTest(headers) + "'")
-                else: print("\n" + colors.yellow("[i]") + " Testing header '" + getHeadersToTest(headers) + "'") 
+                if("," in getHeadersToTest(headers)): logging.info("\n" + colors.yellow("[i]") + " Testing headers '" + getHeadersToTest(headers) + "'")
+                else: logging.info("\n" + colors.yellow("[i]") + " Testing header '" + getHeadersToTest(headers) + "'") 
                 
             if(args.param in url):
-                print("\n" + colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
+                logging.info("\n" + colors.yellow("[i]") + " Testing GET '" + get_params_with_param(url) + "' parameter...")
                 args.is_tested_param_post = False # Needed to handle -i
 
             elif(args.postreq and args.param in post): 
-                print("\n" + colors.yellow("[i]") + " Testing form-line '" + post_params_with_param(post) + "' parameter...")
+                logging.info("\n" + colors.yellow("[i]") + " Testing form-line '" + post_params_with_param(post) + "' parameter...")
                 args.is_tested_param_post = True # Needed to handle -i
             else:
                 is_tested_param_post = False
@@ -385,7 +385,7 @@ def main():
             # Skip CSRF parameter testing..
             if(args.csrfParameter):
                 if(args.csrfParameter + "=" + args.param in url or args.csrfParameter + "=" + args.param in post): 
-                    print(colors.blue("[-]") + " Skipping testing of anti-forgery token")
+                    logging.info(colors.blue("[-]") + " Skipping testing of anti-forgery token")
                     continue
             relativeVulnCount = stats["vulns"]
             stats["urls"] += 1
@@ -404,14 +404,14 @@ def main():
 
                 if(stats["vulns"] == relativeVulnCount and pwnInHeadersExists):
                     # Handle plural
-                    if("," in getHeadersToTest(headers)): print(colors.red("[-]") + " Headers '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.")
-                    else: print(colors.red("[-]") + " Header '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.") 
+                    if("," in getHeadersToTest(headers)): logging.info(colors.red("[-]") + " Headers '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.")
+                    else: logging.info(colors.red("[-]") + " Header '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.") 
 
                 if(stats["vulns"] == relativeVulnCount):
                     if(args.param in url):
-                        print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable....")
+                        logging.info(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable....")
                     if(args.postreq and args.param in post): 
-                        print(colors.red("[-]") + " Form-line parameter '" + post_params_with_param(post) + "' doesn't seem to be vulnerable....")
+                        logging.info(colors.red("[-]") + " Form-line parameter '" + post_params_with_param(post) + "' doesn't seem to be vulnerable....")
                 continue
 
             default = True
@@ -456,14 +456,14 @@ def main():
 
             if(stats["vulns"] == relativeVulnCount and pwnInHeadersExists):
                 # Handle plural
-                if("," in getHeadersToTest(headers)): print(colors.blue("[i]") + " Headers '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.")
-                else: print(colors.blue("[i]") + " Header '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.") 
+                if("," in getHeadersToTest(headers)): logging.info(colors.blue("[i]") + " Headers '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.")
+                else: logging.info(colors.blue("[i]") + " Header '" + getHeadersToTest(headers) + "' doesn't seem to be vulnerable.") 
 
             if(stats["vulns"] == relativeVulnCount):
                 if(args.param in url):
-                    print(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable....")
+                    logging.info(colors.red("[-]") + " GET parameter '" + get_params_with_param(url) + "' doesn't seem to be vulnerable....")
                 if(args.postreq and args.param in post): 
-                    print(colors.red("[-]") + " Form-line parameter '" + post_params_with_param(post) + "' doesn't seem to be vulnerable....")
+                    logging.info(colors.red("[-]") + " Form-line parameter '" + post_params_with_param(post) + "' doesn't seem to be vulnerable....")
 
         lfimap_cleanup(config.webDir, stats)
 

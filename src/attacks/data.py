@@ -1,5 +1,5 @@
 import urllib.parse as urlparse
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.configs import config
 from src.utils.stats import stats
 from src.utils.encodings import encode
@@ -9,7 +9,7 @@ from src.utils import colors
 from urllib.parse import urlparse, parse_qs
 
 def test_data(url, post):
-    if(args.verbose): print(colors.blue("[i]") +" Testing with data wrapper...")
+    if(args.verbose): logging.info(colors.blue("[i]") +" Testing with data wrapper...")
 
     tests = []
 

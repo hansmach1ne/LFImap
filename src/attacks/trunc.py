@@ -1,4 +1,4 @@
-from src.utils.arguments import args
+from src.utils.arguments import args, logging
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.configs.config import *
@@ -6,7 +6,7 @@ from src.utils import colors
 
 def test_trunc(url, post):
     if(args.verbose):
-        print(colors.blue("[i]") + " Testing path truncation using '" + args.truncWordlist + "' wordlist...")
+        logging.info(colors.blue("[i]") + " Testing path truncation using '" + args.truncWordlist + "' wordlist...")
     i = 0
     with open(args.truncWordlist, "r", encoding='utf-8') as f:
         for line in f:
