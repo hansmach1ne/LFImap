@@ -4,11 +4,10 @@ import sys
 import requests
 from datetime import datetime
 
-import src.httpreqs.httpHeaders
 from src.httpreqs.httpHeaders import initHttpHeaders
 from src.httpreqs.httpHeaders import addHeader
 from src.configs import config
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.utils import colors
 from src.utils.parseurl import parseGet
 from src.utils.parseurl import parseFormDataLine
@@ -24,10 +23,13 @@ from src.utils.parseurl import is_string_in_dict
 scriptDirectory = os.path.dirname(__file__ + os.sep + ".." + os.sep + ".." + os.sep + ".." + os.sep)
 scriptDirectory = os.path.abspath(scriptDirectory)
 
-args.mode = ""
+# This is not legal.. here
+# args.mode = ""
 headers = {}
 
 def prepareHeaders():
+    args = process_arguments()
+
     #Init User-Agent, Connection, Accept headers + the ones explicitly specified
     headersTemp = initHttpHeaders()
 
@@ -49,6 +51,7 @@ def prepareHeaders():
     return headersTemp
 
 def checkArgs():
+    args = process_arguments()
     urlfile = args.f
     agent = args.agent
     referer = args.referer

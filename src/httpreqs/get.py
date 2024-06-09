@@ -1,8 +1,10 @@
 import time
 import requests
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 
 def GET(url, headers, proxy, exploitType, exploitMethod, exploit = False):
+    args = process_arguments()
+    
     doContinue = True
     res = None
 

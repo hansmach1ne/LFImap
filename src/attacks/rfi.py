@@ -17,7 +17,8 @@ def random_with_N_digits(n):
     return randint(range_start, range_end)
 
 def test_rfi(url, post):
-
+    args = process_arguments()
+    
     if(args.verbose):
         print(colors.blue("[i]") + " Testing remote file inclusion...")
 

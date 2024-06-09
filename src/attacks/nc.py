@@ -1,13 +1,13 @@
-from src.httpreqs.post import POST
-from src.httpreqs import request 
+from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 
 def exploit_nc(exploit, method, ip, port):
-
+    args = process_arguments()
+    
     url = exploit['GETVAL']
     post = exploit["POSTVAL"]
 

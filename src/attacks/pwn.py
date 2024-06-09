@@ -4,15 +4,13 @@ from src.attacks.nc import exploit_nc
 from src.attacks.php import exploit_php
 from src.attacks.perl import exploit_perl
 from src.attacks.telnet import exploit_telnet
-from src.attacks.rfi import test_rfi
 from src.attacks.rfi import exploit_rfi
 from src.attacks.powershell import exploit_powershell
-from src.utils.arguments import args
-from src.httpreqs.post import POST
-from src.httpreqs.get import GET
+from src.utils.arguments import process_arguments
 
 def pwn(exploit):
-
+    args = process_arguments()
+    
     ip = args.lhost
     port = args.lport
     method = exploit['ATTACK_METHOD']

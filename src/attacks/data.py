@@ -1,7 +1,6 @@
 import urllib.parse as urlparse
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.configs import config
-from src.utils.stats import stats
 from src.utils.encodings import encode
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
@@ -9,6 +8,8 @@ from src.utils import colors
 from urllib.parse import urlparse, parse_qs
 
 def test_data(url, post):
+    args = process_arguments()
+
     if(args.verbose): print(colors.blue("[i]") +" Testing with data wrapper...")
 
     tests = []

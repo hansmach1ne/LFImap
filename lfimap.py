@@ -10,10 +10,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from src.configs import config
 
 # Import utilities
-from src.servers.HTTPServer import ServerHandler
-from src.servers.ICMPServer import ICMPThread
-from src.utils.encodings import encode
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.utils.args_check import checkArgs
 from src.utils.cleanup import lfimap_cleanup
 from src.utils.stats import stats
@@ -47,9 +44,10 @@ from src.utils.parseurl import is_valid_url
 from src.httpreqs.request import extract_all_parameters
 from src.httpreqs.request import extract_input_fields
 
-from urllib.parse import parse_qs, urlsplit
 
 def main():
+    args = process_arguments()
+
     config.proxies['http'] = args.proxyAddr
     config.proxies['https'] = args.proxyAddr
 
@@ -471,6 +469,7 @@ def main():
 if(__name__ == "__main__"):
 
     # Check command-line arguments
+    process_arguments()
     if(not checkArgs()): sys.exit(-1)
 
     main()

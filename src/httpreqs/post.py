@@ -1,9 +1,9 @@
 import time
 import requests
-from src.utils.arguments import args
-import src.httpreqs.httpHeaders
+from src.utils.arguments import process_arguments
 
 def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False):
+    args = process_arguments()
     doContinue = True
     res = None
 

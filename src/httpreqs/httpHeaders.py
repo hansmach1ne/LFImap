@@ -1,6 +1,5 @@
 import random
-from src.utils.arguments import args
-import src.utils.args_check
+from src.utils.arguments import process_arguments
 
 def addHeader(headers, newKey, newVal):
     headers[newKey] = newVal
@@ -11,6 +10,8 @@ def delHeader(headers, key):
     return headers
 
 def initHttpHeaders():
+    args = process_arguments()
+
     headers = {}
     user_agents = [
             "Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",

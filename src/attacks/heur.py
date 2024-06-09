@@ -1,6 +1,6 @@
 import urllib.parse as urlparse
-from src.utils.arguments import args
-from src.configs.config import *
+from src.utils.arguments import process_arguments
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils.stats import stats
@@ -10,6 +10,8 @@ import random
 import string
 
 def test_heuristics(url, post):
+    args = process_arguments()
+
     br = False
     o = urlparse.urlparse(url)
 

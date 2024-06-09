@@ -1,13 +1,10 @@
 from src.httpreqs.request import REQUEST
 from src.httpreqs.request import prepareRequest
 from src.configs.config import proxies
-from src.utils.arguments import args
-from src.servers.ICMPServer import ICMPThread
+from src.utils.arguments import process_arguments
 from src.utils import colors
-from src.utils.stats import stats
 import string
 import random
-import time
 
 def is_value_in_dict(dictionary, target_value):
     for key, value in dictionary.items():
@@ -26,6 +23,8 @@ def generate_random_alphanumeric():
     return ''.join(random.choices(alphanumeric_chars, k=5))
 
 def test_cmd_injection(url, post):
+    args = process_arguments()
+    
     if(args.verbose):
         print(colors.blue("[i]") + " Testing results-based OS command injection...")
 

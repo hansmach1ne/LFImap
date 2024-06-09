@@ -1,4 +1,4 @@
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
@@ -7,6 +7,8 @@ from src.utils import colors
 from src.configs import config
 
 def exploit_log_poison(ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post):
+    args = process_arguments()
+    
     if(args.f):
         return
 

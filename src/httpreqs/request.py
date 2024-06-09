@@ -1,8 +1,8 @@
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.utils.encodings import encode
 from src.utils.stats import stats
 from src.configs import config
-from src.attacks.pwn import *
+from src.attacks.pwn import pwn
 from src.utils import colors
 from src.utils.cleanup import lfimap_cleanup
 from src.utils.args_check import headers
@@ -63,7 +63,7 @@ def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, att
     return e
 
 def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable = False):
-
+    args = process_arguments()
     if(config.scriptName != ""):
         config.TO_REPLACE.append(config.scriptName)
         config.TO_REPLACE.append(config.scriptName+".php")
@@ -122,6 +122,8 @@ def checkPayload(webResponse):
     return False
 
 def prepareRequest(parameter, payload, url, postData):
+    args = process_arguments()
+
     if(parameter in url): reqUrl = url.replace(parameter, encode(payload))
     else: reqUrl = url
 
@@ -143,6 +145,7 @@ def prepareRequest(parameter, payload, url, postData):
     return reqUrl, reqHeaders, reqData
 
 def REQUEST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit = False, followRedirect = True, isCsrfRequest = False):
+    args = process_arguments()
     doContinue = True
     res = None
     if(not postData): postData = ""

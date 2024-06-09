@@ -1,10 +1,12 @@
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.configs.config import *
 from src.utils import colors
 
 def test_trunc(url, post):
+    args = process_arguments()
+    
     if(args.verbose):
         print(colors.blue("[i]") + " Testing path truncation using '" + args.truncWordlist + "' wordlist...")
     i = 0

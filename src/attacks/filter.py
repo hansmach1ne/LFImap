@@ -1,6 +1,6 @@
 import os
 import urllib.parse as urlparse
-from src.utils.arguments import args
+from src.utils.arguments import process_arguments
 from src.configs.config import *
 from src.utils.stats import stats
 from src.httpreqs.request import prepareRequest
@@ -9,6 +9,8 @@ from src.utils import colors
 from src.configs import config
 
 def test_filter(url, post):
+    args = process_arguments()
+
     if(args.verbose):
         print(colors.blue("[i]") + " Testing with filter wrapper...")
 
