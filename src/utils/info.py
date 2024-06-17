@@ -1,21 +1,21 @@
+"""Info"""
 from src.utils import colors
-from src.configs import config
 
 
-# Prints info about reverse shell attack to stdout
 def printInfo(ip, port, shellType, attackMethod):
+    """Prints info about reverse shell attack to stdout"""
     print(
         colors.green("[.]")
-        + " Trying to pop reverse shell to {0}:{1} using {2} via {3}...".format(
-            ip, port, shellType, attackMethod
-        )
+        + f" Trying to pop reverse shell to {ip}:{port} using {shellType} via {attackMethod}..."
     )
 
 
 def printFancyString(newString, lastPrintedStringLen):
+    """Print fency string"""
     if len(newString) < lastPrintedStringLen:
         difference = lastPrintedStringLen - len(newString)
         print("\r" + newString + difference * " ", end="", flush=True)
     else:
         print("\r" + newString, end="", flush=True)
+
     return len(newString)
