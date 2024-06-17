@@ -61,11 +61,19 @@ def is_valid_json(data):
 
 
 def getDictKey(dictionary, n):
+    """
+    Return the n'th item's name from a list of keys() in a array form to a given dict
+    Return n'th item name from a dict
+    """
     keys = list(dictionary.keys())
     return keys[n]
 
 
 def getDictValue(dictionary, n):
+    """
+    Return the n'th item's value from a list of keys() in a array form to a given dict
+    Return n'th item value from a dict
+    """
     values = list(dictionary.values())
     return values[n]
 
