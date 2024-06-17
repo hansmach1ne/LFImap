@@ -1,3 +1,4 @@
+"""ICMP Server"""
 import threading
 import socket
 from src.utils import colors
@@ -5,6 +6,7 @@ from src.utils.arguments import args
 
 
 class ICMPThread(threading.Thread):
+    """ICMP Thread"""
     def __init__(self):
         threading.Thread.__init__(self)
         self.result = None
@@ -16,7 +18,7 @@ class ICMPThread(threading.Thread):
             self.result = False
 
             while True:
-                data, addr = s.recvfrom(1024)
+                data, _ = s.recvfrom(1024)
                 if data:
                     self.result = True
         except PermissionError:
@@ -27,7 +29,9 @@ class ICMPThread(threading.Thread):
                 )
 
     def getResult(self):
+        """getResult"""
         return self.result
 
     def setResult(self, boolean):
+        """setResult"""
         self.result = boolean
