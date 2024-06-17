@@ -365,7 +365,11 @@ def getHeadersToTest(dictionary):
 
 
 def compare_dicts(dict1, dict2):
-    # Check if the dictionaries have the same keys
+    """
+    Compare two dictionaries and return True if they have the same keys
+
+    Returns boolean.
+    """
     if set(dict1.keys()) != set(dict2.keys()):
         return False
 
