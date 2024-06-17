@@ -152,7 +152,7 @@ def parse_url_parameters(url):
 
 def parse_url_from_request_file(file_path, force_ssl=False):
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
             lines = http_request.split("\n")
             get_request_line = lines[0]
