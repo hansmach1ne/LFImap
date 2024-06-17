@@ -1,6 +1,7 @@
+"""LFI Shell"""
+import sys
 import socket
 from src.utils import colors
-import sys
 
 
 def start_listener(listen_port):
@@ -11,12 +12,12 @@ def start_listener(listen_port):
         listener.listen(1)
         print(
             colors.purple("[*]")
-            + " Starting reverse listener on 0.0.0.0:{}".format(listen_port)
+            + f" Starting reverse listener on 0.0.0.0:{listen_port}"
         )
         client_socket, client_address = listener.accept()
 
         print(
-            colors.red("\n[*]") + " Connection received from {}".format(client_address)
+            colors.red("\n[*]") + f" Connection received from {client_address}"
         )
         print(
             colors.red("[*]")
