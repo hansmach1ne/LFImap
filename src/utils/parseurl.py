@@ -95,6 +95,11 @@ def convert_http_formdata_to_json(formdata):
 
 
 def parse_http_request_file(file_path):
+    """
+    Open a provided HTTP Request file and parse it
+    Returns None if unsuccessful
+    Returns `method, headers_dict, form_data` 
+    """
     try:
         with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
@@ -121,6 +126,10 @@ def parse_http_request_file(file_path):
 
 
 def is_string_in_dict(s, my_dict):
+    """
+    Checks if a given `s` (str) is inside a provided `my_dict` (dict)
+    Returns boolean.
+    """
     for key, value in my_dict.items():
         if s in str(key) or s in str(value):
             return True
@@ -128,6 +137,10 @@ def is_string_in_dict(s, my_dict):
 
 
 def parse_url_parameters(url):
+    """
+    Parse a provided `url` to its components
+    Returns `str` of the parameters joined with ', '
+    """
     parsed_url = urlparse(url)
     query_parameters = parse_qs(parsed_url.query)
 
