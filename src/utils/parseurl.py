@@ -274,6 +274,10 @@ def parseGet(url):
 
 
 def parseFormDataLine(postData):
+    """
+    Parse FormData and return a list of testable parameters
+    Returns list.
+    """
     if postData == "":
         return ""
 
