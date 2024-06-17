@@ -53,6 +53,7 @@ def main():
     config.proxies['http'] = args.proxyAddr
     config.proxies['https'] = args.proxyAddr
 
+    config.lastPrintedStringLen = 1
     # If multiple URLS are specified from a file
     if(args.f):
 
@@ -283,7 +284,7 @@ def main():
         r,_ = REQUEST(config.url, headers, config.postreq, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = False)
         if(not args.http_valid): args.http_valid = [200, 204, 301, 302, 303]
 
-        if(not r):
+        if(not r.text):
             print(colors.red("[-]") + " Something unexpected has happened, initial testing response is not clearly received. Please check your switches and url endpoint(s). Exiting...")
             sys.exit(-1)
 

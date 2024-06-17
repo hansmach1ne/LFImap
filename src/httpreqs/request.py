@@ -8,6 +8,7 @@ from src.utils.cleanup import lfimap_cleanup
 from src.utils.args_check import headers
 from src.utils.parseurl import is_valid_json
 from src.utils.parseurl import convert_http_formdata_to_json
+from src.utils.info import printFancyString
 
 import requests
 import requests.exceptions
@@ -63,18 +64,17 @@ def addToExploits(req, request_type, exploit_type, getVal, postVal, headers, att
     return e
 
 def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable = False):
-
-    if(config.scriptName != ""):
-        config.TO_REPLACE.append(config.scriptName)
-        config.TO_REPLACE.append(config.scriptName+".php")
-        config.TO_REPLACE.append(config.scriptName+"%00")
+    #if(config.scriptName != ""):
+    config.TO_REPLACE.append(config.scriptName)
+    config.TO_REPLACE.append(config.scriptName+".php")
+    config.TO_REPLACE.append(config.scriptName+"%00")
 
     if(checkPayload(req) or cmdInjectable):
         for i in range(len(config.TO_REPLACE)):
-            
             if(postVal and isinstance(postVal, bytes)):
                 postVal = postVal.decode('utf-8')
 
+            #print(config.TO_REPLACE)
             if(getVal.find(config.TO_REPLACE[i]) != -1 or getVal.find("?c=" + config.TO_REPLACE[i]) != -1 or postVal.find(config.TO_REPLACE[i]) != -1):
                 # Determine the os based on the payload that worked
                 # TODO improve this to reduce false positives.
@@ -90,7 +90,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
                     if("ipconfig" in postVal.lower() or "Windows IP Configuration" in postVal.lower()): os = "windows"
                     else: os = "linux"
 
-                else: p = ""
+                else: p = ""    
 
                 exploit = addToExploits(req, reqType, explType, u, p, headers, attackType, os)
                 
@@ -102,7 +102,7 @@ def init(req, reqType, explType, getVal, postVal, headers, attackType, cmdInject
                     print(colors.green("[+]") + " " + explType + " -> '" + getVal + "' -> HTTP POST -> '" + postVal + "'")
                     stats["vulns"] += 1
                 
-                if(args.revshell):
+                if(args.revshell and (explType == "RFI" or explType == "RCE")):
                     pwn(exploit)
 
                 if not args.no_stop:
