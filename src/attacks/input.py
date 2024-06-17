@@ -1,13 +1,13 @@
-import urllib.parse as urlparse
+"""Input"""
 from src.utils.arguments import args
-from src.configs.config import *
-from src.utils.stats import stats
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils import colors
 
 
 def test_input(url, post):
+    """Test Input"""
     if args.verbose:
         print(colors.blue("[i]") + " Testing with input wrapper...")
 
@@ -48,13 +48,17 @@ def test_input(url, post):
                 return
             if i == 1 and args.quick:
                 return
-    else:
-        for i in range(len(tests)):
-            u, reqHeaders, _ = prepareRequest(args.param, tests[i], url, post)
-            for j in range(len(posts)):
-                _, br = REQUEST(u, reqHeaders, posts[j], proxies, "RCE", "INPUT")
-                if not br:
-                    return
-                if j == 1 and args.quick:
-                    return
+        return
+
+    for _, test in enumerate(tests):
+        u, reqHeaders, _ = prepareRequest(args.param, test, url, post)
+        for j, post in enumerate(posts):
+            _, br = REQUEST(u, reqHeaders, post, proxies, "RCE", "INPUT")
+
+            if not br:
+                return
+
+            if j == 1 and args.quick:
+                return
+
     return
