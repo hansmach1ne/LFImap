@@ -79,6 +79,10 @@ def getDictValue(dictionary, n):
 
 
 def convert_http_formdata_to_json(formdata):
+    """
+    Convert a HTTP FormData into JSON form
+    Returns JSON in `str` form
+    """
     items = formdata.split("&")
     parsed_data = {}
     for item in items:
