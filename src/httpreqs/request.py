@@ -330,6 +330,7 @@ def REQUEST(
                         proxies=proxy,
                         verify=False,
                         allow_redirects=True,
+                        timeout=args.maxTimeout
                     )
                 else:
                     res = requests.get(
@@ -339,6 +340,7 @@ def REQUEST(
                         proxies=proxy,
                         verify=False,
                         allow_redirects=True,
+                        timeout=args.maxTimeout
                     )
 
         # TODO exploitMethod and exploitType are not being used
