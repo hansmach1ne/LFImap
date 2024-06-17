@@ -96,7 +96,7 @@ def convert_http_formdata_to_json(formdata):
 
 def parse_http_request_file(file_path):
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
             headers, post_data = http_request.split(
                 "\n\n", 1
