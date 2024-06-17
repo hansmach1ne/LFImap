@@ -1,12 +1,13 @@
+"""Trunc"""
 from src.utils.arguments import args
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-from src.configs.config import *
+from src.configs.config import proxies
 from src.utils import colors
-from src.configs import config
 
 
 def test_trunc(url, post):
+    """Test Trunc"""
     if args.verbose:
         print(
             colors.blue("[i]")
@@ -26,9 +27,13 @@ def test_trunc(url, post):
                 postTest = postTest.encode("utf-8")
 
             _, br = REQUEST(u, reqHeaders, postTest, proxies, "LFI", "TRUNC")
+
             if not br:
                 return
+
             if i == 1 and args.quick:
                 return
+
             i += 1
+
     return
