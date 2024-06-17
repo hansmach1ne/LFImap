@@ -201,6 +201,13 @@ def parse_url_from_request_file(file_path, force_ssl=False):
 
 
 def parseGet(url):
+    """
+    Parse a given URL and return back a list of URLs for testing,
+      each URL is for a given parameter being tested and the rest left
+      unmodified
+
+    Returns list of urls
+    """
     placeholder = {}
     testUrls = []
     # Dictionary of GET parameters
