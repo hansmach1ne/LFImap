@@ -6,13 +6,13 @@ from urllib3.exceptions import NewConnectionError
 from requests.exceptions import ConnectTimeout
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+# Disable/Mute TLS errors
+from requests.packages.urllib3 import disable_warnings
+
 # Import configurations
 from src.configs import config
 
 # Import utilities
-from src.servers.HTTPServer import ServerHandler
-from src.servers.ICMPServer import ICMPThread
-from src.utils.encodings import encode
 from src.utils.arguments import args
 from src.utils.args_check import checkArgs
 from src.utils.cleanup import lfimap_cleanup
@@ -21,9 +21,6 @@ from src.utils.stats import stats
 # Import custom request functionality
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-
-# Disable/Mute TLS errors
-from requests.packages.urllib3 import disable_warnings
 
 disable_warnings(InsecureRequestWarning)
 
@@ -38,17 +35,12 @@ from src.attacks.cmdi import test_cmd_injection
 from src.attacks.file import test_file_trunc
 from src.attacks.trunc import test_trunc
 from src.utils import colors
-from src.utils.parseurl import get_all_params
 from src.utils.parseurl import get_params_with_param
 from src.utils.parseurl import post_params_with_param
-from src.utils.parseurl import parse_url_parameters
 from src.utils.parseurl import getHeadersToTest
-from src.utils.parseurl import compare_dicts
 from src.utils.parseurl import is_valid_url
 from src.httpreqs.request import extract_all_parameters
 from src.httpreqs.request import extract_input_fields
-
-from urllib.parse import parse_qs, urlsplit
 
 
 def main():
@@ -151,7 +143,6 @@ def main():
                         + "'. Skipping..."
                     )
                     raise
-                    continue
 
                 relativeVulnCount = stats["vulns"]
                 stats["urls"] += 1
@@ -419,11 +410,11 @@ def main():
                 + colors.yellow("[?]")
                 + " Web application might not be available. Do you still want to force-continue [y/N] "
             )
-            if inp == "n" or inp == "N" or inp == "":
+            if inp in ["n", "N", ""]:
                 print("User interrupt, exiting...")
                 sys.exit(-1)
 
-        if r == False and not args.no_stop:
+        if not r and not args.no_stop:
             lfimap_cleanup(config.webDir, stats)
 
         if csrf_r:
@@ -502,7 +493,7 @@ def main():
                             + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests"
                         )
 
-        if inp == "y" or inp == "Y" or inp == "":
+        if inp in ["y", "Y", ""]:
             args.updateCsrfToken = True
         else:
             args.updateCsrfToken = False
