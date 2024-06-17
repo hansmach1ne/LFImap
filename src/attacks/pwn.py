@@ -1,21 +1,19 @@
-# Import exploit modules
+"""Import exploit modules"""
+import threading
+
 from src.attacks.bash import exploit_bash
 from src.attacks.nc import exploit_nc
 from src.attacks.php import exploit_php
 from src.attacks.perl import exploit_perl
 from src.attacks.telnet import exploit_telnet
-from src.attacks.rfi import test_rfi
 from src.attacks.rfi import exploit_rfi
 from src.attacks.powershell import exploit_powershell
 from src.utils.arguments import args
-from src.httpreqs.post import POST
-from src.httpreqs.get import GET
 from src.servers.LFIshell import start_listener
-import threading
 
 
 def pwn(exploit):
-
+    """pwn"""
     # Starting the reverse shell listener
     listener_thread = threading.Thread(target=start_listener, args=(args.lport,))
     listener_thread.start()
