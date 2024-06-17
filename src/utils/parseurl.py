@@ -49,6 +49,10 @@ def is_valid_url(url):
 
 
 def is_valid_json(data):
+    """
+    Try to load the provided data (str) as json and return if it is or not successful
+    Returns boolean.
+    """
     try:
         json.loads(data)
         return True
