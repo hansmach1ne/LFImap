@@ -306,6 +306,11 @@ def parseFormDataLine(postData):
 
 
 def get_all_params(url):
+    """
+    Returns a dict of parameters from a given URL
+
+    Returns dict. 
+    """
     query_string = urlsplit(url).query
     params = {}
     for param in query_string.split("&"):
@@ -318,6 +323,11 @@ def get_all_params(url):
 
 
 def get_params_with_param(url):
+    """
+    Returns a `str` of parameters from a given URL (GET)
+
+    Returns str (delimiter used ', ').
+    """
     query_string = urlsplit(url).query
     params = dict(parse_qsl(query_string))
 
@@ -326,6 +336,11 @@ def get_params_with_param(url):
 
 
 def post_params_with_param(url):
+    """
+    Returns a `str` of parameters from a given URL (POST)
+
+    Returns str (delimiter used ', ').
+    """
     parsed_params = parse_qs(url)
 
     params_with_pwn_value = [
@@ -336,6 +351,11 @@ def post_params_with_param(url):
 
 
 def getHeadersToTest(dictionary):
+    """
+    Parse a given dictionary and returns a str of parameters
+
+    Returns str (delimiter used ', ')
+    """
     matching_keys = [
         key
         for key, value in dictionary.items()
