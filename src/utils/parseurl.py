@@ -25,8 +25,13 @@ def is_file_ending_with_newline(file_path):
 
 
 def is_valid_url(url):
-    if url == "" or url == None:
+    """
+    Return if the provided `url` valid
+    Returns boolean.
+    """
+    if url == "" or url is None:
         return False
+
     urlRegex = re.compile(
         r"^(?:http|ftp)s?://"  # http:// or https:// or ftp://
         r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # domain...
@@ -39,8 +44,8 @@ def is_valid_url(url):
 
     if re.match(urlRegex, url):
         return True
-    else:
-        return False
+
+    return False
 
 
 def is_valid_json(data):
