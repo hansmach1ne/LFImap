@@ -1,18 +1,20 @@
-import urllib.parse as urlparse
-from src.utils.arguments import args
-from src.configs.config import *
-from src.httpreqs.request import prepareRequest
-from src.httpreqs.request import REQUEST
-from src.utils.stats import stats
-from src.utils import colors
+"""Heuristics Tests"""
 import re
 import random
 import string
 
+import urllib.parse as urlparse
+from src.utils.arguments import args
+from src.configs.config import proxies
+from src.httpreqs.request import prepareRequest
+from src.httpreqs.request import REQUEST
+from src.utils.stats import stats
+from src.utils import colors
+
 
 def test_heuristics(url, post):
+    """Test Heuristics"""
     br = False
-    o = urlparse.urlparse(url)
 
     if args.verbose:
         print("\n" + colors.blue("[i]") + " Testing misc issues using heuristics...")
@@ -96,7 +98,7 @@ def test_heuristics(url, post):
         if res and rProtocol + ":" in res.text.lower():
             pattern = r'href="' + rProtocol + '\\:[^"]*'
             matches = re.findall(pattern, res.text.lower())
-            if len(matches) > 0 and vuln == False:
+            if len(matches) > 0 and not vuln:
                 print("    Positive regex match found in response: " + pattern)
                 vuln = True
                 if args.postreq and len(args.postreq) > 1:
@@ -155,7 +157,7 @@ def test_heuristics(url, post):
             if res and rProtocol + ":" in res.text.lower():
                 pattern = r'href="' + rProtocol + '\\:[^"]*'
                 matches = re.findall(pattern, res.text.lower())
-                if len(matches) > 0 and vuln == False:
+                if len(matches) > 0 and not vuln:
                     print("    Positive regex match found in response: " + pattern)
                     vuln = True
                     if args.postreq and len(args.postreq) > 1:
@@ -185,7 +187,7 @@ def test_heuristics(url, post):
                     + "\\b[^\"']*?[\"'][^>]*>"
                 )
                 matches = re.findall(pattern, res.text.lower())
-                if len(matches) > 0 and vuln == False:
+                if len(matches) > 0 and not vuln:
                     print("    Positive regex match found in response: " + pattern)
                     vuln = True
                     if args.postreq and len(args.postreq) > 1:
@@ -210,10 +212,9 @@ def test_heuristics(url, post):
                 pattern = (
                     r"" + rLetter3 + ";" + rNumb2 + '["\'"][\\s\\S]*\\<\\/script\\>'
                 )
-                compiled_pattern = re.compile(pattern)
 
                 matches = re.findall(pattern, res.text.lower())
-                if len(matches) > 0 and vuln == False:
+                if len(matches) > 0 and not vuln:
                     print("    Positive regex match found in response: " + pattern)
                     vuln = True
                     if args.postreq and len(args.postreq) > 1:
@@ -302,13 +303,13 @@ def test_heuristics(url, post):
                 stats["vulns"] += 1
 
         # Check for Sql errors
-        for i in range(len(sqlErrors)):
-            if res and sqlErrors[i] in res.text.lower():
+        for i, sql_error in enumerate(sqlErrors):
+            if res and sql_error in res.text.lower():
                 if len(args.postreq) > 1:
                     print(
                         colors.green("[+]")
                         + " Info disclosure -> '"
-                        + sqlErrors[i]
+                        + sql_error
                         + "' error detected -> '"
                         + u
                         + "' -> HTTP POST -> '"
@@ -319,7 +320,7 @@ def test_heuristics(url, post):
                     print(
                         colors.green("[+]")
                         + " Info disclosure -> '"
-                        + sqlErrors[i]
+                        + sql_error
                         + "' error detected -> '"
                         + u
                         + "'"
@@ -339,7 +340,7 @@ def test_heuristics(url, post):
     else:
         loc = None
 
-    if res and loc != None and "/lfi/" in loc:
+    if res and loc is not None and "/lfi/" in loc:
         # Full reflection + after the http|s protocol cases
         if (
             loc == "/lfi/a/../"
