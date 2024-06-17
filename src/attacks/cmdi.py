@@ -1,35 +1,46 @@
+"""Command Injection"""
+import string
+import random
+
 from src.httpreqs.request import REQUEST
 from src.httpreqs.request import prepareRequest
 from src.configs.config import proxies
 from src.utils.arguments import args
-from src.servers.ICMPServer import ICMPThread
 from src.utils import colors
-from src.utils.stats import stats
-import string
-import random
-import time
-
 
 def is_value_in_dict(dictionary, target_value):
+    """
+    Returns True if value is found inside the dict
+    
+    Return boolean.
+    """
     for key, value in dictionary.items():
         if key == target_value or value == target_value:
             return True
+
     return False
 
 
 def get_key_for_value(dictionary, target_value):
+    """
+    Get key from a given value
+    Return either the key or empty (str)
+    """
     for key, value in dictionary.items():
         if key == target_value or value == target_value:
             return key
+
     return ""
 
 
 def generate_random_alphanumeric():
+    """Generate 5 length random alphanumeric string"""
     alphanumeric_chars = string.ascii_letters + string.digits
     return "".join(random.choices(alphanumeric_chars, k=5))
 
 
 def test_cmd_injection(url, post):
+    """Test CMD Injection"""
     if args.verbose:
         print(colors.blue("[i]") + " Testing results-based OS command injection...")
 
@@ -43,7 +54,7 @@ def test_cmd_injection(url, post):
 
     randomVal = []
     # Generate 7 random dns subdomains
-    for i in range(7):
+    for _ in range(7):
         randomVal.append(generate_random_alphanumeric())
 
     if args.callback:
@@ -83,11 +94,10 @@ def test_cmd_injection(url, post):
         )
 
     nslookupFlag = False
-    callbackFlag = False
-    for i in range(len(cmdList)):
-        u, reqHeaders, postTest = prepareRequest(args.param, cmdList[i], url, post)
+    for _, cmd in enumerate(cmdList):
+        u, reqHeaders, postTest = prepareRequest(args.param, cmd, url, post)
 
-        if "nslookup" in cmdList[i] and args.verbose and not nslookupFlag:
+        if "nslookup" in cmd and args.verbose and not nslookupFlag:
             nslookupFlag = True
             if args.verbose:
                 print(
@@ -97,7 +107,7 @@ def test_cmd_injection(url, post):
                     + "'. Check your listener logs..."
                 )
 
-        r, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "CMD")
+        _, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "CMD")
 
         if not br or args.quick:
             return
