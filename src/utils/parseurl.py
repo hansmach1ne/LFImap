@@ -7,9 +7,12 @@ from src.configs import config
 import itertools
 
 
-# Check if there is a new line after the headers in reqfile. Return boolean.
 def is_file_ending_with_newline(file_path):
-    with open(file_path, "r") as file:
+    """
+    Check if there is a new line after the headers in reqfile.
+    Return boolean.
+    """
+    with open(file_path, "r", encoding="latin1") as file:
         content = file.read()
 
     # Find the index of the first empty line, which indicates the end of headers
@@ -17,8 +20,8 @@ def is_file_ending_with_newline(file_path):
 
     if index != -1 and index < len(content) - 1:
         return True
-    else:
-        return False
+
+    return False
 
 
 def is_valid_url(url):
