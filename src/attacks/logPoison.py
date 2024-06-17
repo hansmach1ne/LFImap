@@ -154,7 +154,7 @@ def exploit_log_poison(
                                 "",
                                 exploit=True,
                             )
-                            exploitPost = u + "&c=" + payloadStageTwo
+                            exploitPost = url + "&c=" + payloadStageTwo
                         break
 
                     elif config.tempArg in url:
