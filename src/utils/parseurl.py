@@ -151,6 +151,11 @@ def parse_url_parameters(url):
 
 
 def parse_url_from_request_file(file_path, force_ssl=False):
+    """
+    Parse a URL from a HTTP Request file. It will return a URL even if the request file
+      is not for a GET request
+    Returns a `url` from the HTTP Request file
+    """
     try:
         with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
