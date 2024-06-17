@@ -274,7 +274,6 @@ def get_params_with_param(url):
 
 def post_params_with_param(url):
     parsed_params = parse_qs(url)
-    params = dict(parse_qsl(url))
 
     params_with_pwn_value = [
         param for param, value in parsed_params.items() if args.param in value[0]
