@@ -1,10 +1,11 @@
+"""Log Poison"""
+import os
+
 from src.utils.arguments import args
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
-import os
 from src.utils import colors
-from src.configs import config
 from src.utils.info import printFancyString
 from src.utils.info import printInfo
 
@@ -32,7 +33,7 @@ def exploit_log_poison(
         )
         return
 
-    with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r") as f:
+    with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
         print(
             colors.green("[i]")
             + " Enumerating file system to discover access log location..."
