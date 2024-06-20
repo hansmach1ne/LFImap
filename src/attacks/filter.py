@@ -1,15 +1,15 @@
+"""Filter"""
 import os
 import urllib.parse as urlparse
 from src.utils.arguments import args
-from src.configs.config import *
-from src.utils.stats import stats
+from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.utils import colors
-from src.configs import config
 
 
 def test_filter(url, post):
+    """Test Filter"""
     if args.verbose:
         print(colors.blue("[i]") + " Testing with filter wrapper...")
 
@@ -54,11 +54,13 @@ def test_filter(url, post):
         + "%2500"
     )
 
-    for i in range(len(tests)):
-        u, reqHeaders, postTest = prepareRequest(args.param, tests[i], url, post)
+    for i, test in enumerate(tests):
+        u, reqHeaders, postTest = prepareRequest(args.param, test, url, post)
         _, br = REQUEST(u, reqHeaders, postTest, proxies, "LFI", "FILTER")
+
         if not br:
             return
+
         if i == 1 and args.quick:
             return
 
