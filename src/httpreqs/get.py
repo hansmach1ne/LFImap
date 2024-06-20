@@ -18,10 +18,12 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit=False):
                     headers=headers,
                     proxies=proxy,
                     verify=False,
+                    timeout=args.maxTimeout
                 )
             else:
                 res = requests.get(
-                    url, headers=headers, data="", proxies=proxy, verify=False
+                    url, headers=headers, data="", proxies=proxy, verify=False,
+                    timeout=args.maxTimeout
                 )
         else:
             stats["getRequests"] += 1
@@ -33,10 +35,12 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit=False):
                     headers=headers,
                     proxies=proxy,
                     verify=False,
+                    timeout=args.maxTimeout
                 )
             else:
                 res = requests.get(
-                    url, headers=headers, data="", proxies=proxy, verify=False
+                    url, headers=headers, data="", proxies=proxy, verify=False,
+                    timeout=args.maxTimeout
                 )
             if init(res, "GET", exploitType, url, "", headers, exploitMethod):
                 doContinue = False

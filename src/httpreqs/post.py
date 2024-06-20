@@ -11,12 +11,14 @@ def POST(url, headersData, postData, proxy, exploitType, exploitMethod, exploit=
     try:
         if exploit:
             res = requests.post(
-                url, data=postData, headers=headersData, proxies=proxy, verify=False
+                url, data=postData, headers=headersData, proxies=proxy, verify=False,
+                timeout=args.maxTimeout,
             )
         else:
             stats["postRequests"] += 1
             res = requests.post(
-                url, data=postData, headers=headersData, proxies=proxy, verify=False
+                url, data=postData, headers=headersData, proxies=proxy, verify=False,
+                timeout=args.maxTimeout,
             )
             if init(
                 res, "POST", exploitType, url, postData, headersData, exploitMethod
