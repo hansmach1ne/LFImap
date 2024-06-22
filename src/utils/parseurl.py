@@ -7,9 +7,12 @@ from src.configs import config
 import itertools
 
 
-# Check if there is a new line after the headers in reqfile. Return boolean.
 def is_file_ending_with_newline(file_path):
-    with open(file_path, "r") as file:
+    """
+    Check if there is a new line after the headers in reqfile.
+    Return boolean.
+    """
+    with open(file_path, "r", encoding="latin1") as file:
         content = file.read()
 
     # Find the index of the first empty line, which indicates the end of headers
@@ -17,13 +20,18 @@ def is_file_ending_with_newline(file_path):
 
     if index != -1 and index < len(content) - 1:
         return True
-    else:
-        return False
+
+    return False
 
 
 def is_valid_url(url):
-    if url == "" or url == None:
+    """
+    Return if the provided `url` valid
+    Returns boolean.
+    """
+    if url == "" or url is None:
         return False
+
     urlRegex = re.compile(
         r"^(?:http|ftp)s?://"  # http:// or https:// or ftp://
         r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # domain...
@@ -36,11 +44,15 @@ def is_valid_url(url):
 
     if re.match(urlRegex, url):
         return True
-    else:
-        return False
+
+    return False
 
 
 def is_valid_json(data):
+    """
+    Try to load the provided data (str) as json and return if it is or not successful
+    Returns boolean.
+    """
     try:
         json.loads(data)
         return True
@@ -49,16 +61,28 @@ def is_valid_json(data):
 
 
 def getDictKey(dictionary, n):
+    """
+    Return the n'th item's name from a list of keys() in a array form to a given dict
+    Return n'th item name from a dict
+    """
     keys = list(dictionary.keys())
     return keys[n]
 
 
 def getDictValue(dictionary, n):
+    """
+    Return the n'th item's value from a list of keys() in a array form to a given dict
+    Return n'th item value from a dict
+    """
     values = list(dictionary.values())
     return values[n]
 
 
 def convert_http_formdata_to_json(formdata):
+    """
+    Convert a HTTP FormData into JSON form
+    Returns JSON in `str` form
+    """
     items = formdata.split("&")
     parsed_data = {}
     for item in items:
@@ -71,8 +95,13 @@ def convert_http_formdata_to_json(formdata):
 
 
 def parse_http_request_file(file_path):
+    """
+    Open a provided HTTP Request file and parse it
+    Returns None if unsuccessful
+    Returns `method, headers_dict, form_data` 
+    """
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
             headers, post_data = http_request.split(
                 "\n\n", 1
@@ -97,6 +126,10 @@ def parse_http_request_file(file_path):
 
 
 def is_string_in_dict(s, my_dict):
+    """
+    Checks if a given `s` (str) is inside a provided `my_dict` (dict)
+    Returns boolean.
+    """
     for key, value in my_dict.items():
         if s in str(key) or s in str(value):
             return True
@@ -104,6 +137,10 @@ def is_string_in_dict(s, my_dict):
 
 
 def parse_url_parameters(url):
+    """
+    Parse a provided `url` to its components
+    Returns `str` of the parameters joined with ', '
+    """
     parsed_url = urlparse(url)
     query_parameters = parse_qs(parsed_url.query)
 
@@ -114,8 +151,13 @@ def parse_url_parameters(url):
 
 
 def parse_url_from_request_file(file_path, force_ssl=False):
+    """
+    Parse a URL from a HTTP Request file. It will return a URL even if the request file
+      is not for a GET request
+    Returns a `url` from the HTTP Request file
+    """
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
             lines = http_request.split("\n")
             get_request_line = lines[0]
@@ -144,7 +186,7 @@ def parse_url_from_request_file(file_path, force_ssl=False):
             else:
                 raise Exception("Host header not found in the request.")
 
-            if args.force_ssl:
+            if args.force_ssl or force_ssl:
                 url = f"https://{host}{path}"
             else:
                 url = f"http://{host}{path}"
@@ -159,6 +201,13 @@ def parse_url_from_request_file(file_path, force_ssl=False):
 
 
 def parseGet(url):
+    """
+    Parse a given URL and return back a list of URLs for testing,
+      each URL is for a given parameter being tested and the rest left
+      unmodified
+
+    Returns list of urls
+    """
     placeholder = {}
     testUrls = []
     # Dictionary of GET parameters
@@ -225,6 +274,10 @@ def parseGet(url):
 
 
 def parseFormDataLine(postData):
+    """
+    Parse FormData and return a list of testable parameters
+    Returns list.
+    """
     if postData == "":
         return ""
 
@@ -253,6 +306,11 @@ def parseFormDataLine(postData):
 
 
 def get_all_params(url):
+    """
+    Returns a dict of parameters from a given URL
+
+    Returns dict. 
+    """
     query_string = urlsplit(url).query
     params = {}
     for param in query_string.split("&"):
@@ -265,6 +323,11 @@ def get_all_params(url):
 
 
 def get_params_with_param(url):
+    """
+    Returns a `str` of parameters from a given URL (GET)
+
+    Returns str (delimiter used ', ').
+    """
     query_string = urlsplit(url).query
     params = dict(parse_qsl(query_string))
 
@@ -273,8 +336,12 @@ def get_params_with_param(url):
 
 
 def post_params_with_param(url):
+    """
+    Returns a `str` of parameters from a given URL (POST)
+
+    Returns str (delimiter used ', ').
+    """
     parsed_params = parse_qs(url)
-    params = dict(parse_qsl(url))
 
     params_with_pwn_value = [
         param for param, value in parsed_params.items() if args.param in value[0]
@@ -284,6 +351,11 @@ def post_params_with_param(url):
 
 
 def getHeadersToTest(dictionary):
+    """
+    Parse a given dictionary and returns a str of parameters
+
+    Returns str (delimiter used ', ')
+    """
     matching_keys = [
         key
         for key, value in dictionary.items()
@@ -293,7 +365,11 @@ def getHeadersToTest(dictionary):
 
 
 def compare_dicts(dict1, dict2):
-    # Check if the dictionaries have the same keys
+    """
+    Compare two dictionaries and return True if they have the same keys
+
+    Returns boolean.
+    """
     if set(dict1.keys()) != set(dict2.keys()):
         return False
 
