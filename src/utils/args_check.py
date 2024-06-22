@@ -1,10 +1,10 @@
+"""Args Check"""
 import re
 import os
 import sys
-import requests
 from datetime import datetime
 
-import src.httpreqs.httpHeaders
+import requests
 from src.httpreqs.httpHeaders import initHttpHeaders
 from src.httpreqs.httpHeaders import addHeader
 from src.configs import config
@@ -14,7 +14,6 @@ from src.utils.parseurl import parseGet
 from src.utils.parseurl import parseFormDataLine
 from src.utils.parseurl import parse_url_from_request_file
 from src.utils.parseurl import parse_http_request_file
-from src.utils.parseurl import convert_http_formdata_to_json
 from src.utils.parseurl import is_valid_url
 from src.utils.parseurl import get_all_params
 from src.utils.parseurl import parse_url_parameters
@@ -31,7 +30,7 @@ headers = {}
 
 
 def prepareHeaders():
-    # Init User-Agent, Connection, Accept headers + the ones explicitly specified
+    """Init User-Agent, Connection, Accept headers + the ones explicitly specified"""
     headersTemp = initHttpHeaders()
 
     if args.cookie is not None:
@@ -41,16 +40,16 @@ def prepareHeaders():
             headersTemp, "Content-Type", "application/x-www-form-urlencoded"
         )
     if args.httpheaders:
-        for i in range(len(args.httpheaders)):
-            if ":" not in args.httpheaders[i]:
+        for _, httpheader in enumerate(args.httpheaders):
+            if ":" not in httpheader:
                 print(
                     colors.red("[-] '")
-                    + args.httpheaders[i]
+                    + httpheader
                     + "'"
                     + " has no ':' to distinguish parameter name from value. Exiting..."
                 )
                 sys.exit(-1)
-            elif args.httpheaders[i][0] == ":":
+            elif httpheader[0] == ":":
                 print(
                     colors.red("[-]")
                     + " Header name cannot start with ':' character. Exiting..."
@@ -59,14 +58,15 @@ def prepareHeaders():
             else:
                 headersTemp = addHeader(
                     headersTemp,
-                    args.httpheaders[i].split(":", 1)[0].strip(),
-                    args.httpheaders[i].split(":", 1)[1].lstrip(),
+                    httpheader.split(":", 1)[0].strip(),
+                    httpheader.split(":", 1)[1].lstrip(),
                 )
 
     return headersTemp
 
 
 def checkArgs():
+    """Check Args"""
     urlfile = args.f
     agent = args.agent
     referer = args.referer
@@ -97,6 +97,7 @@ def checkArgs():
                 + "' doesn't exist. Exiting..."
             )
             sys.exit(-1)
+
         # RFC states that new line should be at the end, some servers might not even accept the request without it.
         if not is_file_ending_with_newline(args.reqfile):
             print(
@@ -172,7 +173,7 @@ def checkArgs():
         else:
             # Check if every line has defined protocol, if not modify the file and prepend it
             # Also check if every line has at least one parameter to test
-            with open(args.f, "r") as rf:
+            with open(args.f, "r", encoding="latin1") as rf:
                 lines = rf.readlines()
             for index, line in enumerate(lines):
                 line = line.strip()
@@ -345,7 +346,7 @@ def checkArgs():
                 if not os.path.isdir(os.path.dirname(os.path.abspath(abs_file_path))):
                     os.mkdir(os.path.dirname(os.path.abspath(abs_file_path)))
                 else:
-                    with open(abs_file_path, "a") as fp:
+                    with open(abs_file_path, "a", encoding="latin1") as fp:
                         fp.write("-----------START-----------\n")
                         fp.write(
                             "# Starting log: "
@@ -356,7 +357,6 @@ def checkArgs():
                         fp.write("---------------------------")
                         fp.write("\n\n")
         except:
-            raise
             print(
                 colors.red("[-]")
                 + " Failed creating log file: "
@@ -471,7 +471,7 @@ def checkArgs():
                 config.tempArg = item
                 break
     else:
-        with open(args.f, "r") as fi:
+        with open(args.f, "r", encoding="latin1") as fi:
             lines = fi.read().splitlines()
             for item in TEMP:
                 for line in lines:
@@ -515,16 +515,16 @@ def checkArgs():
                 headers, "Content-Type", "application/x-www-form-urlencoded"
             )
         if args.httpheaders:
-            for i in range(len(args.httpheaders)):
-                if ":" not in args.httpheaders[i]:
+            for _, httpheader in enumerate(args.httpheaders):
+                if ":" not in httpheader:
                     print(
                         colors.red("[-] '")
-                        + args.httpheaders[i]
+                        + httpheader
                         + "'"
                         + " has no ':' to distinguish parameter name from value. Exiting..."
                     )
                     sys.exit(-1)
-                elif args.httpheaders[i][0] == ":":
+                elif httpheader[0] == ":":
                     print(
                         colors.red("[-]")
                         + " Header name cannot start with ':' character. Exiting..."
@@ -533,8 +533,8 @@ def checkArgs():
                 else:
                     headers = addHeader(
                         headers,
-                        args.httpheaders[i].split(":", 1)[0].strip(),
-                        args.httpheaders[i].split(":", 1)[1].lstrip(),
+                        httpheader.split(":", 1)[0].strip(),
+                        httpheader.split(":", 1)[1].lstrip(),
                     )
 
         args.httpheaders = headers
