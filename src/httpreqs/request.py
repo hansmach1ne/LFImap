@@ -1,27 +1,24 @@
+"""Request"""
+import socket
+import time
+import urllib.parse as urlparse
+from urllib.parse import urlparse, parse_qs
+
+import requests
+import requests.exceptions
+import urllib3
+from bs4 import BeautifulSoup
+
 from src.utils.arguments import args
 from src.utils.encodings import encode
 from src.utils.stats import stats
 from src.configs import config
-from src.attacks.pwn import *
+from src.attacks.pwn import pwn
 from src.utils import colors
 from src.utils.cleanup import lfimap_cleanup
-from src.utils.args_check import headers
-from src.utils.parseurl import is_valid_json
-from src.utils.parseurl import convert_http_formdata_to_json
-from src.utils.info import printFancyString
-
-import requests
-import requests.exceptions
-import socket
-import time
-import urllib.parse as urlparse
-import urllib3
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
-
 
 def extract_all_parameters(url, form_data=""):
-    # Extract parameters from the URL
+    """Extract parameters from the URL"""
     parsed_url = urlparse(url)
     url_parameters = parse_qs(parsed_url.query)
 
@@ -48,6 +45,7 @@ def extract_all_parameters(url, form_data=""):
 
 
 def extract_input_fields(html_content):
+    """Extract Input Fields"""
     input_fields = {}
 
     soup = BeautifulSoup(html_content, "html.parser")
@@ -64,6 +62,7 @@ def extract_input_fields(html_content):
 def addToExploits(
     req, request_type, exploit_type, getVal, postVal, headers, attackType, os
 ):
+    """Add to Exploits"""
     e = {}
     e["REQUEST_TYPE"] = request_type
     e["EXPLOIT_TYPE"] = exploit_type
@@ -79,21 +78,22 @@ def addToExploits(
 def init(
     req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable=False
 ):
+    """Init the list of exploits"""
     # if(config.scriptName != ""):
     config.TO_REPLACE.append(config.scriptName)
     config.TO_REPLACE.append(config.scriptName + ".php")
     config.TO_REPLACE.append(config.scriptName + "%00")
 
     if checkPayload(req) or cmdInjectable:
-        for i in range(len(config.TO_REPLACE)):
+        for _, to_replace in enumerate(config.TO_REPLACE):
             if postVal and isinstance(postVal, bytes):
                 postVal = postVal.decode("utf-8")
 
             # print(config.TO_REPLACE)
             if (
-                getVal.find(config.TO_REPLACE[i]) != -1
-                or getVal.find("?c=" + config.TO_REPLACE[i]) != -1
-                or postVal.find(config.TO_REPLACE[i]) != -1
+                getVal.find(to_replace) != -1
+                or getVal.find("?c=" + to_replace) != -1
+                or postVal.find(to_replace) != -1
             ):
                 # Determine the os based on the payload that worked
                 # TODO improve this to reduce false positives.
@@ -105,10 +105,10 @@ def init(
                 else:
                     os = "linux"
 
-                u = getVal.replace(config.TO_REPLACE[i], config.tempArg)
+                u = getVal.replace(to_replace, config.tempArg)
 
-                if postVal.find(config.TO_REPLACE[i]):
-                    p = postVal.replace(config.TO_REPLACE[i], config.tempArg)
+                if postVal.find(to_replace):
+                    p = postVal.replace(to_replace, config.tempArg)
                     # Determine the os based on the payload that worked
                     # TODO improve this to reduce false positives.
                     if (
@@ -148,13 +148,16 @@ def init(
 
                 if not args.no_stop:
                     return True
+
                 return False
 
     return False
 
 
-# Checks if sent payload is executed, if any of the below keywords are in the response, returns True
 def checkPayload(webResponse):
+    """
+    Checks if sent payload is executed, if any of the below keywords are in the response, returns True
+    """
     for word in config.KEY_WORDS:
         if webResponse:
             if word in webResponse.text:
@@ -168,6 +171,9 @@ def checkPayload(webResponse):
 
 
 def prepareRequest(parameter, payload, url, postData):
+    """
+    Prepare a request to be sent
+    """
     if parameter in url:
         reqUrl = url.replace(parameter, encode(payload))
     else:
@@ -208,6 +214,7 @@ def REQUEST(
     followRedirect=True,
     isCsrfRequest=False,
 ):
+    """Send out a request"""
     doContinue = True
     res = None
     if not postData:
@@ -245,7 +252,6 @@ def REQUEST(
                 r = args.previousres
                 input_fields = extract_input_fields(r.text)
                 parameters = extract_all_parameters(config.url, config.postreq)
-
             else:
                 # CSRF token request.
                 # csrf_r,_ = REQUEST(args.csrfUrl, headers, args.csrfData, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = True)
@@ -301,6 +307,7 @@ def REQUEST(
                     proxies=proxy,
                     verify=False,
                     allow_redirects=followRedirect,
+                    timeout=args.maxTimeout
                 )
 
             # Check if CSRF token is returned in the response, prepare it for the next request
@@ -349,7 +356,7 @@ def REQUEST(
                 doContinue = False
 
         if args.log:
-            with open(args.log, "a+") as fp:
+            with open(args.log, "a+", encoding="latin1") as fp:
 
                 # Log request
                 splitted = url.split("/")
