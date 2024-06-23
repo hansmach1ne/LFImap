@@ -1,19 +1,22 @@
+"""HTTP Headers"""
 import random
 from src.utils.arguments import args
-import src.utils.args_check
 
 
 def addHeader(headers, newKey, newVal):
+    """"Add a header to the dict"""
     headers[newKey] = newVal
     return headers
 
 
 def delHeader(headers, key):
+    """Remove header from the dict"""
     headers.pop(key)
     return headers
 
 
 def initHttpHeaders():
+    """Init the header dict"""
     headers = {}
     user_agents = [
         "Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",
