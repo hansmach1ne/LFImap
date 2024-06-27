@@ -1,7 +1,8 @@
 import argparse
 from src.utils.banner import BannerHelpFormatter
-
+import sys
 print("")
+sys.stdout.flush()
 parser = argparse.ArgumentParser(
     description="LFImap, Local File Inclusion discovery and exploitation tool",
     formatter_class=BannerHelpFormatter,
@@ -325,9 +326,16 @@ outputOptions.add_argument(
 
 otherGroup = parser.add_argument_group("OTHER")
 otherGroup.add_argument(
+    "-nc",
+    "--no-color",
+    action="store_true",
+    dest="no_colors",
+    help="\t\t Disables colored output for STDOUT\n",
+)
+otherGroup.add_argument(
     "-v",
     "--verbose",
-    action="store_true",
+    action="store_true",    
     dest="verbose",
     help="\t\t Print more detailed output when performing attacks\n",
 )

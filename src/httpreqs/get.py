@@ -47,12 +47,13 @@ def GET(url, headers, proxy, exploitType, exploitMethod, exploit=False):
         if args.delay:
             time.sleep(args.delay / 1000)
     except KeyboardInterrupt:
-        print("\nKeyboard interrupt detected. Exiting...")
+        print("\nKeyboard interrupt detected. Exiting...", flush = True)
         lfimap_cleanup()
     except requests.exceptions.InvalidSchema:
         if args.verbose:
             print(
-                "InvalidSchema exception detected. Server doesn't understand the parameter value."
+                "InvalidSchema exception detected. Server doesn't understand the parameter value.",
+                flush = True
             )
     except:
         pass

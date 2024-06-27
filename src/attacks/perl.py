@@ -21,7 +21,8 @@ def exploit_perl(exploit, method, ip, port):
     )
 
     print(
-        colors.purple("[?]") + " Checking if perl is available on the target system..."
+        colors.purple("[?]") + " Checking if perl is available on the target system...",
+        flush = True
     )
 
     if method == "INPUT":

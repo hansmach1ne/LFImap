@@ -25,7 +25,8 @@ class ICMPThread(threading.Thread):
             if args.verbose:
                 print(
                     colors.red("[-]")
-                    + " Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'"
+                    + " Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'",
+                    flush = True
                 )
 
     def getResult(self):

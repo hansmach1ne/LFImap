@@ -14,7 +14,8 @@ def exploit_bash(exploit, method, ip, port):
     post = exploit["POSTVAL"]
 
     print(
-        colors.purple("[?]") + " Checking if bash is available on the target system..."
+        colors.purple("[?]") + " Checking if bash is available on the target system...",
+        flush = True
     )
 
     if method == "INPUT" and config.tempArg not in url:

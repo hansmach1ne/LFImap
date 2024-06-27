@@ -9,7 +9,7 @@ from src.utils import colors
 def test_input(url, post):
     """Test Input"""
     if args.verbose:
-        print(colors.blue("[i]") + " Testing with input wrapper...")
+        print(colors.blue("[i]") + " Testing with input wrapper...", flush = True)
 
     tests = []
     posts = []

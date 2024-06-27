@@ -13,7 +13,7 @@ from src.utils import colors
 def test_data(url, post):
     """Test Data"""
     if args.verbose:
-        print(colors.blue("[i]") + " Testing with data wrapper...")
+        print(colors.blue("[i]") + " Testing with data wrapper...", flush = True)
 
     tests = []
 

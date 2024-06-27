@@ -28,7 +28,7 @@ def random_with_N_digits(n):
 def test_rfi(url, post):
     """Test RFI"""
     if args.verbose:
-        print(colors.blue("[i]") + " Testing remote file inclusion...")
+        print(colors.blue("[i]") + " Testing remote file inclusion...", flush = True)
 
     # Localhost RFI test
     if args.lhost:
@@ -41,7 +41,8 @@ def test_rfi(url, post):
                     colors.red("[-]")
                     + "Directory '"
                     + scriptDirectory
-                    + "/src/exploits' can't be accessed. Cannot setup local web server for RFI test."
+                    + "/src/exploits' can't be accessed. Cannot setup local web server for RFI test.",
+                    flush = True
                 )
                 return
 
@@ -85,7 +86,7 @@ def test_rfi(url, post):
 
     # Internet RFI test
     if args.verbose:
-        print(colors.blue("[i]") + " Trying to include internet-hosted file...")
+        print(colors.blue("[i]") + " Trying to include internet-hosted file...", flush = True)
 
     pylds = []
     pylds.append(
@@ -134,7 +135,8 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
             colors.red("[-]")
             + " Cannot locate '"
             + payloadFile
-            + "'. Skipping RFI exploit..."
+            + "'. Skipping RFI exploit...",
+            flush = True
         )
         return
     else:
@@ -150,11 +152,11 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     with fileinput.FileInput(temporaryFile, inplace=True) as file:
         for line in file:
             # This redirects stdout to a file, replacing the ip and port values as needed
-            print(line.replace("IP_ADDRESS", ip))
+            print(line.replace("IP_ADDRESS", ip), flush = True)
 
     with fileinput.FileInput(temporaryFile, inplace=True) as file:
         for line in file:
-            print(line.replace("PORT_NUMBER", str(port)))
+            print(line.replace("PORT_NUMBER", str(port)), flush = True)
 
 
 def exploit_rfi(exploit, method, ip, port):

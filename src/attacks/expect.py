@@ -9,7 +9,7 @@ from src.utils import colors
 def test_expect(url, post):
     """Test Expect"""
     if args.verbose:
-        print(colors.blue("[i]") + " Testing with expect wrapper...")
+        print(colors.blue("[i]") + " Testing with expect wrapper...", flush = True)
 
     tests = []
     tests.append("expect%3A%2F%2Fcat%20%2Fetc%2Fpasswd")

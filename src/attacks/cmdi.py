@@ -42,7 +42,7 @@ def generate_random_alphanumeric():
 def test_cmd_injection(url, post):
     """Test CMD Injection"""
     if args.verbose:
-        print(colors.blue("[i]") + " Testing results-based OS command injection...")
+        print(colors.blue("[i]") + " Testing results-based OS command injection...", flush = True)
 
     cmdList = []
     cmdList.append(
@@ -104,7 +104,8 @@ def test_cmd_injection(url, post):
                     colors.blue("[i]")
                     + " Trying to provoke an external callback to '"
                     + args.callback
-                    + "'. Check your listener logs..."
+                    + "'. Check your listener logs...",
+                    flush = True
                 )
 
         _, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "CMD")

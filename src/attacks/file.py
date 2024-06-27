@@ -9,7 +9,7 @@ from src.utils import colors
 def test_file_trunc(url, post):
     """Test file trunc"""
     if args.verbose:
-        print(colors.blue("[i]") + " Testing with file wrapper...")
+        print(colors.blue("[i]") + " Testing with file wrapper...", flush = True)
 
     tests = []
     tests.append("file%3A%2F%2F%2Fetc%2Fpasswd")
