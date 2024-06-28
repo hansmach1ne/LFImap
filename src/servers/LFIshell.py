@@ -65,6 +65,10 @@ def start_listener(listen_port):
                     break
             if response:
                 print(response.decode(), end="", flush = True)
+    except OSError:
+        # Addr already in use
+        # This is expected if multiple RCEs are avilable and user tries to spawn the shell
+        pass
     except Exception as e:
         print(f"Error: {e}", flush = True)
     finally:

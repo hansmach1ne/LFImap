@@ -143,7 +143,7 @@ def init(
                     )
                     stats["vulns"] += 1
 
-                if args.revshell and (explType == "RFI" or explType == "RCE"):
+                if args.revshell and (explType == "RFI" or explType == "RCE" or attackType == "TRUNC"):
                     pwn(exploit)
 
                 if not args.no_stop:

@@ -77,5 +77,8 @@ def pwn(exploit):
         else:
             exploit_powershell(exploit, "CMD", ip, port)
 
-    # Join the listener thread
-    listener_thread.join()
+    # Join the listener thread, with 10 second timeout in case deadlock, unexpected expections or other errors occur in the meantime
+    # This will make sure that execution continues no matter the occurring issues in the thread
+    listener_thread.join(timeout=10)
+
+    return

