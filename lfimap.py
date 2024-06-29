@@ -13,7 +13,7 @@ from requests.packages.urllib3 import disable_warnings
 from src.configs import config
 
 # Import utilities
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 from src.utils.args_check import checkArgs
 from src.utils.cleanup import lfimap_cleanup
 from src.utils.stats import stats
@@ -44,18 +44,18 @@ from src.httpreqs.request import extract_input_fields
 
 
 def main():
-    args = ArgumentHandler()
+    args  = init_args()
 
-    config.proxies["http"] = args.args['proxyAddr']
-    config.proxies["https"] = args.args['proxyAddr']
+    config.proxies["http"] = args['proxyAddr']
+    config.proxies["https"] = args['proxyAddr']
 
     config.lastPrintedStringLen = 1
     # If multiple URLS are specified from a file
-    if args.args['f']:
+    if args['f']:
 
         for iteration, url in enumerate(config.parsedUrls):
-            if not args.args['postreq'] or "".join(args.args['postreq'][0]) == "":
-                args.args['postreq'] = [""]
+            if not args['postreq'] or "".join(args['postreq'][0]) == "":
+                args['postreq'] = [""]
 
                 # Just in case check if URL is correctly formatted, it should be always correct up to this point, though...
                 if not is_valid_url(url):
@@ -80,15 +80,15 @@ def main():
                 )
 
             # CSRF token refresh with -F is not supported yet #TODO
-            args.args['updateCsrfToken'] = False
-            args.args['previouscsrf'] = False
+            args['updateCsrfToken'] = False
+            args['previouscsrf'] = False
 
             # POST testing with -F is not supported
-            args.args['is_tested_param_post'] = False
+            args['is_tested_param_post'] = False
 
             try:
                 # Check if url is accessible
-                tempUrl, headers, postTest = prepareRequest(args.args['param'], "test", url, "")
+                tempUrl, headers, postTest = prepareRequest(args['param'], "test", url, "")
                 try:
                     r, _ = REQUEST(
                         tempUrl, headers, postTest, config.proxies, "test", "test"
@@ -99,8 +99,8 @@ def main():
                     if r == False:
                         continue
 
-                    if args.args['http_valid']:
-                        for http_code in args.args['http_valid']:
+                    if args['http_valid']:
+                        for http_code in args['http_valid']:
                             if http_code == r.status_code:
                                 okCode = True
 
@@ -149,8 +149,8 @@ def main():
                 relativeVulnCount = stats["vulns"]
                 stats["urls"] += 1
 
-                if not args.args['postreq'] or "".join(args.args['postreq'][0]) == "":
-                    if not args.args['verbose']:
+                if not args['postreq'] or "".join(args['postreq'][0]) == "":
+                    if not args['verbose']:
                         print("")
                     print(
                         colors.yellow("[i]")
@@ -160,7 +160,7 @@ def main():
                     )
 
                 # Perform all tests
-                if args.args['test_all']:
+                if args['test_all']:
                     test_heuristics(url, "")
                     test_filter(url, "")
                     test_input(url, "")
@@ -182,31 +182,31 @@ def main():
 
                 default = True
 
-                if args.args['heuristics']:
+                if args['heuristics']:
                     default = False
                     test_heuristics(url, "")
-                if args.args['php_filter']:
+                if args['php_filter']:
                     default = False
                     test_filter(url, "")
-                if args.args['php_input']:
+                if args['php_input']:
                     default = False
                     test_input(url, "")
-                if args.args['php_data']:
+                if args['php_data']:
                     default = False
                     test_data(url, "")
-                if args.args['php_expect']:
+                if args['php_expect']:
                     default = False
                     test_expect(url, "")
-                if args.args['rfi']:
+                if args['rfi']:
                     default = False
                     test_rfi(url, "")
-                if args.args['file']:
+                if args['file']:
                     default = False
                     test_file_trunc(url, "")
-                if args.args['trunc']:
+                if args['trunc']:
                     default = False
                     test_trunc(url, "")
-                if args.args['cmd']:
+                if args['cmd']:
                     default = False
                     test_cmd_injection(url, "")
 
@@ -250,20 +250,20 @@ def main():
         tposts = []  # list of strings
         theaders = []  # list of dicts
 
-        # Find out where the args.args['param'] are located at
-        if args.args['param'] in config.url:
+        # Find out where the args['param'] are located at
+        if args['param'] in config.url:
             pwnInGetExists = True
         else:
             pwnInGetExists = False
 
-        if config.postreq and args.args['param'] in config.postreq:
+        if config.postreq and args['param'] in config.postreq:
             pwnInPostExists = True
         else:
             pwnInPostExists = False
 
-        found_in_headkeys = args.args['param'] in args.args['httpheaders'].keys()
-        found_in_headvalues = args.args['param'] in (
-            str(value) for value in args.args['httpheaders'].values()
+        found_in_headkeys = args['param'] in args['httpheaders'].keys()
+        found_in_headvalues = args['param'] in (
+            str(value) for value in args['httpheaders'].values()
         )
 
         if found_in_headkeys or found_in_headvalues:
@@ -272,26 +272,26 @@ def main():
             pwnInHeadersExists = False
 
         # Default val
-        args.args['updateCsrfToken'] = False
-        args.args['previouscsrf'] = False
+        args['updateCsrfToken'] = False
+        args['previouscsrf'] = False
 
         tempUrl = ""
 
         # Test header
         if pwnInHeadersExists:
             tempUrl, headers, postTest = prepareRequest(
-                args.args['param'], args.args['param'], config.url, config.postreq
+                args['param'], args['param'], config.url, config.postreq
             )
             turls.append(tempUrl)
             theaders.append(headers)
             tposts.append(postTest)
         else:
-            if pwnInGetExists or not pwnInPostExists and args.args['param'] in args.args['url'][0]:
+            if pwnInGetExists or not pwnInPostExists and args['param'] in args['url'][0]:
                 # If the PWN is not in the url, parse all of the parameters
-                if args.args['param'] not in config.url:
-                    for iteration, url in enumerate(args.args['url']):
+                if args['param'] not in config.url:
+                    for iteration, url in enumerate(args['url']):
                         tempUrl, headers, postTest = prepareRequest(
-                            args.args['param'], args.args['param'], url, config.postreq
+                            args['param'], args['param'], url, config.postreq
                         )
                         turls.append(tempUrl)
                         theaders.append(headers)
@@ -301,7 +301,7 @@ def main():
                 else:
                     pwnInGetExists = True
                     tempUrl, headers, postTest = prepareRequest(
-                        args.args['param'], args.args['param'], config.url, config.postreq
+                        args['param'], args['param'], config.url, config.postreq
                     )
                     turls.append(tempUrl)
                     theaders.append(headers)
@@ -309,17 +309,17 @@ def main():
 
             if not pwnInGetExists and not pwnInHeadersExists:
                 # If the PWN keyword is in the FORM-data line
-                if config.postreq and args.args['param'] not in config.postreq:
-                    for i, post in enumerate(args.args['postreq']):
+                if config.postreq and args['param'] not in config.postreq:
+                    for i, post in enumerate(args['postreq']):
                         tempUrl, headers, postTest = prepareRequest(
-                            args.args['param'], args.args['param'], config.url, post
+                            args['param'], args['param'], config.url, post
                         )
                         turls.append(tempUrl)
                         theaders.append(headers)
                         tposts.append(postTest)
                 elif config.postreq != None:
                     tempUrl, headers, postTest = prepareRequest(
-                        args.args['param'], args.args['param'], config.url, config.postreq
+                        args['param'], args['param'], config.url, config.postreq
                     )
                     turls.append(tempUrl)
                     theaders.append(headers)
@@ -340,24 +340,24 @@ def main():
         # print(config.postreq)
 
         # Check if csrf token is being used.
-        # print(args.args['csrfData'])
+        # print(args['csrfData'])
         # print(config.postreq)
 
         # TODO edge case where the url is not specified, but the csrf token is inside the request.?
         csrf_r = ""
-        if args.args['csrfUrl']:
+        if args['csrfUrl']:
             # Send request to the csrf token endpoint
-            if not args.args['csrfMethod']:
-                args.args['csrfMethod'] = "GET"
-            if not args.args['csrfData']:
-                if args.args['postreq']:
-                    args.args['csrfData'] = args.args['postreq'][0]
+            if not args['csrfMethod']:
+                args['csrfMethod'] = "GET"
+            if not args['csrfData']:
+                if args['postreq']:
+                    args['csrfData'] = args['postreq'][0]
                 else:
-                    args.args['csrfData'] = ""
+                    args['csrfData'] = ""
             csrf_r, _ = REQUEST(
-                args.args['csrfUrl'],
+                args['csrfUrl'],
                 headers,
-                args.args['csrfData'],
+                args['csrfData'],
                 config.proxies,
                 "test",
                 "test",
@@ -377,8 +377,8 @@ def main():
             followRedirect=True,
             isCsrfRequest=False,
         )
-        if not args.args['http_valid']:
-            args.args['http_valid'] = [200, 204, 301, 302, 303]
+        if not args['http_valid']:
+            args['http_valid'] = [200, 204, 301, 302, 303]
 
         if (isinstance(r, bool) and not r) or (isinstance(r, str) and not r.text):
             print(
@@ -388,7 +388,7 @@ def main():
             sys.exit(-1)
 
         if r and r.status_code >= 500:
-            if r.status_code not in args.args['http_valid']:
+            if r.status_code not in args['http_valid']:
                 print(
                     colors.red("[-]")
                     + " Initial request yielded "
@@ -416,7 +416,7 @@ def main():
                 print("User interrupt, exiting...")
                 sys.exit(-1)
 
-        if not r and not args.args['no_stop']:
+        if not r and not args['no_stop']:
             lfimap_cleanup(config.webDir, stats)
 
         if csrf_r:
@@ -430,24 +430,24 @@ def main():
 
         inp = "Initial"
         # Check if csrf token is present in the request.
-        if args.args['csrfParameter']:
-            if args.args['csrfParameter'] not in parameters.keys():
+        if args['csrfParameter']:
+            if args['csrfParameter'] not in parameters.keys():
                 print(
                     colors.red("[-]")
                     + " Specified csrf parameter '"
-                    + args.args['csrfParameter']
+                    + args['csrfParameter']
                     + "' not found in the initial request. LFImap will not be able to refresh the csrf token."
                 )
-                args.args['updateCsrfToken'] = False
-            elif args.args['csrfParameter'] not in input_fields.keys():
+                args['updateCsrfToken'] = False
+            elif args['csrfParameter'] not in input_fields.keys():
                 print(
                     colors.red("[-]")
                     + " Specified csrf parameter '"
-                    + args.args['csrfParameter']
+                    + args['csrfParameter']
                     + "' not found in the initial response. LFImap will not be able to refresh the csrf token."
                 )
-                args.args['updateCsrfToken'] = False
-            elif parameters[args.args['csrfParameter']] != input_fields[args.args['csrfParameter']]:
+                args['updateCsrfToken'] = False
+            elif parameters[args['csrfParameter']] != input_fields[args['csrfParameter']]:
                 inp = input(
                     "\n"
                     + colors.yellow("[?]")
@@ -461,7 +461,7 @@ def main():
         else:
             for param_name in parameters.keys():
                 if param_name in config.csrf_params:
-                    args.args['csrfParameter'] = param_name
+                    args['csrfParameter'] = param_name
                     # If there is the same key value pair in both dicts
                     if any(item in input_fields.items() for item in parameters.items()):
                         print(
@@ -470,19 +470,19 @@ def main():
                             + param_name
                             + "' appears to be anti-forgery token, but it hasn't been refreshed by the web application. LFImap will not auto-refresh csrf token value"
                         )
-                        args.args['updateCsrfToken'] = False
+                        args['updateCsrfToken'] = False
                     elif len(input_fields) == 0:
-                        if not args.args['csrfUrl']:
+                        if not args['csrfUrl']:
                             print(
                                 colors.blue("[i]")
                                 + " Parameter '"
                                 + param_name
                                 + "' appears to be anti-forgery token, however the csrf token is not present in the response. Please specify the  '--csrf-url' to auto-refresh the token."
                             )
-                            args.args['updateCsrfToken'] = False
+                            args['updateCsrfToken'] = False
                     elif (
-                        parameters[args.args['csrfParameter']]
-                        != input_fields[args.args['csrfParameter']]
+                        parameters[args['csrfParameter']]
+                        != input_fields[args['csrfParameter']]
                     ):
                         inp = input(
                             "\n"
@@ -496,13 +496,13 @@ def main():
                         )
 
         if inp in ["y", "Y", ""]:
-            args.args['updateCsrfToken'] = True
+            args['updateCsrfToken'] = True
         else:
-            args.args['updateCsrfToken'] = False
+            args['updateCsrfToken'] = False
 
         okCode = False
-        if args.args['http_valid']:
-            for http_code in args.args['http_valid']:
+        if args['http_valid']:
+            for http_code in args['http_valid']:
                 if http_code == r.status_code:
                     okCode = True
 
@@ -520,7 +520,7 @@ def main():
                     + str(r.status_code)
                     + "\n"
                 )
-                if not args.args['no_stop']:
+                if not args['no_stop']:
                     sys.exit(-1)
 
         else:
@@ -538,7 +538,7 @@ def main():
                     + str(r.status_code)
                     + "\n"
                 )
-                if not args.args['no_stop']:
+                if not args['no_stop']:
                     sys.exit(-1)
 
         # Main loop that will perform testing
@@ -565,7 +565,7 @@ def main():
                         + "'"
                     )
 
-            if args.args['param'] in url:
+            if args['param'] in url:
                 print(
                     "\n"
                     + colors.yellow("[i]")
@@ -573,9 +573,9 @@ def main():
                     + get_params_with_param(url)
                     + "' parameter..."
                 )
-                args.args['is_tested_param_post'] = False  # Needed to handle -i
+                args['is_tested_param_post'] = False  # Needed to handle -i
 
-            elif args.args['postreq'] and args.args['param'] in post:
+            elif args['postreq'] and args['param'] in post:
                 print(
                     "\n"
                     + colors.yellow("[i]")
@@ -583,15 +583,15 @@ def main():
                     + post_params_with_param(post)
                     + "' parameter..."
                 )
-                args.args['is_tested_param_post'] = True  # Needed to handle -i
+                args['is_tested_param_post'] = True  # Needed to handle -i
             else:
                 is_tested_param_post = False
 
             # Skip CSRF parameter testing..
-            if args.args['csrfParameter']:
+            if args['csrfParameter']:
                 if (
-                    args.args['csrfParameter'] + "=" + args.args['param'] in url
-                    or args.args['csrfParameter'] + "=" + args.args['param'] in post
+                    args['csrfParameter'] + "=" + args['param'] in url
+                    or args['csrfParameter'] + "=" + args['param'] in post
                 ):
                     print(
                         colors.blue("[-]") + " Skipping testing of anti-forgery token"
@@ -601,7 +601,7 @@ def main():
             stats["urls"] += 1
 
             # Perform all tests
-            if args.args['test_all']:
+            if args['test_all']:
                 test_heuristics(url, post)
                 test_filter(url, post)
                 test_input(url, post)
@@ -630,14 +630,14 @@ def main():
                         )
 
                 if stats["vulns"] == relativeVulnCount:
-                    if args.args['param'] in url:
+                    if args['param'] in url:
                         print(
                             colors.red("[-]")
                             + " GET parameter '"
                             + get_params_with_param(url)
                             + "' doesn't seem to be vulnerable...."
                         )
-                    if args.args['postreq'] and args.args['param'] in post:
+                    if args['postreq'] and args['param'] in post:
                         print(
                             colors.red("[-]")
                             + " Form-line parameter '"
@@ -648,31 +648,31 @@ def main():
 
             default = True
 
-            if args.args['heuristics']:
+            if args['heuristics']:
                 default = False
                 test_heuristics(url, post)
-            if args.args['php_filter']:
+            if args['php_filter']:
                 default = False
                 test_filter(url, post)
-            if args.args['php_input']:
+            if args['php_input']:
                 default = False
                 test_input(url, post)
-            if args.args['php_data']:
+            if args['php_data']:
                 default = False
                 test_data(url, post)
-            if args.args['php_expect']:
+            if args['php_expect']:
                 default = False
                 test_expect(url, post)
-            if args.args['file']:
+            if args['file']:
                 default = False
                 test_file_trunc(url, post)
-            if args.args['rfi']:
+            if args['rfi']:
                 default = False
                 test_rfi(url, post)
-            if args.args['trunc']:
+            if args['trunc']:
                 default = False
                 test_trunc(url, post)
-            if args.args['cmd']:
+            if args['cmd']:
                 default = False
                 test_cmd_injection(url, post)
 
@@ -704,14 +704,14 @@ def main():
                     )
 
             if stats["vulns"] == relativeVulnCount:
-                if args.args['param'] in url:
+                if args['param'] in url:
                     print(
                         colors.red("[-]")
                         + " GET parameter '"
                         + get_params_with_param(url)
                         + "' doesn't seem to be vulnerable...."
                     )
-                if args.args['postreq'] and args.args['param'] in post:
+                if args['postreq'] and args['param'] in post:
                     print(
                         colors.red("[-]")
                         + " Form-line parameter '"

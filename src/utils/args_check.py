@@ -8,7 +8,7 @@ import requests
 from src.httpreqs.httpHeaders import initHttpHeaders
 from src.httpreqs.httpHeaders import addHeader
 from src.configs import config
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 from src.utils import colors
 from src.utils.parseurl import parseGet
 from src.utils.parseurl import parseFormDataLine
@@ -25,8 +25,8 @@ scriptDirectory = os.path.dirname(
 )
 scriptDirectory = os.path.abspath(scriptDirectory)
 
-args = ArgumentHandler()
-args.args['mode'] = ""
+args  = init_args()
+args['mode'] = ""
 headers = {}
 
 
@@ -34,14 +34,14 @@ def prepareHeaders():
     """Init User-Agent, Connection, Accept headers + the ones explicitly specified"""
     headersTemp = initHttpHeaders()
 
-    if args.args['cookie'] is not None:
-        headersTemp = addHeader(headersTemp, "Cookie", args.args['cookie'])
-    if args.args['mode'] == "post":
+    if args['cookie'] is not None:
+        headersTemp = addHeader(headersTemp, "Cookie", args['cookie'])
+    if args['mode'] == "post":
         headersTemp = addHeader(
             headersTemp, "Content-Type", "application/x-www-form-urlencoded"
         )
-    if args.args['httpheaders']:
-        for _, httpheader in enumerate(args.args['httpheaders']):
+    if args['httpheaders']:
+        for _, httpheader in enumerate(args['httpheaders']):
             if ":" not in httpheader:
                 print(
                     colors.red("[-] '")
@@ -68,11 +68,11 @@ def prepareHeaders():
 
 def checkArgs():
     """Check Args"""
-    args = ArgumentHandler()
+    args  = init_args()
 
-    urlfile = args.args['f']
-    agent = args.args['agent']
-    referer = args.args['referer']
+    urlfile = args['f']
+    agent = args['agent']
+    referer = args['referer']
 
     if scriptDirectory == "":
         separator = ""
@@ -80,84 +80,84 @@ def checkArgs():
         separator = os.sep
 
     # Check if mandatory args are provided
-    if not args.args['f'] and not args.args['url'] and not args.args['reqfile']:
+    if not args['f'] and not args['url'] and not args['reqfile']:
         print(
             colors.red("[-]")
             + " Mandatory arguments ('-U', '-F' or '-R') unspecified. Refer to help menu with '-h' or '--help'."
         )
         sys.exit(-1)
 
-    if not args.args['param']:
-        args.args['param'] = "PWN"
+    if not args['param']:
+        args['param'] = "PWN"
 
     # -R specified
-    if args.args['reqfile']:
-        if not os.path.exists(args.args['reqfile']):
+    if args['reqfile']:
+        if not os.path.exists(args['reqfile']):
             print(
                 colors.red("[-]")
                 + " Specified request file '"
-                + args.args['reqfile']
+                + args['reqfile']
                 + "' doesn't exist. Exiting..."
             )
             sys.exit(-1)
 
         # RFC states that new line should be at the end, some servers might not even accept the request without it.
-        if not is_file_ending_with_newline(args.args['reqfile']):
+        if not is_file_ending_with_newline(args['reqfile']):
             print(
                 colors.red("[-]")
                 + " Request file '"
-                + args.args['reqfile']
+                + args['reqfile']
                 + "' doesn't contain empty space after the headers. Please add it and try again..."
             )
             sys.exit(-1)
-        elif os.path.exists(args.args['reqfile']):
-            args.args['url'] = parse_url_from_request_file(args.args['reqfile'], args.args['force_ssl'])
-            config.url = args.args['url']
-            args.args['method'], args.args['httpheaders'], args.args['postreq'] = parse_http_request_file(
-                args.args['reqfile']
+        elif os.path.exists(args['reqfile']):
+            args['url'] = parse_url_from_request_file(args['reqfile'], args['force_ssl'])
+            config.url = args['url']
+            args['method'], args['httpheaders'], args['postreq'] = parse_http_request_file(
+                args['reqfile']
             )
         else:
             print(
                 colors.red("[-]")
                 + " Specified request file '"
-                + args.args['reqfile']
+                + args['reqfile']
                 + "' doesn't exist. Exiting..."
             )
             sys.exit(-1)
 
-    # args.args['mode'] is needed for exploitation modules to better understand in what context the vulnerability lies
+    # args['mode'] is needed for exploitation modules to better understand in what context the vulnerability lies
 
     # if '-F' is provided, set mode to file
-    if args.args['f']:
-        args.args['mode'] = "file"
+    if args['f']:
+        args['mode'] = "file"
     # if '-D' is provided, set mode to post
-    elif args.args['postreq']:
-        args.args['mode'] = "post"
+    elif args['postreq']:
+        args['mode'] = "post"
     # otherwise, set mode to get
     else:
-        args.args['mode'] = "get"
+        args['mode'] = "get"
 
-    tempUrl = args.args['url']
+    tempUrl = args['url']
     # IF URL protocol not specified, add it
-    if args.args['mode'] != "file":
+    if args['mode'] != "file":
         if not tempUrl.startswith("http") and not tempUrl.startswith("socks"):
-            if args.args['force_ssl']:
-                if args.args['verbose']:
+            if args['force_ssl']:
+                if args['verbose']:
                     print(
                         colors.blue("[i]")
                         + " No URL scheme provided. Defaulting to https."
                     )
-                args.args['url'] = "https://" + tempUrl
+                args['url'] = "https://" + tempUrl
                 tempUrl = "https://" + tempUrl
                 config.url = "https://" + tempUrl
 
             else:
-                if args.args['verbose']:
+                if args['verbose']:
                     print(
                         colors.blue("[i]")
                         + " No URL scheme provided. Defaulting to http."
                     )
-                args.args['url'] = "http://" + tempUrl
+                args['url'] = "http://" + tempUrl
                 tempUrl = "http://" + tempUrl
                 config.url = "http://" + tempUrl
 
@@ -168,19 +168,19 @@ def checkArgs():
     # file mode
     else:
         # Check if file exists
-        if not os.path.exists(args.args['f']):
+        if not os.path.exists(args['f']):
             print(
-                colors.red("[-]") + " File '" + args.args['f'] + "' doesn't exist. Exiting..."
+                colors.red("[-]") + " File '" + args['f'] + "' doesn't exist. Exiting..."
             )
             sys.exit(-1)
         else:
             # Check if every line has defined protocol, if not modify the file and prepend it
             # Also check if every line has at least one parameter to test
-            with open(args.args['f'], "r", encoding="latin1") as rf:
+            with open(args['f'], "r", encoding="latin1") as rf:
                 lines = rf.readlines()
             for index, line in enumerate(lines):
                 line = line.strip()
-                protocol = "https://" if args.args['force_ssl'] else "http://"
+                protocol = "https://" if args['force_ssl'] else "http://"
 
                 # Ignore empty lines from urlfile
                 if line == "":
@@ -189,7 +189,7 @@ def checkArgs():
                 # If first key of the dictionary is empty, there are no parameters to test, skip
                 first_key = next(iter(get_all_params(line)), None)
                 if first_key == "":
-                    if args.args['verbose']:
+                    if args['verbose']:
                         print(
                             colors.blue("[i]")
                             + " URL line #"
@@ -206,19 +206,19 @@ def checkArgs():
                     config.urls.append(protocol + line)
 
     # -F specified, parse URL one by one
-    if args.args['f']:
+    if args['f']:
         parsedList = []
         for l in config.urls:
             l = l.strip()
-            if args.args['param'] not in l:
+            if args['param'] not in l:
                 if (
                     parse_url_parameters(l) not in parsedList
                     and parseGet(l) not in config.parsedUrls
                 ):
                     config.parsedUrls.append(parseGet(l))
-                args.args['automaticGetParams'] = True
+                args['automaticGetParams'] = True
             else:
-                args.args['automaticGetParams'] = False
+                args['automaticGetParams'] = False
                 if (
                     parse_url_parameters(l) not in parsedList
                     and l.strip() not in config.parsedUrls
@@ -236,64 +236,64 @@ def checkArgs():
 
     # -F is not specified, parse single URL
     else:
-        if args.args['param'] not in args.args['url']:
-            config.url = args.args['url']
-            args.args['url'] = parseGet(args.args['url'])
-            args.args['automaticGetParams'] = True
+        if args['param'] not in args['url']:
+            config.url = args['url']
+            args['url'] = parseGet(args['url'])
+            args['automaticGetParams'] = True
         else:
-            args.args['automaticGetParams'] = False
-            config.url = args.args['url']
-            args.args['url'] = [args['url']]
+            args['automaticGetParams'] = False
+            config.url = args['url']
+            args['url'] = [args['url']]
 
     # Parse -D or -J FORM-data
-    if not args.args['reqfile']:
-        if args.args['f']:
-            args.args['postreq'] = False
-        elif args.args['postreq']:
-            config.postreq = args.args['postreq']
-            args.args['postreq'] = parseFormDataLine(args.args['postreq'])
-        # elif(args.args['json']):
-        #    config.jsonreq = args.args['json']
-        #    args.args['postreq'] = parseFormDataLine(args.args['json'])
-        #    print(args.args['postreq'])
+    if not args['reqfile']:
+        if args['f']:
+            args['postreq'] = False
+        elif args['postreq']:
+            config.postreq = args['postreq']
+            args['postreq'] = parseFormDataLine(args['postreq'])
+        # elif(args['json']):
+        #    config.jsonreq = args['json']
+        #    args['postreq'] = parseFormDataLine(args['json'])
+        #    print(args['postreq'])
         else:
-            args.args['postreq'] = False
+            args['postreq'] = False
 
-    if not args.args['f']:
+    if not args['f']:
         if (
-            tempUrl == "".join(args.args['url'])
-            and not args.args['postreq']
-            and args.args['param'] not in tempUrl
+            tempUrl == "".join(args['url'])
+            and not args['postreq']
+            and args['param'] not in tempUrl
         ):
-            if args.args['reqfile'] and not is_string_in_dict(args.args['param'], args.args['httpheaders']):
+            if args['reqfile'] and not is_string_in_dict(args['param'], args['httpheaders']):
                 print(colors.red("[-]") + " No parameters to test. Exiting...")
                 sys.exit(-1)
 
     # If -M is not specified, set the method to test manually
-    if not args.args['method'] and not args.args['reqfile']:
-        if args.args['f']:
-            args.args['method'] = "GET"
-        elif args.args['postreq']:
-            args.args['method'] = "POST"
-        elif args.args['url']:
-            args.args['method'] = "GET"
+    if not args['method'] and not args['reqfile']:
+        if args['f']:
+            args['method'] = "GET"
+        elif args['postreq']:
+            args['method'] = "POST"
+        elif args['url']:
+            args['method'] = "GET"
 
-    if not args.args['postreq']:
+    if not args['postreq']:
         config.postreq = None
 
     # Check if provided trunc wordlist exists
-    if args.args['truncWordlist']:
-        if not os.path.isfile(args.args['truncWordlist']):
+    if args['truncWordlist']:
+        if not os.path.isfile(args['truncWordlist']):
             print(
                 colors.red("[-]")
                 + " Specified truncation wordlist '"
-                + args.args['truncWordlist']
+                + args['truncWordlist']
                 + "' doesn't exist. Exiting..."
             )
             sys.exit(-1)
     else:
-        if args.args['uselong']:
-            args.args['truncWordlist'] = (
+        if args['uselong']:
+            args['truncWordlist'] = (
                 scriptDirectory
                 + separator
                 + "src"
@@ -303,7 +303,7 @@ def checkArgs():
                 + "long.txt"
             )
         else:
-            args.args['truncWordlist'] = (
+            args['truncWordlist'] = (
                 scriptDirectory
                 + separator
                 + "src"
@@ -312,23 +312,23 @@ def checkArgs():
                 + separator
                 + "short.txt"
             )
-        if (not os.path.exists(args.args['truncWordlist'])) and (args.args['test_all'] or args.args['trunc']):
+        if (not os.path.exists(args['truncWordlist'])) and (args['test_all'] or args['trunc']):
             print(
                 colors.red("[-]")
                 + " Cannot locate "
-                + args.args['truncWordlist']
+                + args['truncWordlist']
                 + " wordlist. Since '-a' or '-t' was specified, lfimap will exit..."
             )
             sys.exit(-1)
 
     # Check if log file is correct and writeable
-    if args.args['log']:
+    if args['log']:
         try:
-            if os.path.exists(args.args['log']):
+            if os.path.exists(args['log']):
                 print(
                     colors.blue("[i]")
                     + " Log destination file '"
-                    + args.args['log']
+                    + args['log']
                     + "' already exists"
                 )
                 users_input = input(
@@ -340,12 +340,12 @@ def checkArgs():
                 else:
                     print("")
             else:
-                if not os.path.isabs(args.args['log']):
+                if not os.path.isabs(args['log']):
                     script_dir = os.path.dirname(__file__)
-                    rel_path = args.args['log']
+                    rel_path = args['log']
                     abs_file_path = os.path.join(script_dir, rel_path)
                 else:
-                    abs_file_path = args.args['log']
+                    abs_file_path = args['log']
                 if not os.path.isdir(os.path.dirname(os.path.abspath(abs_file_path))):
                     os.mkdir(os.path.dirname(os.path.abspath(abs_file_path)))
                 else:
@@ -363,21 +363,21 @@ def checkArgs():
             print(
                 colors.red("[-]")
                 + " Failed creating log file: "
-                + args.args['log']
+                + args['log']
                 + ". Check if you specified correct path and have correct permissions..."
             )
             sys.exit(-1)
 
     # Checks if '--lhost' and '--lport' are provided with '-x'
-    if args.args['revshell']:
-        if not args.args['lhost']:
+    if args['revshell']:
+        if not args['lhost']:
             print(
                 colors.red("[-]")
                 + " Please, specify localhost IP ('--lhost') for reverse shell. Exiting..."
             )
             sys.exit(-1)
 
-        if not args.args['lport']:
+        if not args['lport']:
             print(
                 colors.red("[-]")
                 + " Please, specify localhost PORT number ('--lport') for reverse shell. Exiting..."
@@ -386,11 +386,11 @@ def checkArgs():
 
         else:
             reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
-            if not re.match(reg, args.args['lhost']):
+            if not re.match(reg, args['lhost']):
                 print(colors.red("[-]") + " LHOST IP address is not valid. Exiting...")
                 sys.exit(-1)
 
-            if args.args['lport'] < 1 or args.args['lport'] > 65534:
+            if args['lport'] < 1 or args['lport'] > 65534:
                 print(
                     colors.red("[-]")
                     + " LPORT must be between 1 and 65534. Exiting ..."
@@ -398,59 +398,59 @@ def checkArgs():
                 sys.exit(-1)
 
     # Check if CSRF URL is correctly specified
-    if args.args['csrfUrl']:
-        if not args.args['csrfUrl'].startswith("http"):
-            if args.args['verbose']:
+    if args['csrfUrl']:
+        if not args['csrfUrl'].startswith("http"):
+            if args['verbose']:
                 print(
                     colors.blue("[i]")
                     + " No URL scheme provided in csrf extraction endpoint. Defaulting to http..."
                 )
-            args.args['csrfUrl'] = "http://" + args.args['csrfUrl']
+            args['csrfUrl'] = "http://" + args['csrfUrl']
 
-    if args.args['csrfUrl'] and not is_valid_url(args.args['csrfUrl']):
+    if args['csrfUrl'] and not is_valid_url(args['csrfUrl']):
         print(
             colors.red("[-]")
             + " Specified csrf extraction URL '"
-            + args.args['csrfUrl']
+            + args['csrfUrl']
             + "' is not valid. Exiting..."
         )
         sys.exit(-1)
 
     # Check if second order URL is correctly specified
-    if args.args['checkUrl']:
-        if not args.args['checkUrl'].startswith("http"):
-            if args.args['verbose']:
+    if args['checkUrl']:
+        if not args['checkUrl'].startswith("http"):
+            if args['verbose']:
                 print(
                     colors.blue("[i]")
                     + " No URL scheme provided in second order check endpoint. Defaulting to http..."
                 )
-            args.args['checkUrl'] = "http://" + args.args['checkUrl']
+            args['checkUrl'] = "http://" + args['checkUrl']
         print(
             colors.blue("[i]")
             + " Second order endpoint is specified. After each payload, lookup is done to check if payload triggered interesting behaviour."
         )
 
-    if args.args['checkUrl'] and not is_valid_url(args.args['checkUrl']):
+    if args['checkUrl'] and not is_valid_url(args['checkUrl']):
         print(
             colors.red("[-]")
             + " Specified second order check URL '"
-            + args.args['checkUrl']
+            + args['checkUrl']
             + "' is not valid. Exiting..."
         )
         sys.exit(-1)
 
     # Check if proxy is correct
-    if args.args['proxyAddr']:
+    if args['proxyAddr']:
         try:
-            if "http" not in args.args['proxyAddr'] and "socks" not in args.args['proxyAddr']:
-                if args.args['verbose']:
+            if "http" not in args['proxyAddr'] and "socks" not in args['proxyAddr']:
+                if args['verbose']:
                     print(
                         colors.blue("[i]")
                         + " No proxy scheme provided. Defaulting to http..."
                     )
-                args.args['proxyAddr'] = "http://" + args.args['proxyAddr']
+                args['proxyAddr'] = "http://" + args['proxyAddr']
 
-            r = requests.get(args.args['proxyAddr'], timeout=5, verify=False)
+            r = requests.get(args['proxyAddr'], timeout=5, verify=False)
             if r.status_code >= 500:
                 print(
                     colors.red("[-]")
@@ -468,13 +468,13 @@ def checkArgs():
     TEMP = ["CMD", "TEMP", "LFIMAP", "LFI"]
 
     # TODO check this
-    if args.args['mode'] != "file":
+    if args['mode'] != "file":
         for item in TEMP:
-            if item not in args.args['url']:
+            if item not in args['url']:
                 config.tempArg = item
                 break
     else:
-        with open(args.args['f'], "r", encoding="latin1") as fi:
+        with open(args['f'], "r", encoding="latin1") as fi:
             lines = fi.read().splitlines()
             for item in TEMP:
                 for line in lines:
@@ -484,15 +484,15 @@ def checkArgs():
                     config.tempArg = item
                     break
 
-    if args.args['encodings']:
-        for e in args.args['encodings']:
+    if args['encodings']:
+        for e in args['encodings']:
             if e != "U" and e != "B":
                 print(
                     "[!] Invalid payload encoding specified. Please use 'U' for URL or 'B' for BASE64 encoded payload."
                 )
                 sys.exit(-1)
 
-    if args.args['mode'] == "file" and args.args['revshell']:
+    if args['mode'] == "file" and args['revshell']:
         print(
             "[!] Specifying multiple url testing with '-F' and reverse shell attack with '-x' is NOT RECOMMENDED, unless you know what you're doing."
         )
@@ -501,24 +501,24 @@ def checkArgs():
             print(colors.blue("[i]") + " User selected exit option. Exiting...")
             sys.exit(-1)
 
-    if args.args['quick'] and args.args['verbose']:
+    if args['quick'] and args['verbose']:
         print(
             colors.blue("[i]") + " Quick mode enabled, LFImap will use fewer payloads."
         )
 
-    if not args.args['reqfile']:
+    if not args['reqfile']:
         # Preparing headers
         headers = prepareHeaders()
-        if args.args['cookie'] is not None:
-            headers = addHeader(headers, "Cookie", args.args['cookie'])
-        if args.args['mode'] == "post":
-            # if(args.args['json']): headers = addHeader(headers, "Content-Type", "application/json")
+        if args['cookie'] is not None:
+            headers = addHeader(headers, "Cookie", args['cookie'])
+        if args['mode'] == "post":
+            # if(args['json']): headers = addHeader(headers, "Content-Type", "application/json")
             # else:
             headers = addHeader(
                 headers, "Content-Type", "application/x-www-form-urlencoded"
             )
-        if args.args['httpheaders']:
-            for _, httpheader in enumerate(args.args['httpheaders']):
+        if args['httpheaders']:
+            for _, httpheader in enumerate(args['httpheaders']):
                 if ":" not in httpheader:
                     print(
                         colors.red("[-] '")
@@ -540,16 +540,16 @@ def checkArgs():
                         httpheader.split(":", 1)[1].lstrip(),
                     )
 
-        args.args['httpheaders'] = headers
+        args['httpheaders'] = headers
 
     # warning if cookie/Authorization header is not provided
     cookieIsPresent = False
-    for key, value in args.args['httpheaders'].items():
+    for key, value in args['httpheaders'].items():
         if key.lower() == "cookie" or key.lower() == "authorization":
             cookieIsPresent = True
             break
     if not cookieIsPresent:
-        if args.args['verbose']:
+        if args['verbose']:
             print(
                 colors.blue("[i]")
                 + " Session information is not provided. LFImap might have troubles finding vulnerabilities if testing endpoint requires authentication."

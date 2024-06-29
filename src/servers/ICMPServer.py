@@ -2,7 +2,7 @@
 import threading
 import socket
 from src.utils import colors
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 
 
 class ICMPThread(threading.Thread):
@@ -12,7 +12,7 @@ class ICMPThread(threading.Thread):
         self.result = None
 
     def run(self):
-        args = ArgumentHandler()
+        args  = init_args()
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
             s.setsockopt(socket.SOL_IP, socket.IP_HDRINCL, 1)

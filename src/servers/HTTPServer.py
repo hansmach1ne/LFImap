@@ -2,7 +2,7 @@
 import http.client
 import http.server
 import socketserver
-from src.utils.arguments import ArgumentHandler
+from src.utils.arguments import init_args
 from src.configs import config
 from src.utils import colors
 
@@ -18,11 +18,11 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
 def serve_forever():
     """Serve Forever"""
-    args = ArgumentHandler()
+    args  = init_args()
     socketserver.TCPServer.allow_reuse_address = True
     try:
         with socketserver.TCPServer(("", config.rfi_test_port), ServerHandler) as httpd:
-            if args.args['verbose']:
+            if args['verbose']:
                 print(
                     colors.blue("[i]")
                     + " Opening temporary local web server on port "
@@ -34,7 +34,7 @@ def serve_forever():
             except:
                 httpd.server_close()
     except:
-        if args.args['verbose']:
+        if args['verbose']:
             print(
                 colors.red("[-]")
                 + " Cannot setup local web server on port "
