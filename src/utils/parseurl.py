@@ -121,7 +121,7 @@ def parse_http_request_file(file_path):
             return method, headers_dict, form_data
 
     except Exception as e:
-        print(f"Error parsing HTTP request: {e}")
+        print(f"Error parsing HTTP request: {e}", flush = True)
         return None
 
 

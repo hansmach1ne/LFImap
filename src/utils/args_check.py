@@ -47,13 +47,15 @@ def prepareHeaders():
                     colors.red("[-] '")
                     + httpheader
                     + "'"
-                    + " has no ':' to distinguish parameter name from value. Exiting..."
+                    + " has no ':' to distinguish parameter name from value. Exiting...",
+                    flush = True
                 )
                 sys.exit(-1)
             elif httpheader[0] == ":":
                 print(
                     colors.red("[-]")
-                    + " Header name cannot start with ':' character. Exiting..."
+                    + " Header name cannot start with ':' character. Exiting...",
+                    flush = True
                 )
                 sys.exit(-1)
             else:
@@ -83,7 +85,8 @@ def checkArgs():
     if not args['f'] and not args['url'] and not args['reqfile']:
         print(
             colors.red("[-]")
-            + " Mandatory arguments ('-U', '-F' or '-R') unspecified. Refer to help menu with '-h' or '--help'."
+            + " Mandatory arguments ('-U', '-F' or '-R') unspecified. Refer to help menu with '-h' or '--help'.",
+            flush = True
         )
         sys.exit(-1)
 
@@ -148,7 +151,8 @@ def checkArgs():
                 if args['verbose']:
                     print(
                         colors.blue("[i]")
-                        + " No URL scheme provided. Defaulting to https."
+                        + " No URL scheme provided. Defaulting to https.",
+                        flush = True
                     )
                 args['url'] = "https://" + tempUrl
                 tempUrl = "https://" + tempUrl
@@ -158,7 +162,8 @@ def checkArgs():
                 if args['verbose']:
                     print(
                         colors.blue("[i]")
-                        + " No URL scheme provided. Defaulting to http."
+                        + " No URL scheme provided. Defaulting to http.",
+                        flush = True
                     )
                 args['url'] = "http://" + tempUrl
                 tempUrl = "http://" + tempUrl
@@ -166,7 +171,8 @@ def checkArgs():
 
         # Check if URL is valid
         if not is_valid_url(tempUrl):
-            print(tempUrl + " is not valid URL.")
+            print(tempUrl + " is not valid URL."),
+            flush = True
             sys.exit(-1)
     # file mode
     else:
@@ -201,7 +207,8 @@ def checkArgs():
                             + ". "
                             + "'"
                             + line
-                            + "' contains no parameters to test. Ignoring this entry..."
+                            + "' contains no parameters to test. Ignoring this entry...",
+                            flush = True
                         )
                     continue
                 elif line.startswith("http"):
@@ -322,7 +329,8 @@ def checkArgs():
                 colors.red("[-]")
                 + " Cannot locate "
                 + args['truncWordlist']
-                + " wordlist. Since '-a' or '-t' was specified, lfimap will exit..."
+                + " wordlist. Since '-a' or '-t' was specified, lfimap will exit...",
+                flush = True
             )
             sys.exit(-1)
 
@@ -341,10 +349,10 @@ def checkArgs():
                     "[?] Do you want to continue and append logs to it? Y/n: "
                 )
                 if users_input == "n" and users_input != "N":
-                    print("User exit...")
+                    print("User exit...", flush = True)
                     sys.exit(-1)
                 else:
-                    print("")
+                    print("", flush = True)
             else:
                 if not os.path.isabs(args['log']):
                     script_dir = os.path.dirname(__file__)
@@ -370,7 +378,8 @@ def checkArgs():
                 colors.red("[-]")
                 + " Failed creating log file: "
                 + args['log']
-                + ". Check if you specified correct path and have correct permissions..."
+                + ". Check if you specified correct path and have correct permissions...",
+                flush = True
             )
             sys.exit(-1)
 
@@ -379,14 +388,16 @@ def checkArgs():
         if not args['lhost']:
             print(
                 colors.red("[-]")
-                + " Please, specify localhost IP ('--lhost') for reverse shell. Exiting..."
+                + " Please, specify localhost IP ('--lhost') for reverse shell. Exiting...",
+                flush = True
             )
             sys.exit(-1)
 
         if not args['lport']:
             print(
                 colors.red("[-]")
-                + " Please, specify localhost PORT number ('--lport') for reverse shell. Exiting..."
+                + " Please, specify localhost PORT number ('--lport') for reverse shell. Exiting...",
+                flush = True
             )
             sys.exit(-1)
 
@@ -399,7 +410,8 @@ def checkArgs():
             if args['lport'] < 1 or args['lport'] > 65534:
                 print(
                     colors.red("[-]")
-                    + " LPORT must be between 1 and 65534. Exiting ..."
+                    + " LPORT must be between 1 and 65534. Exiting ...",
+                    flush = True
                 )
                 sys.exit(-1)
 
@@ -409,7 +421,8 @@ def checkArgs():
             if args['verbose']:
                 print(
                     colors.blue("[i]")
-                    + " No URL scheme provided in csrf extraction endpoint. Defaulting to http..."
+                    + " No URL scheme provided in csrf extraction endpoint. Defaulting to http...",
+                    flush = True
                 )
             args['csrfUrl'] = "http://" + args['csrfUrl']
 
@@ -418,7 +431,8 @@ def checkArgs():
             colors.red("[-]")
             + " Specified csrf extraction URL '"
             + args['csrfUrl']
-            + "' is not valid. Exiting..."
+            + "' is not valid. Exiting...",
+            flush = True
         )
         sys.exit(-1)
 
@@ -428,12 +442,14 @@ def checkArgs():
             if args['verbose']:
                 print(
                     colors.blue("[i]")
-                    + " No URL scheme provided in second order check endpoint. Defaulting to http..."
+                    + " No URL scheme provided in second order check endpoint. Defaulting to http...",
+                    flush = True
                 )
             args['checkUrl'] = "http://" + args['checkUrl']
         print(
             colors.blue("[i]")
-            + " Second order endpoint is specified. After each payload, lookup is done to check if payload triggered interesting behaviour."
+            + " Second order endpoint is specified. After each payload, lookup is done to check if payload triggered interesting behaviour.",
+            flush = True
         )
 
     if args['checkUrl'] and not is_valid_url(args['checkUrl']):
@@ -453,7 +469,8 @@ def checkArgs():
                 if args['verbose']:
                     print(
                         colors.blue("[i]")
-                        + " No proxy scheme provided. Defaulting to http..."
+                        + " No proxy scheme provided. Defaulting to http...",
+                        flush = True
                     )
                 args['proxyAddr'] = "http://" + args['proxyAddr']
 
@@ -461,11 +478,12 @@ def checkArgs():
             if r.status_code >= 500:
                 print(
                     colors.red("[-]")
-                    + " Proxy is available, but it returns server-side error code >=500. Exiting..."
+                    + " Proxy is available, but it returns server-side error code >=500. Exiting...",
+                    flush = True
                 )
                 sys.exit(-1)
         except:
-            print(colors.red("[-]") + " Proxy is not available. Exiting...")
+            print(colors.red("[-]") + " Proxy is not available. Exiting...", flush = True)
             sys.exit(-1)
     else:
         config.tOut = 1
@@ -495,22 +513,25 @@ def checkArgs():
         for e in args['encodings']:
             if e != "U" and e != "B":
                 print(
-                    "[!] Invalid payload encoding specified. Please use 'U' for URL or 'B' for BASE64 encoded payload."
+                    "[!] Invalid payload encoding specified. Please use 'U' for URL or 'B' for BASE64 encoded payload.",
+                    flush = True
                 )
                 sys.exit(-1)
 
     if args['mode'] == "file" and args['revshell']:
         print(
-            "[!] Specifying multiple url testing with '-F' and reverse shell attack with '-x' is NOT RECOMMENDED, unless you know what you're doing."
+            "[!] Specifying multiple url testing with '-F' and reverse shell attack with '-x' is NOT RECOMMENDED, unless you know what you're doing.",
+            flush = True
         )
         option = input("[?] Are you sure you want to continue? y/n: ")
         if option != "y" and option != "Y":
-            print(colors.blue("[i]") + " User selected exit option. Exiting...")
+            print(colors.blue("[i]") + " User selected exit option. Exiting...", flush = True)
             sys.exit(-1)
 
     if args['quick'] and args['verbose']:
         print(
-            colors.blue("[i]") + " Quick mode enabled, LFImap will use fewer payloads."
+            colors.blue("[i]") + " Quick mode enabled, LFImap will use fewer payloads.",
+            flush = True
         )
 
     if not args['reqfile']:
@@ -531,13 +552,15 @@ def checkArgs():
                         colors.red("[-] '")
                         + httpheader
                         + "'"
-                        + " has no ':' to distinguish parameter name from value. Exiting..."
+                        + " has no ':' to distinguish parameter name from value. Exiting...",
+                        flush = True
                     )
                     sys.exit(-1)
                 elif httpheader[0] == ":":
                     print(
                         colors.red("[-]")
-                        + " Header name cannot start with ':' character. Exiting..."
+                        + " Header name cannot start with ':' character. Exiting...",
+                        flush = True
                     )
                     sys.exit(-1)
                 else:
@@ -559,7 +582,8 @@ def checkArgs():
         if args['verbose']:
             print(
                 colors.blue("[i]")
-                + " Session information is not provided. LFImap might have troubles finding vulnerabilities if testing endpoint requires authentication."
+                + " Session information is not provided. LFImap might have troubles finding vulnerabilities if testing endpoint requires authentication.",
+                flush = True
             )
 
     return True

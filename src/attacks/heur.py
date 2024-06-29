@@ -100,7 +100,7 @@ def test_heuristics(url, post):
             pattern = r'href="' + rProtocol + '\\:[^"]*'
             matches = re.findall(pattern, res.text.lower())
             if len(matches) > 0 and not vuln:
-                print("    Positive regex match found in response: " + pattern)
+                print("    Positive regex match found in response: " + pattern, flush = True)
                 vuln = True
                 if args['postreq'] and len(args['postreq']) > 1:
                     print(
@@ -109,14 +109,16 @@ def test_heuristics(url, post):
                         + u
                         + "' -> HTTP POST -> '"
                         + postTest
-                        + "' -> reflection in HREF attribute value"
+                        + "' -> reflection in HREF attribute value",
+                        flush = True
                     )
                 else:
                     print(
                         colors.green("[+]")
                         + " XSS -> '"
                         + u
-                        + "' -> reflection in HREF atribute value"
+                        + "' -> reflection in HREF atribute value",
+                        flush = True
                     )
 
         if (
@@ -143,14 +145,16 @@ def test_heuristics(url, post):
                     + u
                     + "' -> HTTP POST -> '"
                     + postTest
-                    + "' -> full reflection in response"
+                    + "' -> full reflection in response",
+                    flush = True
                 )
             else:
                 print(
                     colors.green("[+]")
                     + " XSS -> '"
                     + u
-                    + "' -> full reflection in response"
+                    + "' -> full reflection in response",
+                    flush = True
                 )
 
         else:
@@ -159,7 +163,7 @@ def test_heuristics(url, post):
                 pattern = r'href="' + rProtocol + '\\:[^"]*'
                 matches = re.findall(pattern, res.text.lower())
                 if len(matches) > 0 and not vuln:
-                    print("    Positive regex match found in response: " + pattern)
+                    print("    Positive regex match found in response: " + pattern, flush = True)
                     vuln = True
                     if args['postreq'] and len(args['postreq']) > 1:
                         print(
@@ -168,14 +172,16 @@ def test_heuristics(url, post):
                             + u
                             + "' -> HTTP POST -> '"
                             + postTest
-                            + "' -> reflection in HREF attribute value. Check if javascript: is allowed"
+                            + "' -> reflection in HREF attribute value. Check if javascript: is allowed",
+                            flush = True
                         )
                     else:
                         print(
                             colors.green("[+]")
                             + " XSS -> '"
                             + u
-                            + "' -> reflection in HREF atribute value. Check if javascript: is allowed"
+                            + "' -> reflection in HREF atribute value. Check if javascript: is allowed",
+                            flush = True
                         )
 
             # ATTRIBUTE
@@ -189,7 +195,7 @@ def test_heuristics(url, post):
                 )
                 matches = re.findall(pattern, res.text.lower())
                 if len(matches) > 0 and not vuln:
-                    print("    Positive regex match found in response: " + pattern)
+                    print("    Positive regex match found in response: " + pattern, flush = True)
                     vuln = True
                     if args['postreq'] and len(args['postreq']) > 1:
                         print(
@@ -198,14 +204,16 @@ def test_heuristics(url, post):
                             + u
                             + "' -> HTTP POST -> '"
                             + postTest
-                            + "' -> reflection in tag attribute"
+                            + "' -> reflection in tag attribute",
+                            flush = True
                         )
                     else:
                         print(
                             colors.green("[+]")
                             + " XSS -> '"
                             + u
-                            + "' -> reflection in tag atribute"
+                            + "' -> reflection in tag atribute",
+                            flush = True
                         )
 
             # SCRIPT
@@ -216,7 +224,7 @@ def test_heuristics(url, post):
 
                 matches = re.findall(pattern, res.text.lower())
                 if len(matches) > 0 and not vuln:
-                    print("    Positive regex match found in response: " + pattern)
+                    print("    Positive regex match found in response: " + pattern, flush = True)
                     vuln = True
                     if args['postreq'] and len(args['postreq']) > 1:
                         print(
@@ -225,14 +233,16 @@ def test_heuristics(url, post):
                             + u
                             + "' -> HTTP POST -> '"
                             + postTest
-                            + "' -> reflection in script context"
+                            + "' -> reflection in script context",
+                            flush = True
                         )
                     else:
                         print(
                             colors.green("[+]")
                             + " XSS -> '"
                             + u
-                            + "' -> reflection in script context"
+                            + "' -> reflection in script context",
+                            flush = True
                         )
 
         # CRLF
@@ -249,14 +259,16 @@ def test_heuristics(url, post):
                     + u
                     + "' -> HTTP POST -> '"
                     + postTest
-                    + "' -> response splitting, 'lfi' header is present"
+                    + "' -> response splitting, 'lfi' header is present",
+                    flush = True
                 )
             else:
                 print(
                     colors.green("[+]")
                     + " CRLF -> '"
                     + u
-                    + "' -> response splitting, 'Lfi' header is present"
+                    + "' -> response splitting, 'Lfi' header is present",
+                    flush = True
                 )
 
         if vuln:
@@ -265,18 +277,19 @@ def test_heuristics(url, post):
 
             # Print CT, CSP details, because these could present another layer of security against XSS, CRLF
             if "Content-Type" in res.headers:
-                print("    Content-Type: " + res.headers["Content-Type"])
+                print("    Content-Type: " + res.headers["Content-Type"], flush = True)
             if "Content-Security-Policy" in res.headers:
                 print(
                     "    Content-Security-Policy: "
-                    + res.headers["Content-Security-Policy"]
+                    + res.headers["Content-Security-Policy"],
+                    flush = True
                 )
 
         if args['quick'] or br:
             break
 
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing for error-based info leak...")
+        print(colors.blue("[i]") + " Testing for error-based info leak...", flush = True)
 
     if res and fiErrors[0] in res.text.lower():
         for i in range(1, len(fiErrors)):
@@ -290,7 +303,8 @@ def test_heuristics(url, post):
                         + u
                         + "' -> HTTP POST -> '"
                         + postTest
-                        + "'"
+                        + "'",
+                        flush = True
                     )
                 else:
                     print(
@@ -299,7 +313,8 @@ def test_heuristics(url, post):
                         + fiErrors[i]
                         + "' error triggered -> '"
                         + u
-                        + "'"
+                        + "'",
+                        flush = True
                     )
                 stats["vulns"] += 1
 
@@ -315,7 +330,8 @@ def test_heuristics(url, post):
                         + u
                         + "' -> HTTP POST -> '"
                         + postTest
-                        + "'"
+                        + "'",
+                        flush = True
                     )
                 else:
                     print(
@@ -324,13 +340,14 @@ def test_heuristics(url, post):
                         + sql_error
                         + "' error detected -> '"
                         + u
-                        + "'"
+                        + "'",
+                        flush = True
                     )
                 stats["vulns"] += 1
 
     # Open redirect check
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing for open redirect...")
+        print(colors.blue("[i]") + " Testing for open redirect...", flush = True)
 
     u, tempHeaders, postTest = prepareRequest(args['param'], "/lfi/a/../", url, post)
     # followRedirect must be False, otherwise if CSRF token refresh needs to happen, it might not be able to refresh the token and break
@@ -355,14 +372,16 @@ def test_heuristics(url, post):
                     + u
                     + "' -> HTTP POST -> '"
                     + postTest.replace("/lfi/a/../", "evil.com")
-                    + "'"
+                    + "'",
+                    flush = True
                 )
             else:
                 print(
                     colors.green("[+]")
                     + " Open redirect -> '"
                     + u.replace("/lfi/a/../", "evil.com")
-                    + "'"
+                    + "'",
+                    flush = True
                 )
             stats["vulns"] += 1
             br = True
@@ -376,14 +395,16 @@ def test_heuristics(url, post):
                     + u
                     + "' -> HTTP POST -> '"
                     + postTest.replace("/lfi/a/../", "/evil.com/")
-                    + "'"
+                    + "'",
+                    flush = True
                 )
             else:
                 print(
                     colors.green("[+]")
                     + " Open redirect via relative double slash -> '"
                     + u.replace("/lfi/a/../", "/evil.com/")
-                    + "'"
+                    + "'",
+                    flush = True
                 )
             stats["vulns"] += 1
             br = True
@@ -396,14 +417,16 @@ def test_heuristics(url, post):
                     + u
                     + "' -> HTTP POST -> '"
                     + postTest.replace("/lfi/a/../", "/../arbitrary/endpoint")
-                    + "'"
+                    + "'",
+                    flush = True
                 )
             else:
                 print(
                     colors.green("[+]")
                     + " Client-Side path traversal redirect -> '"
                     + u.replace("/lfi/a/../", "/../arbitrary/endpoint")
-                    + "'"
+                    + "'",
+                    flush = True
                 )
             stats["vulns"] += 1
             br = True

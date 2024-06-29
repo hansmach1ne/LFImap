@@ -12,16 +12,19 @@ def start_listener(listen_port):
         listener.listen(1)
         print(
             colors.purple("[*]")
-            + f" Starting reverse listener on 0.0.0.0:{listen_port}"
+            + f" Starting reverse listener on 0.0.0.0:{listen_port}",
+            flush = True
         )
         client_socket, client_address = listener.accept()
 
         print(
-            colors.red("\n[*]") + f" Connection received from {client_address}"
+            colors.red("\n[*]") + f" Connection received from {client_address}",
+            flush = True
         )
         print(
             colors.red("[*]")
-            + " Press enter to spawn the shell. Type 'back' to continue or 'quit' to terminate LFImap.\n"
+            + " Press enter to spawn the shell. Type 'back' to continue or 'quit' to terminate LFImap.\n",
+            flush = True
         )
 
         # Set a timeout for the socket
@@ -38,7 +41,7 @@ def start_listener(listen_port):
                         break
                 except socket.timeout:
                     break
-            print(response.decode(), end="")
+            print(response.decode(), end="", flush = True)
 
             command = input("")
             if command.lower() in ["back"]:
@@ -61,8 +64,12 @@ def start_listener(listen_port):
                 except socket.timeout:
                     break
             if response:
-                print(response.decode(), end="")
+                print(response.decode(), end="", flush = True)
+    except OSError:
+        # Addr already in use
+        # This is expected if multiple RCEs are avilable and user tries to spawn the shell
+        pass
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", flush = True)
     finally:
         listener.close()

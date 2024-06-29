@@ -27,7 +27,8 @@ def serve_forever():
                     colors.blue("[i]")
                     + " Opening temporary local web server on port "
                     + str(config.rfi_test_port)
-                    + " and hosting $LFIMAP_DIR/src/exploits that will be used for test inclusion"
+                    + " and hosting $LFIMAP_DIR/src/exploits that will be used for test inclusion",
+                    flush = True
                 )
             try:
                 httpd.serve_forever()
@@ -39,5 +40,6 @@ def serve_forever():
                 colors.red("[-]")
                 + " Cannot setup local web server on port "
                 + str(config.rfi_test_port)
-                + ", it's in use or unavailable..."
+                + ", it's in use or unavailable...",
+                flush = True
             )

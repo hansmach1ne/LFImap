@@ -105,8 +105,9 @@ def test_cmd_injection(url, post):
                 print(
                     colors.blue("[i]")
                     + " Trying to provoke an external callback to '"
-                    + args['callback']
-                    + "'. Check your listener logs..."
+                    + args.callback
+                    + "'. Check your listener logs...",
+                    flush = True
                 )
 
         _, br = REQUEST(u, reqHeaders, postTest, proxies, "RCE", "CMD")
