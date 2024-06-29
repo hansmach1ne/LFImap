@@ -98,7 +98,7 @@ def checkArgs():
                 + " Specified request file '"
                 + args['reqfile']
                 + "' doesn't exist. Exiting...",
-                flush=True
+                flush = True
             )
             sys.exit(-1)
 
@@ -123,7 +123,7 @@ def checkArgs():
                 + " Specified request file '"
                 + args['reqfile']
                 + "' doesn't exist. Exiting...",
-                flush=True
+                flush = True
             )
             sys.exit(-1)
 
@@ -173,7 +173,7 @@ def checkArgs():
         if not os.path.exists(args['f']):
             print(
                 colors.red("[-]") + " File '" + args['f'] + "' doesn't exist. Exiting...",
-                flush=True
+                flush = True
             )
             sys.exit(-1)
         else:
@@ -292,7 +292,7 @@ def checkArgs():
                 + " Specified truncation wordlist '"
                 + args['truncWordlist']
                 + "' doesn't exist. Exiting...",
-                flush=True
+                flush = True
             )
             sys.exit(-1)
     else:

@@ -151,7 +151,7 @@ def main():
 
                 if not args['postreq'] or "".join(args['postreq'][0]) == "":
                     if not args['verbose']:
-                        print("", flush=True)
+                        print("", flush = True)
                     print(
                         colors.yellow("[i]")
                         + " Testing GET '"
@@ -437,7 +437,7 @@ def main():
                     + " Specified csrf parameter '"
                     + args['csrfParameter']
                     + "' not found in the initial request. LFImap will not be able to refresh the csrf token.",
-                    flush=True
+                    flush = True
                 )
                 args['updateCsrfToken'] = False
             elif args['csrfParameter'] not in input_fields.keys():
@@ -446,7 +446,7 @@ def main():
                     + " Specified csrf parameter '"
                     + args['csrfParameter']
                     + "' not found in the initial response. LFImap will not be able to refresh the csrf token.",
-                    flush=True
+                    flush = True
                 )
                 args['updateCsrfToken'] = False
             elif parameters[args['csrfParameter']] != input_fields[args['csrfParameter']]:

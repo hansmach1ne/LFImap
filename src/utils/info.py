@@ -14,8 +14,8 @@ def printFancyString(newString, lastPrintedStringLen):
     """Print fency string"""
     if len(newString) < lastPrintedStringLen:
         difference = lastPrintedStringLen - len(newString)
-        print("\r" + newString + difference * " ", end="", flush=True)
+        print("\r" + newString + difference * " ", end="", flush = True)
     else:
-        print("\r" + newString, end="", flush=True)
+        print("\r" + newString, end="", flush = True)
 
     return len(newString)
