@@ -1,6 +1,6 @@
+"""httpHeaders"""
 import random
-from src.utils.arguments import args
-import src.utils.args_check
+from src.utils.arguments import ArgumentHandler
 
 
 def addHeader(headers, newKey, newVal):
@@ -14,6 +14,7 @@ def delHeader(headers, key):
 
 
 def initHttpHeaders():
+    args = ArgumentHandler()
     headers = {}
     user_agents = [
         "Mozilla/5.0 (X11; U; Linux i686; it-IT; rv:1.9.0.2) Gecko/2008092313 Ubuntu/9.25 (jaunty) Firefox/3.8",
@@ -27,12 +28,12 @@ def initHttpHeaders():
         "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.19 (KHTML, like Gecko) Chrome/0.2.153.1 Safari/525.19",
     ]
 
-    if args.agent:
-        headers["User-Agent"] = args.agent
+    if args.args['agent']:
+        headers["User-Agent"] = args.args['agent']
     else:
         headers["User-Agent"] = random.choice(user_agents)
-    if args.referer:
-        headers["Referer"] = args.referer
+    if args.args['referer']:
+        headers["Referer"] = args.args['referer']
 
     headers["Accept"] = "*/*"
     headers["Connection"] = "Close"

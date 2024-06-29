@@ -1,5 +1,5 @@
 """Trunc"""
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
 from src.configs.config import proxies
@@ -8,20 +8,21 @@ from src.utils import colors
 
 def test_trunc(url, post):
     """Test Trunc"""
-    if args.verbose:
+    args = ArgumentHandler()
+    if args.args['verbose']:
         print(
             colors.blue("[i]")
             + " Testing path truncation using '"
-            + args.truncWordlist
+            + args.args['truncWordlist']
             + "' wordlist..."
         )
 
     i = 0
 
-    with open(args.truncWordlist, "r", encoding="utf-8") as f:
+    with open(args.args['truncWordlist'], "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            u, reqHeaders, postTest = prepareRequest(args.param, line, url, post)
+            u, reqHeaders, postTest = prepareRequest(args.args['param'], line, url, post)
             # Because of some unicode tests that we do, (wide N for nodejs apps..)
             if postTest:
                 postTest = postTest.encode("utf-8")
@@ -31,7 +32,7 @@ def test_trunc(url, post):
             if not br:
                 return
 
-            if i == 1 and args.quick:
+            if i == 1 and args.args['quick']:
                 return
 
             i += 1

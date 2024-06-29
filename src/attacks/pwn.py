@@ -8,18 +8,19 @@ from src.attacks.perl import exploit_perl
 from src.attacks.telnet import exploit_telnet
 from src.attacks.rfi import exploit_rfi
 from src.attacks.powershell import exploit_powershell
-from src.utils.arguments import args
+from src.utils.arguments import ArgumentHandler
 from src.servers.LFIshell import start_listener
 
 
 def pwn(exploit):
     """pwn"""
+    args = ArgumentHandler()
     # Starting the reverse shell listener
-    listener_thread = threading.Thread(target=start_listener, args=(args.lport,))
+    listener_thread = threading.Thread(target=start_listener, args=(args.args['lport'],))
     listener_thread.start()
 
-    ip = args.lhost
-    port = args.lport
+    ip = args.args['lhost']
+    port = args.args['lport']
     method = exploit["ATTACK_METHOD"]
 
     if method == "INPUT":
