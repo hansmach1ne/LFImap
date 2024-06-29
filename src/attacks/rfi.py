@@ -29,7 +29,7 @@ def test_rfi(url, post):
     """Test RFI"""
     args  = init_args()
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing remote file inclusion...")
+        print(colors.blue("[i]") + " Testing remote file inclusion...", flush = True)
 
     # Localhost RFI test
     if args['lhost']:

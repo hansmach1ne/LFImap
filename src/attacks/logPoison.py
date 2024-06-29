@@ -37,7 +37,7 @@ def exploit_log_poison(
     with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
         print(
             colors.green("[i]")
-            + " Enumerating file system to discover access log location..."
+            + " Enumerating file system to discover access log location...", flush = True
         )
         lines = f.readlines()
         for line in lines:

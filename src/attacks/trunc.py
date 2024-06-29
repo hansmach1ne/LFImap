@@ -14,7 +14,7 @@ def test_trunc(url, post):
             colors.blue("[i]")
             + " Testing path truncation using '"
             + args['truncWordlist']
-            + "' wordlist..."
+            + "' wordlist...", flush = True
         )
 
     i = 0

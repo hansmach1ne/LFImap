@@ -18,7 +18,7 @@ def test_heuristics(url, post):
     br = False
 
     if args['verbose']:
-        print("\n" + colors.blue("[i]") + " Testing misc issues using heuristics...")
+        print("\n" + colors.blue("[i]") + " Testing misc issues using heuristics...", flush = True)
 
     tests = []
 

@@ -19,7 +19,7 @@ def exploit_telnet(exploit, method, ip, port):
 
     print(
         colors.purple("[.]")
-        + " Checking if telnet is available on the target system..."
+        + " Checking if telnet is available on the target system...", flush = True
     )
 
     if method == "INPUT":
