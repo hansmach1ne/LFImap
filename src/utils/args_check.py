@@ -108,7 +108,8 @@ def checkArgs():
                 colors.red("[-]")
                 + " Request file '"
                 + args['reqfile']
-                + "' doesn't contain empty space after the headers. Please add it and try again..."
+                + "' doesn't contain empty space after the headers. Please add it and try again...",
+                flush = True
             )
             sys.exit(-1)
         elif os.path.exists(args['reqfile']):
