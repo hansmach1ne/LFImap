@@ -84,6 +84,8 @@ def init(
     config.TO_REPLACE.append(config.scriptName + ".php")
     config.TO_REPLACE.append(config.scriptName + "%00")
 
+    args  = init_args()
+    
     if checkPayload(req) or cmdInjectable:
         for _, to_replace in enumerate(config.TO_REPLACE):
             if postVal and isinstance(postVal, bytes):

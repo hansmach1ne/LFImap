@@ -428,28 +428,28 @@ def init_args() -> dict:
         help="\t\t Output all requests and responses to specified file",
     )
 
-otherGroup = parser.add_argument_group("OTHER")
-otherGroup.add_argument(
-    "-nc",
-    "--no-color",
-    action="store_true",
-    dest="no_colors",
-    help="\t\t Disables colored output for STDOUT\n",
-)
-otherGroup.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",    
-    dest="verbose",
-    help="\t\t Print more detailed output when performing attacks\n",
-)
-otherGroup.add_argument(
-    "-h",
-    "--help",
-    action="help",
-    default=argparse.SUPPRESS,
-    help="\t\t Print this help message\n\n",
-)
+    otherGroup = parser.add_argument_group("OTHER")
+    otherGroup.add_argument(
+        "-nc",
+        "--no-color",
+        action="store_true",
+        dest="no_colors",
+        help="\t\t Disables colored output for STDOUT\n",
+    )
+    otherGroup.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",    
+        dest="verbose",
+        help="\t\t Print more detailed output when performing attacks\n",
+    )
+    otherGroup.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        default=argparse.SUPPRESS,
+        help="\t\t Print this help message\n\n",
+    )
 
     args = vars(parser.parse_args())
 
