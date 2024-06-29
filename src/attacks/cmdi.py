@@ -43,7 +43,8 @@ def test_cmd_injection(url, post):
     """Test CMD Injection"""
     args  = init_args()
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing results-based OS command injection...")
+        print(colors.blue("[i]") + " Testing results-based OS command injection...",
+                    flush=True)
 
     cmdList = []
     cmdList.append(
