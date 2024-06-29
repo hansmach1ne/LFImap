@@ -270,7 +270,7 @@ def checkArgs():
             and args['param'] not in tempUrl
         ):
             if args['reqfile'] and not is_string_in_dict(args['param'], args['httpheaders']):
-                print(colors.red("[-]") + " No parameters to test. Exiting...")
+                print(colors.red("[-]") + " No parameters to test. Exiting...", flush = True)
                 sys.exit(-1)
 
     # If -M is not specified, set the method to test manually
@@ -334,7 +334,8 @@ def checkArgs():
                     colors.blue("[i]")
                     + " Log destination file '"
                     + args['log']
-                    + "' already exists"
+                    + "' already exists",
+                    flush = True
                 )
                 users_input = input(
                     "[?] Do you want to continue and append logs to it? Y/n: "
@@ -392,7 +393,7 @@ def checkArgs():
         else:
             reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
             if not re.match(reg, args['lhost']):
-                print(colors.red("[-]") + " LHOST IP address is not valid. Exiting...")
+                print(colors.red("[-]") + " LHOST IP address is not valid. Exiting...", flush = True)
                 sys.exit(-1)
 
             if args['lport'] < 1 or args['lport'] > 65534:
@@ -440,7 +441,8 @@ def checkArgs():
             colors.red("[-]")
             + " Specified second order check URL '"
             + args['checkUrl']
-            + "' is not valid. Exiting..."
+            + "' is not valid. Exiting...",
+            flush = True
         )
         sys.exit(-1)
 

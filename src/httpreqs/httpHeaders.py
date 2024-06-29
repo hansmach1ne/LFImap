@@ -14,6 +14,7 @@ def delHeader(headers, key):
 
 
 def initHttpHeaders():
+    """Init the header dict"""
     args  = init_args()
     headers = {}
     user_agents = [
