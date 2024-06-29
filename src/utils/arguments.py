@@ -1,6 +1,9 @@
 """Arguments"""
+import sys
 import argparse
 from src.utils.banner import BannerHelpFormatter
+
+sys.stdout.flush()
 
 args = None
 
