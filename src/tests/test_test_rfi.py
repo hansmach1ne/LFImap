@@ -27,7 +27,9 @@ expecting_filename_rfi = [
 
 
 class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
+    """CustomHTTPRequestHandler"""
     def do_GET(self) -> None:
+        """do_GET"""
         if self.path.startswith("/vulnerabilities") or self.path == "/":
             uri = urllib3.util.parse_url(self.path)
             response = b""
