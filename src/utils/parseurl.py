@@ -1,5 +1,5 @@
 from urllib.parse import urlsplit, parse_qsl, parse_qs, urlparse
-from src.utils.arguments import args
+from src.utils.arguments import init_args
 import json
 import re
 from src.configs import config
@@ -156,6 +156,7 @@ def parse_url_from_request_file(file_path, force_ssl=False):
       is not for a GET request
     Returns a `url` from the HTTP Request file
     """
+    args  = init_args()
     try:
         with open(file_path, "r", encoding="latin1") as file:
             http_request = file.read()
@@ -186,7 +187,7 @@ def parse_url_from_request_file(file_path, force_ssl=False):
             else:
                 raise Exception("Host header not found in the request.")
 
-            if args.force_ssl or force_ssl:
+            if args['force_ssl'] or force_ssl:
                 url = f"https://{host}{path}"
             else:
                 url = f"http://{host}{path}"
@@ -208,6 +209,7 @@ def parseGet(url):
 
     Returns list of urls
     """
+    args  = init_args()
     placeholder = {}
     testUrls = []
     # Dictionary of GET parameters
@@ -248,7 +250,7 @@ def parseGet(url):
             recreated += "".join(k)
             recreated += "="
             if "".join(k) == testParameter:
-                recreated += args.param  # PWN
+                recreated += args['param']  # PWN
             else:
                 num = len(v)
                 tmp = 0
@@ -263,7 +265,7 @@ def parseGet(url):
                     for item in v:
                         if tmp != 0:
                             recreated += "&" + "".join(k) + "="
-                        recreated += args.param  # PWN
+                        recreated += args['param']  # PWN
                         tmp += 1
             c += 1
 
@@ -328,10 +330,11 @@ def get_params_with_param(url):
 
     Returns str (delimiter used ', ').
     """
+    args  = init_args()
     query_string = urlsplit(url).query
     params = dict(parse_qsl(query_string))
 
-    matching_params = [key for key, value in params.items() if args.param in value]
+    matching_params = [key for key, value in params.items() if args['param'] in value]
     return ", ".join(matching_params)
 
 
@@ -341,10 +344,11 @@ def post_params_with_param(url):
 
     Returns str (delimiter used ', ').
     """
+    args  = init_args()
     parsed_params = parse_qs(url)
 
     params_with_pwn_value = [
-        param for param, value in parsed_params.items() if args.param in value[0]
+        param for param, value in parsed_params.items() if args['param'] in value[0]
     ]
     result = ", ".join(params_with_pwn_value)
     return result
@@ -356,10 +360,11 @@ def getHeadersToTest(dictionary):
 
     Returns str (delimiter used ', ')
     """
+    args  = init_args()
     matching_keys = [
         key
         for key, value in dictionary.items()
-        if isinstance(value, bytes) and args.param.encode() in value
+        if isinstance(value, bytes) and args['param'].encode() in value
     ]
     return ", ".join(matching_keys)
 

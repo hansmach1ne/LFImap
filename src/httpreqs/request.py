@@ -9,7 +9,7 @@ import requests.exceptions
 import urllib3
 from bs4 import BeautifulSoup
 
-from src.utils.arguments import args
+from src.utils.arguments import init_args
 from src.utils.encodings import encode
 from src.utils.stats import stats
 from src.configs import config
@@ -84,6 +84,8 @@ def init(
     config.TO_REPLACE.append(config.scriptName + ".php")
     config.TO_REPLACE.append(config.scriptName + "%00")
 
+    args  = init_args()
+    
     if checkPayload(req) or cmdInjectable:
         for _, to_replace in enumerate(config.TO_REPLACE):
             if postVal and isinstance(postVal, bytes):
@@ -143,10 +145,10 @@ def init(
                     )
                     stats["vulns"] += 1
 
-                if args.revshell and (explType == "RFI" or explType == "RCE" or attackType == "TRUNC"):
+                if args['revshell'] and (explType == "RFI" or explType == "RCE" or attackType == "TRUNC"):
                     pwn(exploit)
 
-                if not args.no_stop:
+                if not args['no_stop']:
                     return True
 
                 return False
@@ -174,12 +176,14 @@ def prepareRequest(parameter, payload, url, postData):
     """
     Prepare a request to be sent
     """
+
+    args  = init_args()
     if parameter in url:
         reqUrl = url.replace(parameter, encode(payload))
     else:
         reqUrl = url
 
-    # if postData and args.json and not is_valid_json(args.json):
+    # if postData and args['json'] and not is_valid_json(args['json']):
     #    reqData = convert_http_formdata_to_json(postData.replace(parameter, encode(payload)).lstrip())
     if postData:
         reqData = postData.replace(parameter, encode(payload)).lstrip()
@@ -189,8 +193,8 @@ def prepareRequest(parameter, payload, url, postData):
         reqData = ""
 
     reqHeaders = {}
-    if parameter in args.httpheaders.values():
-        for key, value in args.httpheaders.items():
+    if parameter in args['httpheaders'].values():
+        for key, value in args['httpheaders'].items():
             if parameter in value:
                 reqHeaders[key.strip()] = value.replace(
                     parameter, encode(payload)
@@ -199,7 +203,7 @@ def prepareRequest(parameter, payload, url, postData):
                 reqHeaders[key] = value
 
     else:
-        return reqUrl, args.httpheaders, reqData
+        return reqUrl, args['httpheaders'], reqData
     return reqUrl, reqHeaders, reqData
 
 
@@ -215,6 +219,7 @@ def REQUEST(
     isCsrfRequest=False,
 ):
     """Send out a request"""
+    args  = init_args()
     doContinue = True
     res = None
     if not postData:
@@ -224,37 +229,37 @@ def REQUEST(
         # Set the timeout on the testing request, based on proxy and user-provided value
         if exploitMethod == "RFI":
             timeout = 15
-        elif args.maxTimeout:
-            timeout = args.maxTimeout
-        elif args.proxyAddr:
+        elif args['maxTimeout']:
+            timeout = args['maxTimeout']
+        elif args['proxyAddr']:
             timeout = 15
         else:
             timeout = 5
 
         # Handle if CSRF request
         if isCsrfRequest:
-            if args.csrfMethod and isCsrfRequest:
-                method = args.csrfMethod
-        elif args.method:
-            method = args.method
+            if args['csrfMethod'] and isCsrfRequest:
+                method = args['csrfMethod']
+        elif args['method']:
+            method = args['method']
         else:
             method = "GET"
 
-        if args.csrfUrl and isCsrfRequest:
-            url = args.csrfUrl
+        if args['csrfUrl'] and isCsrfRequest:
+            url = args['csrfUrl']
 
-        if args.csrfData and isCsrfRequest:
-            postData = args.csrfData
+        if args['csrfData'] and isCsrfRequest:
+            postData = args['csrfData']
 
         # Handle CSRF refresh before sending the payload.
-        if args.updateCsrfToken:
-            if args.previouscsrf:
-                r = args.previousres
+        if args['updateCsrfToken']:
+            if args['previouscsrf']:
+                r = args['previousres']
                 input_fields = extract_input_fields(r.text)
                 parameters = extract_all_parameters(config.url, config.postreq)
             else:
                 # CSRF token request.
-                # csrf_r,_ = REQUEST(args.csrfUrl, headers, args.csrfData, config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = True)
+                # csrf_r,_ = REQUEST(args['csrfUrl'], headers, args['csrfData'], config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = True)
                 r = requests.request(
                     method,
                     url,
@@ -269,19 +274,19 @@ def REQUEST(
                 parameters = extract_all_parameters(config.url, config.postreq)
 
             if input_fields and parameters:
-                if args.csrfParameter and args.csrfParameter in url:
+                if args['csrfParameter'] and args['csrfParameter'] in url:
                     # Modify get data.
                     # Get current csrf value from the request that user specified
-                    curr_csrf = parameters[args.csrfParameter]
-                    new_csrf = input_fields[args.csrfParameter]
+                    curr_csrf = parameters[args['csrfParameter']]
+                    new_csrf = input_fields[args['csrfParameter']]
                     url = url.replace(curr_csrf, new_csrf)
 
                 if isinstance(postData, bytes):
                     postData = postData.decode("latin-1", errors="replace")
 
-                if args.csrfParameter and args.csrfParameter in postData:
-                    curr_csrf = parameters[args.csrfParameter]
-                    new_csrf = input_fields[args.csrfParameter]
+                if args['csrfParameter'] and args['csrfParameter'] in postData:
+                    curr_csrf = parameters[args['csrfParameter']]
+                    new_csrf = input_fields[args['csrfParameter']]
                     postData = postData.replace(curr_csrf, new_csrf)
 
         else:
@@ -307,47 +312,47 @@ def REQUEST(
                     proxies=proxy,
                     verify=False,
                     allow_redirects=followRedirect,
-                    timeout=args.maxTimeout
+                    timeout=args['maxTimeout']
                 )
 
             # Check if CSRF token is returned in the response, prepare it for the next request
-            if args.updateCsrfToken:
+            if args['updateCsrfToken']:
                 input_fields = extract_input_fields(res.text)
                 if (
-                    args.csrfParameter
-                    and args.csrfParameter in input_fields
-                    and input_fields[args.csrfParameter]
+                    args['csrfParameter']
+                    and args['csrfParameter'] in input_fields
+                    and input_fields[args['csrfParameter']]
                 ):
-                    args.previouscsrf = input_fields[args.csrfParameter]
+                    args['previouscsrf'] = input_fields[args['csrfParameter']]
                 else:
-                    args.previouscsrf = False
+                    args['previouscsrf'] = False
 
                 if res:
-                    args.previousres = res
+                    args['previousres'] = res
 
             # If the second order check url is specified, res will be overwritten with new value of that second order endpoint.
             # If the request is csrf token refresh, skip the second order check.
-            if args.checkUrl and not isCsrfRequest:
-                if args.secondMethod:
+            if args['checkUrl'] and not isCsrfRequest:
+                if args['secondMethod']:
                     res = requests.request(
-                        args.secondMethod,
-                        args.checkUrl,
-                        data=args.secondData,
+                        args['secondMethod'],
+                        args['checkUrl'],
+                        data=args['secondData'],
                         headers=headersData,
                         proxies=proxy,
                         verify=False,
                         allow_redirects=True,
-                        timeout=args.maxTimeout
+                        timeout=args['maxTimeout']
                     )
                 else:
                     res = requests.get(
-                        args.checkUrl,
-                        data=args.secondData,
+                        args['checkUrl'],
+                        data=args['secondData'],
                         headers=headersData,
                         proxies=proxy,
                         verify=False,
                         allow_redirects=True,
-                        timeout=args.maxTimeout
+                        timeout=args['maxTimeout']
                     )
 
         # TODO exploitMethod and exploitType are not being used
@@ -355,8 +360,8 @@ def REQUEST(
             if init(res, "", exploitType, url, postData, headersData, exploitMethod):
                 doContinue = False
 
-        if args.log:
-            with open(args.log, "a+", encoding="latin1") as fp:
+        if args['log']:
+            with open(args['log'], "a+", encoding="latin1") as fp:
 
                 # Log request
                 splitted = url.split("/")
@@ -397,14 +402,14 @@ def REQUEST(
                 fp.write(res.text + "\n")
                 fp.write("--\n\n\n")
 
-        if args.delay:
-            time.sleep(args.delay / 1000)
+        if args['delay']:
+            time.sleep(args['delay'] / 1000)
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...", flush = True)
         lfimap_cleanup(config.webDir, stats)
     except requests.exceptions.InvalidSchema:
-        if not args.no_stop:
+        if not args['no_stop']:
             print(
                 colors.red("[-]")
                 + " Previous request caused InvalidSchema exception. Try specifying '--no-stop' to continue testing even if errors occurred...",
@@ -418,7 +423,7 @@ def REQUEST(
             )
         return False, False
     except requests.exceptions.ConnectionError:
-        if not args.no_stop:
+        if not args['no_stop']:
             print(
                 colors.red("[-]")
                 + " Previous request caused ConnectionError. Try specifying '--no-stop' to continue testing even if errors occurred...",
@@ -432,13 +437,13 @@ def REQUEST(
             )
         return False, False
     except socket.timeout:
-        if exploitMethod == "RFI" and not args.callback and not args.lhost:
+        if exploitMethod == "RFI" and not args['callback'] and not args['lhost']:
             print(
                 colors.green("[?]")
                 + " Socket timeout. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm...",
                 flush = True
             )
-        if not args.no_stop:
+        if not args['no_stop']:
             print(
                 colors.red("[-]")
                 + " Previous request caused Socket timeout. Try specifying '--no-stop' to continue testing even if errors occurred...",
@@ -452,7 +457,7 @@ def REQUEST(
             )
         return False, False
     except requests.exceptions.ReadTimeout:
-        if exploitMethod == "RFI" and not args.callback and not args.lhost:
+        if exploitMethod == "RFI" and not args['callback'] and not args['lhost']:
             print(
                 colors.green("[?]")
                 + " Previous request caused ReadTimeout exception. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm.",
@@ -466,7 +471,7 @@ def REQUEST(
             )
         return False, False
     except urllib3.exceptions.ReadTimeoutError:
-        if exploitMethod == "RFI" and not args.callback and not args.lhost:
+        if exploitMethod == "RFI" and not args['callback'] and not args['lhost']:
             print(
                 colors.green("[?]")
                 + " Previous request caused ReadTimeoutError. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm.",
@@ -480,7 +485,7 @@ def REQUEST(
             )
         return False, False
     except ConnectionRefusedError:
-        if not args.no_stop:
+        if not args['no_stop']:
             print(
                 colors.red("[-]")
                 + " Previous request caused ConnectionRefusedError. Try specifying '--no-stop' to continue testing upon errors...",
@@ -494,7 +499,7 @@ def REQUEST(
             )
         return False, False
     except:
-        if args.verbose:
+        if args['verbose']:
             print(
                 colors.red("[-]")
                 + " Previous request caused uncaught exception. Try proxying requests to see exactly what happened",
