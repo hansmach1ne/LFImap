@@ -39,7 +39,7 @@ class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
                     paths = params["page"]
                     for path in paths:
                         for filename in expecting_filename_rfi:
-                            if path.endswith(filename):
+                            if path.endswith(f"/{filename}"):
                                 response = base64.b64decode(
                                     "OTYxYmIwOGE5NWRiYzM0Mzk3MjQ4ZDkyMzUyZGE3OTk="
                                 )
