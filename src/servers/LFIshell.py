@@ -18,11 +18,11 @@ def start_listener(listen_port):
         client_socket, client_address = listener.accept()
 
         print(
-            colors.red("\n[*]") + f" Connection received from {client_address}",
+            colors.Colors().red("\n[*]") + f" Connection received from {client_address}",
             flush = True
         )
         print(
-            colors.red("[*]")
+            colors.Colors().red("[*]")
             + " Press enter to spawn the shell. Type 'back' to continue or 'quit' to terminate LFImap.\n",
             flush = True
         )

@@ -43,7 +43,7 @@ def test_cmd_injection(url, post):
     """Test CMD Injection"""
     args  = init_args()
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing results-based OS command injection...",
+        print(colors.Colors().blue("[i]") + " Testing results-based OS command injection...",
                 flush = True)
 
     cmdList = []
@@ -103,7 +103,7 @@ def test_cmd_injection(url, post):
             nslookupFlag = True
             if args['verbose']:
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " Trying to provoke an external callback to '"
                     + args.callback
                     + "'. Check your listener logs...",

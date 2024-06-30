@@ -60,7 +60,7 @@ def main():
                 # Just in case check if URL is correctly formatted, it should be always correct up to this point, though...
                 if not is_valid_url(url):
                     print(
-                        colors.red("\n[-]")
+                        colors.Colors().red("\n[-]")
                         + " URL '"
                         + url
                         + "'' is not valid. Skipping...",
@@ -70,7 +70,7 @@ def main():
 
                 print(
                     "\n"
-                    + colors.lightblue("[i]")
+                    + colors.Colors().lightblue("[i]")
                     + " Parsing URL ["
                     + str(iteration + 1)
                     + "/"
@@ -108,7 +108,7 @@ def main():
 
                         if not okCode:
                             print(
-                                colors.red("[-] ")
+                                colors.Colors().red("[-] ")
                                 + " URL '"
                                 + tempUrl
                                 + "' is not accessible. HTTP code "
@@ -117,7 +117,7 @@ def main():
                                 flush = True
                             )
                             print(
-                                colors.blue("[i]")
+                                colors.Colors().blue("[i]")
                                 + " Try specifying parameter --http-ok "
                                 + str(r.status_code)
                                 + "\n",
@@ -127,7 +127,7 @@ def main():
                     else:
                         if r.status_code != 200 and r.status_code != 204:
                             print(
-                                colors.red("[-]")
+                                colors.Colors().red("[-]")
                                 + " URL '"
                                 + tempUrl
                                 + "' is not accessible. HTTP code "
@@ -136,7 +136,7 @@ def main():
                                 flush = True
                             )
                             print(
-                                colors.blue("[i]")
+                                colors.Colors().blue("[i]")
                                 + " Try specifying parameter --http-ok "
                                 + str(r.status_code)
                                 + "\n",
@@ -145,7 +145,7 @@ def main():
                             continue
                 except:
                     print(
-                        colors.red("[-]")
+                        colors.Colors().red("[-]")
                         + " Exception occurred while accessing '"
                         + tempUrl
                         + "'. Skipping...",
@@ -160,7 +160,7 @@ def main():
                     if not args['verbose']:
                         print("", flush = True)
                     print(
-                        colors.yellow("[i]")
+                        colors.Colors().yellow("[i]")
                         + " Testing GET '"
                         + get_params_with_param(url)
                         + "' parameter...",
@@ -181,7 +181,7 @@ def main():
 
                     if stats["vulns"] == relativeVulnCount:
                         print(
-                            colors.red("[-]")
+                            colors.Colors().red("[-]")
                             + " GET parameter '"
                             + get_params_with_param(url)
                             + "' doesn't seem to be vulnerable.\n",
@@ -231,7 +231,7 @@ def main():
 
                 if stats["vulns"] == relativeVulnCount:
                     print(
-                        colors.red("[-]")
+                        colors.Colors().red("[-]")
                         + " GET parameter '"
                         + get_params_with_param(url)
                         + "' doesn't seem to be vulnerable.\n",
@@ -239,13 +239,13 @@ def main():
                     )
 
             except ConnectTimeout:
-                print(colors.red("[-]") + " URL '" + url + "' timed out. Skipping...", flush = True)
+                print(colors.Colors().red("[-]") + " URL '" + url + "' timed out. Skipping...", flush = True)
             except ConnectionRefusedError:
-                print(colors.red("[-]") + " Failed to establish connection to " + url, flush = True)
+                print(colors.Colors().red("[-]") + " Failed to establish connection to " + url, flush = True)
             except NewConnectionError:
-                print(colors.red("[-]") + " Failed to establish connection to " + url, flush = True)
+                print(colors.Colors().red("[-]") + " Failed to establish connection to " + url, flush = True)
             except OSError:
-                print(colors.red("[-]") + " Failed to establish connection to " + url, flush = True)
+                print(colors.Colors().red("[-]") + " Failed to establish connection to " + url, flush = True)
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt detected. Exiting...", flush = True)
                 lfimap_cleanup(config.webDir, stats)
@@ -337,7 +337,7 @@ def main():
 
         # No arguments found to test, if this is not set.
         if tempUrl == None or tempUrl == "":
-            print(colors.red("[-]") + " No arguments to test. Exiting...", flush = True)
+            print(colors.Colors().red("[-]") + " No arguments to test. Exiting...", flush = True)
             sys.exit(-1)
 
         # Test request to see if the site is accessible
@@ -392,7 +392,7 @@ def main():
 
         if (isinstance(r, bool) and not r) or (isinstance(r, str) and not r.text):
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Something unexpected has happened, initial testing response is not clearly received. Please check your switches and url endpoint(s). Exiting...",
                 flush = True
             )
@@ -401,7 +401,7 @@ def main():
         if r and r.status_code >= 500:
             if r.status_code not in args['http_valid']:
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Initial request yielded "
                     + str(r.status_code)
                     + " response. Application might not be available. To force-continue specify '--http-ok "
@@ -416,13 +416,13 @@ def main():
             in r.text.lower()
         ):
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " No response received from remote server. This could be proxy's response due to unresponsive application server.",
                 flush = True
             )
             inp = input(
                 "\n"
-                + colors.yellow("[?]")
+                + colors.Colors().yellow("[?]")
                 + " Web application might not be available. Do you still want to force-continue [y/N] ",
                 flush = True
             )
@@ -448,7 +448,7 @@ def main():
         if args['csrfParameter']:
             if args['csrfParameter'] not in parameters.keys():
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Specified csrf parameter '"
                     + args['csrfParameter']
                     + "' not found in the initial request. LFImap will not be able to refresh the csrf token.",
@@ -457,7 +457,7 @@ def main():
                 args['updateCsrfToken'] = False
             elif args['csrfParameter'] not in input_fields.keys():
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Specified csrf parameter '"
                     + args['csrfParameter']
                     + "' not found in the initial response. LFImap will not be able to refresh the csrf token.",
@@ -467,12 +467,12 @@ def main():
             elif parameters[args['csrfParameter']] != input_fields[args['csrfParameter']]:
                 inp = input(
                     "\n"
-                    + colors.yellow("[?]")
+                    + colors.Colors().yellow("[?]")
                     + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] "
                 )
             else:
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests",
                     flush = True
                 )
@@ -483,7 +483,7 @@ def main():
                     # If there is the same key value pair in both dicts
                     if any(item in input_fields.items() for item in parameters.items()):
                         print(
-                            colors.blue("[i]")
+                            colors.Colors().blue("[i]")
                             + " Parameter '"
                             + param_name
                             + "' appears to be anti-forgery token, but it hasn't been refreshed by the web application. LFImap will not auto-refresh csrf token value",
@@ -493,7 +493,7 @@ def main():
                     elif len(input_fields) == 0:
                         if not args['csrfUrl']:
                             print(
-                                colors.blue("[i]")
+                                colors.Colors().blue("[i]")
                                 + " Parameter '"
                                 + param_name
                                 + "' appears to be anti-forgery token, however the csrf token is not present in the response. Please specify the  '--csrf-url' to auto-refresh the token.",
@@ -506,12 +506,12 @@ def main():
                     ):
                         inp = input(
                             "\n"
-                            + colors.yellow("[?]")
+                            + colors.Colors().yellow("[?]")
                             + " It appears that CSRF value is refreshed after each request. Do you wish to automatically update tokens? [Y/n] "
                         )
                     else:
                         print(
-                            colors.blue("[i]")
+                            colors.Colors().blue("[i]")
                             + " It appears that CSRF token is not refreshed after each request. LFImap will not automatically update the csrf token in requests",
                             flush = True
                         )
@@ -529,7 +529,7 @@ def main():
 
             if r and not okCode:
                 print(
-                    colors.red("[-] ")
+                    colors.Colors().red("[-] ")
                     + tempUrl
                     + " is not accessible. HTTP code "
                     + str(r.status_code)
@@ -537,7 +537,7 @@ def main():
                     flush = True
                 )
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " Try specifying parameter --http-ok "
                     + str(r.status_code)
                     + "\n",
@@ -549,7 +549,7 @@ def main():
         else:
             if r and r.status_code != 200 and r.status_code != 204:
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + tempUrl
                     + " is not accessible. HTTP code "
                     + str(r.status_code)
@@ -557,7 +557,7 @@ def main():
                     flush = True
                 )
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " Try specifying parameter --http-ok "
                     + str(r.status_code)
                     + "\n",
@@ -576,7 +576,7 @@ def main():
                 if "," in getHeadersToTest(headers):
                     print(
                         "\n"
-                        + colors.yellow("[i]")
+                        + colors.Colors().yellow("[i]")
                         + " Testing headers '"
                         + getHeadersToTest(headers)
                         + "'",
@@ -585,7 +585,7 @@ def main():
                 else:
                     print(
                         "\n"
-                        + colors.yellow("[i]")
+                        + colors.Colors().yellow("[i]")
                         + " Testing header '"
                         + getHeadersToTest(headers)
                         + "'",
@@ -595,7 +595,7 @@ def main():
             if args['param'] in url:
                 print(
                     "\n"
-                    + colors.yellow("[i]")
+                    + colors.Colors().yellow("[i]")
                     + " Testing GET '"
                     + get_params_with_param(url)
                     + "' parameter...",
@@ -606,7 +606,7 @@ def main():
             elif args['postreq'] and args['param'] in post:
                 print(
                     "\n"
-                    + colors.yellow("[i]")
+                    + colors.Colors().yellow("[i]")
                     + " Testing form-line '"
                     + post_params_with_param(post)
                     + "' parameter...",
@@ -623,7 +623,7 @@ def main():
                     or args['csrfParameter'] + "=" + args['param'] in post
                 ):
                     print(
-                        colors.blue("[-]") + " Skipping testing of anti-forgery token",
+                        colors.Colors().blue("[-]") + " Skipping testing of anti-forgery token",
                         flush = True
                     )
                     continue
@@ -646,7 +646,7 @@ def main():
                     # Handle plural
                     if "," in getHeadersToTest(headers):
                         print(
-                            colors.red("[-]")
+                            colors.Colors().red("[-]")
                             + " Headers '"
                             + getHeadersToTest(headers)
                             + "' doesn't seem to be vulnerable.",
@@ -654,7 +654,7 @@ def main():
                         )
                     else:
                         print(
-                            colors.red("[-]")
+                            colors.Colors().red("[-]")
                             + " Header '"
                             + getHeadersToTest(headers)
                             + "' doesn't seem to be vulnerable.",
@@ -664,7 +664,7 @@ def main():
                 if stats["vulns"] == relativeVulnCount:
                     if args['param'] in url:
                         print(
-                            colors.red("[-]")
+                            colors.Colors().red("[-]")
                             + " GET parameter '"
                             + get_params_with_param(url)
                             + "' doesn't seem to be vulnerable....",
@@ -672,7 +672,7 @@ def main():
                         )
                     if args['postreq'] and args['param'] in post:
                         print(
-                            colors.red("[-]")
+                            colors.Colors().red("[-]")
                             + " Form-line parameter '"
                             + post_params_with_param(post)
                             + "' doesn't seem to be vulnerable....",
@@ -724,7 +724,7 @@ def main():
                 # Handle plural
                 if "," in getHeadersToTest(headers):
                     print(
-                        colors.blue("[i]")
+                        colors.Colors().blue("[i]")
                         + " Headers '"
                         + getHeadersToTest(headers)
                         + "' doesn't seem to be vulnerable.",
@@ -732,7 +732,7 @@ def main():
                     )
                 else:
                     print(
-                        colors.blue("[i]")
+                        colors.Colors().blue("[i]")
                         + " Header '"
                         + getHeadersToTest(headers)
                         + "' doesn't seem to be vulnerable.",
@@ -742,7 +742,7 @@ def main():
             if stats["vulns"] == relativeVulnCount:
                 if args['param'] in url:
                     print(
-                        colors.red("[-]")
+                        colors.Colors().red("[-]")
                         + " GET parameter '"
                         + get_params_with_param(url)
                         + "' doesn't seem to be vulnerable....",
@@ -750,7 +750,7 @@ def main():
                     )
                 if args['postreq'] and args['param'] in post:
                     print(
-                        colors.red("[-]")
+                        colors.Colors().red("[-]")
                         + " Form-line parameter '"
                         + post_params_with_param(post)
                         + "' doesn't seem to be vulnerable....",

@@ -18,7 +18,7 @@ def test_heuristics(url, post):
     br = False
 
     if args['verbose']:
-        print("\n" + colors.blue("[i]") + " Testing misc issues using heuristics...", flush = True)
+        print("\n" + colors.Colors().blue("[i]") + " Testing misc issues using heuristics...", flush = True)
 
     tests = []
 
@@ -87,9 +87,9 @@ def test_heuristics(url, post):
 
     for test in tests:
         if args['verbose'] and xssTest in test:
-            print(colors.blue("[i]") + " Testing for XSS...")
+            print(colors.Colors().blue("[i]") + " Testing for XSS...")
         if args['verbose'] and "%0d%0a" in test:
-            print(colors.blue("[i]") + " Testing for CRLF...")
+            print(colors.Colors().blue("[i]") + " Testing for CRLF...")
 
         vuln = False
         u, tempHeaders, postTest = prepareRequest(args['param'], test, url, post)
@@ -104,7 +104,7 @@ def test_heuristics(url, post):
                 vuln = True
                 if args['postreq'] and len(args['postreq']) > 1:
                     print(
-                        colors.green("[+]")
+                        colors.Colors().green("[+]")
                         + " XSS -> '"
                         + u
                         + "' -> HTTP POST -> '"
@@ -114,7 +114,7 @@ def test_heuristics(url, post):
                     )
                 else:
                     print(
-                        colors.green("[+]")
+                        colors.Colors().green("[+]")
                         + " XSS -> '"
                         + u
                         + "' -> reflection in HREF atribute value",
@@ -140,7 +140,7 @@ def test_heuristics(url, post):
             vuln = True
             if args['postreq'] and len(args['postreq']) > 1:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " XSS -> '"
                     + u
                     + "' -> HTTP POST -> '"
@@ -150,7 +150,7 @@ def test_heuristics(url, post):
                 )
             else:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " XSS -> '"
                     + u
                     + "' -> full reflection in response",
@@ -167,7 +167,7 @@ def test_heuristics(url, post):
                     vuln = True
                     if args['postreq'] and len(args['postreq']) > 1:
                         print(
-                            colors.green("[+]")
+                            colors.Colors().green("[+]")
                             + " XSS -> '"
                             + u
                             + "' -> HTTP POST -> '"
@@ -177,7 +177,7 @@ def test_heuristics(url, post):
                         )
                     else:
                         print(
-                            colors.green("[+]")
+                            colors.Colors().green("[+]")
                             + " XSS -> '"
                             + u
                             + "' -> reflection in HREF atribute value. Check if javascript: is allowed",
@@ -199,7 +199,7 @@ def test_heuristics(url, post):
                     vuln = True
                     if args['postreq'] and len(args['postreq']) > 1:
                         print(
-                            colors.green("[+]")
+                            colors.Colors().green("[+]")
                             + " XSS -> '"
                             + u
                             + "' -> HTTP POST -> '"
@@ -209,7 +209,7 @@ def test_heuristics(url, post):
                         )
                     else:
                         print(
-                            colors.green("[+]")
+                            colors.Colors().green("[+]")
                             + " XSS -> '"
                             + u
                             + "' -> reflection in tag atribute",
@@ -228,7 +228,7 @@ def test_heuristics(url, post):
                     vuln = True
                     if args['postreq'] and len(args['postreq']) > 1:
                         print(
-                            colors.green("[+]")
+                            colors.Colors().green("[+]")
                             + " XSS -> '"
                             + u
                             + "' -> HTTP POST -> '"
@@ -238,7 +238,7 @@ def test_heuristics(url, post):
                         )
                     else:
                         print(
-                            colors.green("[+]")
+                            colors.Colors().green("[+]")
                             + " XSS -> '"
                             + u
                             + "' -> reflection in script context",
@@ -254,7 +254,7 @@ def test_heuristics(url, post):
             vuln = True
             if args['postreq'] and len(args['postreq']) > 1:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " CRLF -> '"
                     + u
                     + "' -> HTTP POST -> '"
@@ -264,7 +264,7 @@ def test_heuristics(url, post):
                 )
             else:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " CRLF -> '"
                     + u
                     + "' -> response splitting, 'Lfi' header is present",
@@ -289,14 +289,14 @@ def test_heuristics(url, post):
             break
 
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing for error-based info leak...", flush = True)
+        print(colors.Colors().blue("[i]") + " Testing for error-based info leak...", flush = True)
 
     if res and fiErrors[0] in res.text.lower():
         for i in range(1, len(fiErrors)):
             if fiErrors[i] in res.text.lower():
                 if args['postreq'] and len(args['postreq']) > 1:
                     print(
-                        colors.green("[+]")
+                        colors.Colors().green("[+]")
                         + " Info disclosure -> '"
                         + fiErrors[i]
                         + "' error triggered -> '"
@@ -308,7 +308,7 @@ def test_heuristics(url, post):
                     )
                 else:
                     print(
-                        colors.green("[+]")
+                        colors.Colors().green("[+]")
                         + " Info disclosure -> '"
                         + fiErrors[i]
                         + "' error triggered -> '"
@@ -323,7 +323,7 @@ def test_heuristics(url, post):
             if res and sql_error in res.text.lower():
                 if len(args['postreq']) > 1:
                     print(
-                        colors.green("[+]")
+                        colors.Colors().green("[+]")
                         + " Info disclosure -> '"
                         + sql_error
                         + "' error detected -> '"
@@ -335,7 +335,7 @@ def test_heuristics(url, post):
                     )
                 else:
                     print(
-                        colors.green("[+]")
+                        colors.Colors().green("[+]")
                         + " Info disclosure -> '"
                         + sql_error
                         + "' error detected -> '"
@@ -347,7 +347,7 @@ def test_heuristics(url, post):
 
     # Open redirect check
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing for open redirect...", flush = True)
+        print(colors.Colors().blue("[i]") + " Testing for open redirect...", flush = True)
 
     u, tempHeaders, postTest = prepareRequest(args['param'], "/lfi/a/../", url, post)
     # followRedirect must be False, otherwise if CSRF token refresh needs to happen, it might not be able to refresh the token and break
@@ -367,7 +367,7 @@ def test_heuristics(url, post):
         ):
             if args['postreq'] and len(args['postreq']) > 1:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " Open redirect -> '"
                     + u
                     + "' -> HTTP POST -> '"
@@ -377,7 +377,7 @@ def test_heuristics(url, post):
                 )
             else:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " Open redirect -> '"
                     + u.replace("/lfi/a/../", "evil.com")
                     + "'",
@@ -390,7 +390,7 @@ def test_heuristics(url, post):
         elif loc == "//lfi/a/../" or loc == "///lfi/a../":
             if args['postreq'] and len(args['postreq']) > 1:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " Open redirect via relative double slash -> '"
                     + u
                     + "' -> HTTP POST -> '"
@@ -400,7 +400,7 @@ def test_heuristics(url, post):
                 )
             else:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " Open redirect via relative double slash -> '"
                     + u.replace("/lfi/a/../", "/evil.com/")
                     + "'",
@@ -412,7 +412,7 @@ def test_heuristics(url, post):
         elif "/a/../" in loc and "/a/../" in urlparse.urlparse(loc).path:
             if args['postreq'] and len(args['postreq']) > 1:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " Client-Side path traversal redirect -> '"
                     + u
                     + "' -> HTTP POST -> '"
@@ -422,7 +422,7 @@ def test_heuristics(url, post):
                 )
             else:
                 print(
-                    colors.green("[+]")
+                    colors.Colors().green("[+]")
                     + " Client-Side path traversal redirect -> '"
                     + u.replace("/lfi/a/../", "/../arbitrary/endpoint")
                     + "'",

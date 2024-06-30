@@ -24,7 +24,7 @@ def serve_forever():
         with socketserver.TCPServer(("", config.rfi_test_port), ServerHandler) as httpd:
             if args['verbose']:
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " Opening temporary local web server on port "
                     + str(config.rfi_test_port)
                     + " and hosting $LFIMAP_DIR/src/exploits that will be used for test inclusion",
@@ -37,7 +37,7 @@ def serve_forever():
     except:
         if args['verbose']:
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Cannot setup local web server on port "
                 + str(config.rfi_test_port)
                 + ", it's in use or unavailable...",

