@@ -79,6 +79,7 @@ def init(
     req, reqType, explType, getVal, postVal, headers, attackType, cmdInjectable=False
 ):
     """Init the list of exploits"""
+    args = init_args()
     # if(config.scriptName != ""):
     config.TO_REPLACE.append(config.scriptName)
     config.TO_REPLACE.append(config.scriptName + ".php")
