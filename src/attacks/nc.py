@@ -20,7 +20,7 @@ def exploit_nc(exploit, method, ip, port):
     )
 
     print(
-        colors.purple("[?]")
+        colors.Colors().purple("[?]")
         + " Checking if netcat is available on the target system...", flush = True
     )
 

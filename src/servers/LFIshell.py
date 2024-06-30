@@ -11,7 +11,7 @@ def start_listener(listen_port):
         listener.bind(("0.0.0.0", listen_port))
         listener.listen(1)
         print(
-            colors.purple("[*]")
+            colors.Colors().purple("[*]")
             + f" Starting reverse listener on 0.0.0.0:{listen_port}",
             flush = True
         )
