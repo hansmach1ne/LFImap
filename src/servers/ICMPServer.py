@@ -25,7 +25,7 @@ class ICMPThread(threading.Thread):
         except PermissionError:
             if args['verbose']:
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'",
                     flush = True
                 )

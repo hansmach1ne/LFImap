@@ -8,7 +8,6 @@ from random import randint
 from src.httpreqs import request
 from src.configs.config import rfi_test_port
 from src.utils.arguments import init_args
-from src.utils.args_check import scriptDirectory
 from src.servers.HTTPServer import serve_forever
 from src.configs import config
 from src.utils import colors
@@ -30,19 +29,19 @@ def test_rfi(url, post):
     """Test RFI"""
     args  = init_args()
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing remote file inclusion...", flush = True)
+        print(colors.Colors().blue("[i]") + " Testing remote file inclusion...", flush = True)
 
     # Localhost RFI test
     if args['lhost']:
         try:
             # Setup exploit serving path
-            if os.access(scriptDirectory + os.sep + "src/exploits", os.R_OK):
-                config.webDir = scriptDirectory + os.sep + "src/exploits"
+            if os.access(args['scriptDirectory'] + os.sep + "src/exploits", os.R_OK):
+                config.webDir = args['scriptDirectory'] + os.sep + "src/exploits"
             else:
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + "Directory '"
-                    + scriptDirectory
+                    + args['scriptDirectory']
                     + "/src/exploits' can't be accessed. Cannot setup local web server for RFI test.",
                     flush = True
                 )
@@ -89,26 +88,16 @@ def test_rfi(url, post):
 
     # Internet RFI test
     if args['verbose']:
-        print(colors.blue("[i]") + " Trying to include internet-hosted file...", flush = True)
+        print(colors.Colors().blue("[i]") + " Trying to include internet-hosted file...", flush = True)
 
     base_uri = "https://raw.githubusercontent.com/hansmach1ne/LFImap/main/src/exploits/"
 
     pylds = []
-    pylds.append(
-        urllib.parse.quote_plus(f"{base_uri}ysvznc.php")
-    )
-    pylds.append(
-        urllib.parse.quote_plus(f"{base_uri}ysvznc.jsp")
-    )
-    pylds.append(
-        urllib.parse.quote_plus(f"{base_uri}ysvznc.html")
-    )
-    pylds.append(
-        urllib.parse.quote_plus(f"{base_uri}ysvznc.gif")
-    )
-    pylds.append(
-        urllib.parse.quote_plus(f"{base_uri}ysvznc.png")
-    )
+
+    for filename in ["ysvznc.php", "ysvznc.jsp", "ysvznc.html", "ysvznc.gif", "ysvznc.png"]:
+        pylds.append(
+            urllib.parse.quote_plus(f"{base_uri}{filename}")
+        )
 
     if args['callback']:
         if not args['callback'].startswith("http://"):
@@ -137,7 +126,7 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     # Copy a file from exploits/reverse_shell.php
     if not os.path.exists(payloadFile):
         print(
-            colors.red("[-]")
+            colors.Colors().red("[-]")
             + " Cannot locate '"
             + payloadFile
             + "'. Skipping RFI exploit...",

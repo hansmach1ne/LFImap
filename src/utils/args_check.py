@@ -20,12 +20,13 @@ from src.utils.parseurl import parse_url_parameters
 from src.utils.parseurl import is_file_ending_with_newline
 from src.utils.parseurl import is_string_in_dict
 
+args  = init_args()
+
 scriptDirectory = os.path.dirname(
     __file__ + os.sep + ".." + os.sep + ".." + os.sep + ".." + os.sep
 )
-scriptDirectory = os.path.abspath(scriptDirectory)
+args['scriptDirectory'] = os.path.abspath(scriptDirectory)
 
-args  = init_args()
 args['mode'] = ""
 headers = {}
 
@@ -44,7 +45,7 @@ def prepareHeaders():
         for _, httpheader in enumerate(args['httpheaders']):
             if ":" not in httpheader:
                 print(
-                    colors.red("[-] '")
+                    colors.Colors().red("[-] '")
                     + httpheader
                     + "'"
                     + " has no ':' to distinguish parameter name from value. Exiting...",
@@ -53,7 +54,7 @@ def prepareHeaders():
                 sys.exit(-1)
             elif httpheader[0] == ":":
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Header name cannot start with ':' character. Exiting...",
                     flush = True
                 )
@@ -76,7 +77,7 @@ def checkArgs():
     agent = args['agent']
     referer = args['referer']
 
-    if scriptDirectory == "":
+    if args['scriptDirectory'] == "":
         separator = ""
     else:
         separator = os.sep
@@ -84,7 +85,7 @@ def checkArgs():
     # Check if mandatory args are provided
     if not args['f'] and not args['url'] and not args['reqfile']:
         print(
-            colors.red("[-]")
+            colors.Colors().red("[-]")
             + " Mandatory arguments ('-U', '-F' or '-R') unspecified. Refer to help menu with '-h' or '--help'.",
             flush = True
         )
@@ -97,7 +98,7 @@ def checkArgs():
     if args['reqfile']:
         if not os.path.exists(args['reqfile']):
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Specified request file '"
                 + args['reqfile']
                 + "' doesn't exist. Exiting...",
@@ -108,7 +109,7 @@ def checkArgs():
         # RFC states that new line should be at the end, some servers might not even accept the request without it.
         if not is_file_ending_with_newline(args['reqfile']):
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Request file '"
                 + args['reqfile']
                 + "' doesn't contain empty space after the headers. Please add it and try again...",
@@ -123,7 +124,7 @@ def checkArgs():
             )
         else:
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Specified request file '"
                 + args['reqfile']
                 + "' doesn't exist. Exiting...",
@@ -150,7 +151,7 @@ def checkArgs():
             if args['force_ssl']:
                 if args['verbose']:
                     print(
-                        colors.blue("[i]")
+                        colors.Colors().blue("[i]")
                         + " No URL scheme provided. Defaulting to https.",
                         flush = True
                     )
@@ -161,7 +162,7 @@ def checkArgs():
             else:
                 if args['verbose']:
                     print(
-                        colors.blue("[i]")
+                        colors.Colors().blue("[i]")
                         + " No URL scheme provided. Defaulting to http.",
                         flush = True
                     )
@@ -179,7 +180,7 @@ def checkArgs():
         # Check if file exists
         if not os.path.exists(args['f']):
             print(
-                colors.red("[-]") + " File '" + args['f'] + "' doesn't exist. Exiting...",
+                colors.Colors().red("[-]") + " File '" + args['f'] + "' doesn't exist. Exiting...",
                 flush = True
             )
             sys.exit(-1)
@@ -201,7 +202,7 @@ def checkArgs():
                 if first_key == "":
                     if args['verbose']:
                         print(
-                            colors.blue("[i]")
+                            colors.Colors().blue("[i]")
                             + " URL line #"
                             + str(index + 1)
                             + ". "
@@ -277,7 +278,7 @@ def checkArgs():
             and args['param'] not in tempUrl
         ):
             if args['reqfile'] and not is_string_in_dict(args['param'], args['httpheaders']):
-                print(colors.red("[-]") + " No parameters to test. Exiting...", flush = True)
+                print(colors.Colors().red("[-]") + " No parameters to test. Exiting...", flush = True)
                 sys.exit(-1)
 
     # If -M is not specified, set the method to test manually
@@ -296,7 +297,7 @@ def checkArgs():
     if args['truncWordlist']:
         if not os.path.isfile(args['truncWordlist']):
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Specified truncation wordlist '"
                 + args['truncWordlist']
                 + "' doesn't exist. Exiting...",
@@ -306,7 +307,7 @@ def checkArgs():
     else:
         if args['uselong']:
             args['truncWordlist'] = (
-                scriptDirectory
+                args['scriptDirectory']
                 + separator
                 + "src"
                 + separator
@@ -316,7 +317,7 @@ def checkArgs():
             )
         else:
             args['truncWordlist'] = (
-                scriptDirectory
+                args['scriptDirectory']
                 + separator
                 + "src"
                 + separator
@@ -326,7 +327,7 @@ def checkArgs():
             )
         if (not os.path.exists(args['truncWordlist'])) and (args['test_all'] or args['trunc']):
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Cannot locate "
                 + args['truncWordlist']
                 + " wordlist. Since '-a' or '-t' was specified, lfimap will exit...",
@@ -339,7 +340,7 @@ def checkArgs():
         try:
             if os.path.exists(args['log']):
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " Log destination file '"
                     + args['log']
                     + "' already exists",
@@ -375,7 +376,7 @@ def checkArgs():
                         fp.write("\n\n")
         except:
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Failed creating log file: "
                 + args['log']
                 + ". Check if you specified correct path and have correct permissions...",
@@ -387,7 +388,7 @@ def checkArgs():
     if args['revshell']:
         if not args['lhost']:
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Please, specify localhost IP ('--lhost') for reverse shell. Exiting...",
                 flush = True
             )
@@ -395,7 +396,7 @@ def checkArgs():
 
         if not args['lport']:
             print(
-                colors.red("[-]")
+                colors.Colors().red("[-]")
                 + " Please, specify localhost PORT number ('--lport') for reverse shell. Exiting...",
                 flush = True
             )
@@ -404,12 +405,12 @@ def checkArgs():
         else:
             reg = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
             if not re.match(reg, args['lhost']):
-                print(colors.red("[-]") + " LHOST IP address is not valid. Exiting...", flush = True)
+                print(colors.Colors().red("[-]") + " LHOST IP address is not valid. Exiting...", flush = True)
                 sys.exit(-1)
 
             if args['lport'] < 1 or args['lport'] > 65534:
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " LPORT must be between 1 and 65534. Exiting ...",
                     flush = True
                 )
@@ -420,7 +421,7 @@ def checkArgs():
         if not args['csrfUrl'].startswith("http"):
             if args['verbose']:
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " No URL scheme provided in csrf extraction endpoint. Defaulting to http...",
                     flush = True
                 )
@@ -428,7 +429,7 @@ def checkArgs():
 
     if args['csrfUrl'] and not is_valid_url(args['csrfUrl']):
         print(
-            colors.red("[-]")
+            colors.Colors().red("[-]")
             + " Specified csrf extraction URL '"
             + args['csrfUrl']
             + "' is not valid. Exiting...",
@@ -441,20 +442,20 @@ def checkArgs():
         if not args['checkUrl'].startswith("http"):
             if args['verbose']:
                 print(
-                    colors.blue("[i]")
+                    colors.Colors().blue("[i]")
                     + " No URL scheme provided in second order check endpoint. Defaulting to http...",
                     flush = True
                 )
             args['checkUrl'] = "http://" + args['checkUrl']
         print(
-            colors.blue("[i]")
+            colors.Colors().blue("[i]")
             + " Second order endpoint is specified. After each payload, lookup is done to check if payload triggered interesting behaviour.",
             flush = True
         )
 
     if args['checkUrl'] and not is_valid_url(args['checkUrl']):
         print(
-            colors.red("[-]")
+            colors.Colors().red("[-]")
             + " Specified second order check URL '"
             + args['checkUrl']
             + "' is not valid. Exiting...",
@@ -468,7 +469,7 @@ def checkArgs():
             if "http" not in args['proxyAddr'] and "socks" not in args['proxyAddr']:
                 if args['verbose']:
                     print(
-                        colors.blue("[i]")
+                        colors.Colors().blue("[i]")
                         + " No proxy scheme provided. Defaulting to http...",
                         flush = True
                     )
@@ -477,13 +478,13 @@ def checkArgs():
             r = requests.get(args['proxyAddr'], timeout=5, verify=False)
             if r.status_code >= 500:
                 print(
-                    colors.red("[-]")
+                    colors.Colors().red("[-]")
                     + " Proxy is available, but it returns server-side error code >=500. Exiting...",
                     flush = True
                 )
                 sys.exit(-1)
         except:
-            print(colors.red("[-]") + " Proxy is not available. Exiting...", flush = True)
+            print(colors.Colors().red("[-]") + " Proxy is not available. Exiting...", flush = True)
             sys.exit(-1)
     else:
         config.tOut = 1
@@ -525,12 +526,12 @@ def checkArgs():
         )
         option = input("[?] Are you sure you want to continue? y/n: ")
         if option != "y" and option != "Y":
-            print(colors.blue("[i]") + " User selected exit option. Exiting...", flush = True)
+            print(colors.Colors().blue("[i]") + " User selected exit option. Exiting...", flush = True)
             sys.exit(-1)
 
     if args['quick'] and args['verbose']:
         print(
-            colors.blue("[i]") + " Quick mode enabled, LFImap will use fewer payloads.",
+            colors.Colors().blue("[i]") + " Quick mode enabled, LFImap will use fewer payloads.",
             flush = True
         )
 
@@ -549,7 +550,7 @@ def checkArgs():
             for _, httpheader in enumerate(args['httpheaders']):
                 if ":" not in httpheader:
                     print(
-                        colors.red("[-] '")
+                        colors.Colors().red("[-] '")
                         + httpheader
                         + "'"
                         + " has no ':' to distinguish parameter name from value. Exiting...",
@@ -558,7 +559,7 @@ def checkArgs():
                     sys.exit(-1)
                 elif httpheader[0] == ":":
                     print(
-                        colors.red("[-]")
+                        colors.Colors().red("[-]")
                         + " Header name cannot start with ':' character. Exiting...",
                         flush = True
                     )
@@ -581,7 +582,7 @@ def checkArgs():
     if not cookieIsPresent:
         if args['verbose']:
             print(
-                colors.blue("[i]")
+                colors.Colors().blue("[i]")
                 + " Session information is not provided. LFImap might have troubles finding vulnerabilities if testing endpoint requires authentication.",
                 flush = True
             )

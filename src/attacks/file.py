@@ -10,7 +10,7 @@ def test_file_trunc(url, post):
     """Test file trunc"""
     args  = init_args()
     if args['verbose']:
-        print(colors.blue("[i]") + " Testing with file wrapper...", flush = True)
+        print(colors.Colors().blue("[i]") + " Testing with file wrapper...", flush = True)
 
     tests = []
     tests.append("file%3A%2F%2F%2Fetc%2Fpasswd")

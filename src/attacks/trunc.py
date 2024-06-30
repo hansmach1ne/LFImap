@@ -11,7 +11,7 @@ def test_trunc(url, post):
     args  = init_args()
     if args['verbose']:
         print(
-            colors.blue("[i]")
+            colors.Colors().blue("[i]")
             + " Testing path truncation using '"
             + args['truncWordlist']
             + "' wordlist...", flush = True
