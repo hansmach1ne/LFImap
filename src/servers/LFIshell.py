@@ -1,7 +1,7 @@
 """LFI Shell"""
 import sys
 import socket
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def start_listener(listen_port):
@@ -11,18 +11,18 @@ def start_listener(listen_port):
         listener.bind(("0.0.0.0", listen_port))
         listener.listen(1)
         print(
-            colors.Colors().purple("[*]")
+            Colors().purple("[*]")
             + f" Starting reverse listener on 0.0.0.0:{listen_port}",
             flush = True
         )
         client_socket, client_address = listener.accept()
 
         print(
-            colors.Colors().red("\n[*]") + f" Connection received from {client_address}",
+            Colors().red("\n[*]") + f" Connection received from {client_address}",
             flush = True
         )
         print(
-            colors.Colors().red("[*]")
+            Colors().red("[*]")
             + " Press enter to spawn the shell. Type 'back' to continue or 'quit' to terminate LFImap.\n",
             flush = True
         )

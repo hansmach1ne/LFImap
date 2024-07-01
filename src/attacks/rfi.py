@@ -10,7 +10,7 @@ from src.configs.config import rfi_test_port
 from src.utils.arguments import init_args
 from src.servers.HTTPServer import serve_forever
 from src.configs import config
-from src.utils import colors
+from src.utils.colors import Colors
 from src.utils.info import printInfo
 
 
@@ -29,7 +29,7 @@ def test_rfi(url, post):
     """Test RFI"""
     args  = init_args()
     if args['verbose']:
-        print(colors.Colors().blue("[i]") + " Testing remote file inclusion...", flush = True)
+        print(Colors().blue("[i]") + " Testing remote file inclusion...", flush = True)
 
     # Localhost RFI test
     if args['lhost']:
@@ -39,7 +39,7 @@ def test_rfi(url, post):
                 config.webDir = args['scriptDirectory'] + os.sep + "src/exploits"
             else:
                 print(
-                    colors.Colors().red("[-]")
+                    Colors().red("[-]")
                     + "Directory '"
                     + args['scriptDirectory']
                     + "/src/exploits' can't be accessed. Cannot setup local web server for RFI test.",
@@ -88,7 +88,7 @@ def test_rfi(url, post):
 
     # Internet RFI test
     if args['verbose']:
-        print(colors.Colors().blue("[i]") + " Trying to include internet-hosted file...", flush = True)
+        print(Colors().blue("[i]") + " Trying to include internet-hosted file...", flush = True)
 
     base_uri = "https://raw.githubusercontent.com/hansmach1ne/LFImap/main/src/exploits/"
 
@@ -126,7 +126,7 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
     # Copy a file from exploits/reverse_shell.php
     if not os.path.exists(payloadFile):
         print(
-            colors.Colors().red("[-]")
+            Colors().red("[-]")
             + " Cannot locate '"
             + payloadFile
             + "'. Skipping RFI exploit...",

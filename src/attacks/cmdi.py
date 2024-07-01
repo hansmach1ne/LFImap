@@ -6,7 +6,7 @@ from src.httpreqs.request import REQUEST
 from src.httpreqs.request import prepareRequest
 from src.configs.config import proxies
 from src.utils.arguments import init_args
-from src.utils import colors
+from src.utils.colors import Colors
 
 def is_value_in_dict(dictionary, target_value):
     """
@@ -43,7 +43,7 @@ def test_cmd_injection(url, post):
     """Test CMD Injection"""
     args  = init_args()
     if args['verbose']:
-        print(colors.Colors().blue("[i]") + " Testing results-based OS command injection...",
+        print(Colors().blue("[i]") + " Testing results-based OS command injection...",
                 flush = True)
 
     cmdList = []
@@ -103,7 +103,7 @@ def test_cmd_injection(url, post):
             nslookupFlag = True
             if args['verbose']:
                 print(
-                    colors.Colors().blue("[i]")
+                    Colors().blue("[i]")
                     + " Trying to provoke an external callback to '"
                     + args.callback
                     + "'. Check your listener logs...",

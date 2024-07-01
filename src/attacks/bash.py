@@ -5,7 +5,7 @@ from src.utils.encodings import encode
 from src.utils.arguments import init_args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def exploit_bash(exploit, method, ip, port):
@@ -15,7 +15,7 @@ def exploit_bash(exploit, method, ip, port):
     post = exploit["POSTVAL"]
 
     print(
-        colors.Colors().purple("[?]") + " Checking if bash is available on the target system...", flush = True
+        Colors().purple("[?]") + " Checking if bash is available on the target system...", flush = True
     )
 
     if method == "INPUT" and config.tempArg not in url:

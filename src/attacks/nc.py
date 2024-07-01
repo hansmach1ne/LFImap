@@ -5,7 +5,7 @@ from src.utils.encodings import encode
 from src.utils.arguments import init_args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def exploit_nc(exploit, method, ip, port):
@@ -20,7 +20,7 @@ def exploit_nc(exploit, method, ip, port):
     )
 
     print(
-        colors.Colors().purple("[?]")
+        Colors().purple("[?]")
         + " Checking if netcat is available on the target system...", flush = True
     )
 
