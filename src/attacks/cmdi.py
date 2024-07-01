@@ -92,7 +92,7 @@ def test_cmd_injection(url, post):
             + randomVal[6]
             + "."
             + args['callback']
-            + "`%26".format(randomVal[3], randomVal[4], randomVal[5])
+            + "`%26"
         )
 
     nslookupFlag = False
