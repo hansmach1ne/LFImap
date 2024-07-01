@@ -1,11 +1,11 @@
 """Info"""
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def printInfo(ip, port, shellType, attackMethod):
     """Prints info about reverse shell attack to stdout"""
     print(
-        colors.Colors().green("[.]")
+        Colors().green("[.]")
         + f" Trying to pop reverse shell to {ip}:{port} using {shellType} via {attackMethod}...",
         flush = True
     )

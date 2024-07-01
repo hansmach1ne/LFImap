@@ -3,14 +3,14 @@ from src.utils.arguments import init_args
 from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def test_input(url, post):
     """Test Input"""
     args  = init_args()
     if args['verbose']:
-        print(colors.Colors().blue("[i]") + " Testing with input wrapper...", flush = True)
+        print(Colors().blue("[i]") + " Testing with input wrapper...", flush = True)
 
     tests = []
     posts = []

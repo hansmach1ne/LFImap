@@ -1,7 +1,7 @@
 """ICMP Server"""
 import threading
 import socket
-from src.utils import colors
+from src.utils.colors import Colors
 from src.utils.arguments import init_args
 
 
@@ -25,7 +25,7 @@ class ICMPThread(threading.Thread):
         except PermissionError:
             if args['verbose']:
                 print(
-                    colors.Colors().red("[-]")
+                    Colors().red("[-]")
                     + " Raw socket access is not allowed. For blind ICMP command injection test, rerun lfimap as admin/sudo with '-c'",
                     flush = True
                 )
