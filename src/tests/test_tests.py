@@ -1,5 +1,4 @@
 """test_rfi_exploit"""
-
 import time
 import os
 import threading
@@ -18,53 +17,55 @@ import src.attacks.rfi
 # Event that shuts down the server when we are done with it
 shut_down_http_server = threading.Event()
 
-expecting_filename_rfi = [
-    "ysvznc.php",
-    "ysvznc.jsp",
-    "ysvznc.html",
-    "ysvznc.gif",
-    "ysvznc.png",
-]
-
 
 class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
-    """CustomHTTPRequestHandler"""
+    """CustomHTTPReq`uestHandler"""
+
+    request_response_markers = []
 
     def do_GET(self) -> None:
         """do_GET"""
+        if self.request_response_markers is None:
+            print("WARNING: NO markers have been set")
+            self.send_response(200)
+            self.end_headers()
+
         if self.path.startswith("/vulnerabilities") or self.path == "/":
             uri = urllib3.util.parse_url(self.path)
             response = b""
             if uri.query is not None:
                 params = urllib.parse.parse_qs(uri.query)
-                if "page" in params:
+                if "name" in params:
                     # Check if it is one of our markers
-                    pages = params["page"]
+                    values = params["name"]
                     found = False
-                    for page in pages:
-                        page = urllib.parse.unquote(page)
-                        for filename in expecting_filename_rfi:
-                            if page.endswith(f"/{filename}"):
-                                response = base64.b64decode(
-                                    "OTYxYmIwOGE5NWRiYzM0Mzk3MjQ4ZDkyMzUyZGE3OTk="
-                                )
+                    for value in values:
+                        value = urllib.parse.unquote(value)
+
+                        for request_response_marker in self.request_response_markers:
+                            for value in request_response_marker["find"]:
+                                response = request_response_marker["respond"]
                                 found = True
                                 break
+
+                            if found:
+                                break
+
                         if found:
                             break
 
-                    if not found:
-                        for value in pages:
-                            value = urllib.parse.unquote(value)
-                            if "cat${IFS}/etc/passwd" in value:
-                                response = b"root:x:0:0"
-                                found = True
-                                break
+                    # if not found:
+                    #     for value in pages:
+                    #         value = urllib.parse.unquote(value)
+                    #         if "cat${IFS}/etc/passwd" in value:
+                    #             response = b"root:x:0:0"
+                    #             found = True
+                    #             break
 
-                            if "1&ipconfig /all&" in value:
-                                response = b"Windows IP Configuration"
-                                found = True
-                                break
+                    #         if "1&ipconfig /all&" in value:
+                    #             response = b"Windows IP Configuration"
+                    #             found = True
+                    #             break
 
             self.send_response(200)
             self.end_headers()
@@ -74,10 +75,12 @@ class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.end_headers()
 
 
-def dummy_http_server():
+def dummy_http_server(request_response_markers):
     """Dummy HTTP Server for testing"""
     server_address = ("127.0.0.1", 8080)
     http_handler = CustomHTTPRequestHandler
+    http_handler.request_response_markers = request_response_markers
+
     # Prevent the HTTP Server from logging the requests into the stdout
     http_handler.log_message = lambda *args, **kwargs: None
     httpd = ThreadingHTTPServer(server_address, http_handler)
@@ -87,6 +90,7 @@ def dummy_http_server():
 
 
 def custom_init_args():
+    """Custom Init of the Args"""
     src.utils.arguments.args = {
         "url": ["http://127.0.0.1:8080/vulnerabilities/fi/?page=PWN"],
         "f": None,
@@ -147,17 +151,18 @@ def custom_init_args():
         "truncWordlist"
     ] = f"{src.utils.arguments.args['script_directory']}/src/wordlists/short.txt"
 
-def start_web_server():
-    """ Start HTTP Server """
+
+def start_web_server(request_response_markers=None):
+    """Start HTTP Server"""
     shut_down_http_server.clear()
-    thread = threading.Thread(target=dummy_http_server)
+    thread = threading.Thread(target=dummy_http_server, args=[request_response_markers])
     thread.start()
 
     time.sleep(0.5)
 
 
 def stop_web_server():
-    """ Stop web server """
+    """Stop web server"""
     shut_down_http_server.set()
     # Trigger another handle_request, so that the loop exits
 
@@ -170,11 +175,26 @@ def stop_web_server():
 def test_test_rfi():
     """Test the test_rfi interface"""
 
-    start_web_server()
+    start_web_server(
+        [
+            {
+                "find": [
+                    "/ysvznc.php",
+                    "/ysvznc.jsp",
+                    "/ysvznc.html",
+                    "/ysvznc.gif",
+                    "/ysvznc.png",
+                ],
+                "respond": base64.b64decode(
+                    "OTYxYmIwOGE5NWRiYzM0Mzk3MjQ4ZDkyMzUyZGE3OTk="
+                ),
+            }
+        ],
+    )
     custom_init_args()
     init_stats()
 
-    src.attacks.rfi.test_rfi("http://127.0.0.1:8080/vulnerabilities/fi/?page=PWN", "")
+    src.attacks.rfi.test_rfi("http://127.0.0.1:8080/vulnerabilities/?name=PWN", "")
 
     stop_web_server()
 
@@ -192,12 +212,17 @@ def test_test_rfi():
 def test_test_cmd_injection():
     """Test the test_cmd_injection interface"""
 
-    start_web_server()
+    start_web_server(
+        [
+            {"find": ["cat${IFS}/etc/passwd"], "respond": b"root:x:0:0"},
+            {"find": ["1&ipconfig /all&"], "respond": b"Windows IP Configuration"},
+        ]
+    )
     custom_init_args()
     init_stats()
 
     src.attacks.cmdi.test_cmd_injection(
-        "http://127.0.0.1:8080/vulnerabilities/fi/?page=PWN", ""
+        "http://127.0.0.1:8080/vulnerabilities/fi/?name=PWN", ""
     )
 
     stop_web_server()
