@@ -5,14 +5,14 @@ from src.utils.arguments import init_args
 from src.configs.config import proxies
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def test_filter(url, post):
     """Test Filter"""
     args  = init_args()
     if args['verbose']:
-        print(colors.Colors().blue("[i]") + " Testing with filter wrapper...", flush = True)
+        print(Colors().blue("[i]") + " Testing with filter wrapper...", flush = True)
 
     tests = []
     tests.append("php%3A%2F%2Ffilter%2Fresource%3D%2Fetc%2Fpasswd")

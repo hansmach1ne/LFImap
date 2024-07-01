@@ -13,7 +13,7 @@ from src.utils.arguments import init_args
 from src.utils.encodings import encode
 from src.utils.stats import stats
 from src.configs import config
-from src.utils import colors
+from src.utils.colors import Colors
 from src.utils.cleanup import lfimap_cleanup
 
 def extract_all_parameters(url, form_data=""):
@@ -128,11 +128,11 @@ def init(
 
                 # Print finding
                 if postVal == "" and explType:
-                    print(colors.Colors().green("[+]") + " " + explType + " -> '" + getVal + "'", flush = True)
+                    print(Colors().green("[+]") + " " + explType + " -> '" + getVal + "'", flush = True)
                     stats["vulns"] += 1
                 elif explType:
                     print(
-                        colors.Colors().green("[+]")
+                        Colors().green("[+]")
                         + " "
                         + explType
                         + " -> '"
@@ -410,13 +410,13 @@ def REQUEST(
     except requests.exceptions.InvalidSchema:
         if not args['no_stop']:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused InvalidSchema exception. Try specifying '--no-stop' to continue testing even if errors occurred...",
                 flush = True
             )
         else:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " InvalidSchema exception detected. Server cannot parse the parameter URI. Try proxying requests to see exactly what happened...",
                 flush = True
             )
@@ -424,13 +424,13 @@ def REQUEST(
     except requests.exceptions.ConnectionError:
         if not args['no_stop']:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused ConnectionError. Try specifying '--no-stop' to continue testing even if errors occurred...",
                 flush = True
             )
         else:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused ConnectionError. Try proxying requests to see exactly what happened...",
                 flush = True
             )
@@ -438,19 +438,19 @@ def REQUEST(
     except socket.timeout:
         if exploitMethod == "RFI" and not args['callback'] and not args['lhost']:
             print(
-                colors.Colors().green("[?]")
+                Colors().green("[?]")
                 + " Socket timeout. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm...",
                 flush = True
             )
         if not args['no_stop']:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused Socket timeout. Try specifying '--no-stop' to continue testing even if errors occurred...",
                 flush = True
             )
         else:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused socket timeout. Try specifying bigger '--delay' or '--max-timeout'. Skipping...",
                 flush = True
             )
@@ -458,13 +458,13 @@ def REQUEST(
     except requests.exceptions.ReadTimeout:
         if exploitMethod == "RFI" and not args['callback'] and not args['lhost']:
             print(
-                colors.Colors().green("[?]")
+                Colors().green("[?]")
                 + " Previous request caused ReadTimeout exception. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm.",
                 flush = True
             )
         else:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused read timeout. Try specifying bigger '--delay' or '--max-timeout'. Skipping...",
                 flush = True
             )
@@ -472,13 +472,13 @@ def REQUEST(
     except urllib3.exceptions.ReadTimeoutError:
         if exploitMethod == "RFI" and not args['callback'] and not args['lhost']:
             print(
-                colors.Colors().green("[?]")
+                Colors().green("[?]")
                 + " Previous request caused ReadTimeoutError. This could be an indication for RFI vulnerability. Try specifying '--lhost' or '--callback' to confirm.",
                 flush = True
             )
         else:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused ReadTimeoutError. Try specifying bigger '--delay' or '--max-timeout'. Skipping...",
                 flush = True
             )
@@ -486,13 +486,13 @@ def REQUEST(
     except ConnectionRefusedError:
         if not args['no_stop']:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused ConnectionRefusedError. Try specifying '--no-stop' to continue testing upon errors...",
                 flush = True
             )
         else:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused ConnectionRefusedError. Try proxying requests to see exactly what happened...",
                 flush = True
             )
@@ -500,7 +500,7 @@ def REQUEST(
     except:
         if args['verbose']:
             print(
-                colors.Colors().red("[-]")
+                Colors().red("[-]")
                 + " Previous request caused uncaught exception. Try proxying requests to see exactly what happened",
                 flush = True
             )

