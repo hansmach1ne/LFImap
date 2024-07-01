@@ -11,7 +11,7 @@ import urllib3.util
 import requests
 import pytest
 import src.attacks.cmdi
-from src.utils.stats import stats
+from src.utils.stats import stats, init_stats
 import src.utils.arguments
 import src.attacks.rfi
 
@@ -172,8 +172,11 @@ def test_test_rfi():
 
     start_web_server()
     custom_init_args()
+    init_stats()
 
     src.attacks.rfi.test_rfi("http://127.0.0.1:8080/vulnerabilities/fi/?page=PWN", "")
+
+    stop_web_server()
 
     if stats["requests"] != 5:
         msg = f"We are expecting 5 'requests', got: {stats['requests']}"
@@ -185,18 +188,19 @@ def test_test_rfi():
 
     print(f"{stats=}")
 
-    stop_web_server()
-
 
 def test_test_cmd_injection():
     """Test the test_cmd_injection interface"""
 
     start_web_server()
     custom_init_args()
+    init_stats()
 
     src.attacks.cmdi.test_cmd_injection(
         "http://127.0.0.1:8080/vulnerabilities/fi/?page=PWN", ""
     )
+
+    stop_web_server()
 
     if stats["requests"] != 2:
         msg = f"We are expecting 2 'requests', got: {stats['requests']}"
@@ -207,5 +211,3 @@ def test_test_cmd_injection():
         pytest.fail(msg)
 
     print(f"{stats=}")
-
-    stop_web_server()
