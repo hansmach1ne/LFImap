@@ -7,14 +7,14 @@ from src.configs import config
 from src.utils.encodings import encode
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-from src.utils import colors
+from src.utils.colors import Colors
 
 
 def test_data(url, post):
     """Test Data"""
     args  = init_args()
     if args['verbose']:
-        print(colors.Colors().blue("[i]") + " Testing with data wrapper...", flush = True)
+        print(Colors().blue("[i]") + " Testing with data wrapper...", flush = True)
 
     tests = []
 
