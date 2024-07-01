@@ -54,19 +54,6 @@ class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
                         if found:
                             break
 
-                    # if not found:
-                    #     for value in pages:
-                    #         value = urllib.parse.unquote(value)
-                    #         if "cat${IFS}/etc/passwd" in value:
-                    #             response = b"root:x:0:0"
-                    #             found = True
-                    #             break
-
-                    #         if "1&ipconfig /all&" in value:
-                    #             response = b"Windows IP Configuration"
-                    #             found = True
-                    #             break
-
             self.send_response(200)
             self.end_headers()
             self.wfile.write(response)
