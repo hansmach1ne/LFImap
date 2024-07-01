@@ -44,6 +44,11 @@ from src.httpreqs.request import extract_input_fields
 
 
 def main():
+    
+    # Check command-line arguments
+    if not checkArgs():
+        sys.exit(-1)
+
     args  = init_args()
 
     config.proxies["http"] = args['proxyAddr']
@@ -761,9 +766,4 @@ def main():
 
 
 if __name__ == "__main__":
-
-    # Check command-line arguments
-    if not checkArgs():
-        sys.exit(-1)
-
     main()
