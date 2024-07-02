@@ -15,6 +15,7 @@ from src.utils.stats import stats
 from src.configs import config
 from src.utils.colors import Colors
 from src.utils.cleanup import lfimap_cleanup
+from src.attacks.pwn import pwn
 
 def extract_all_parameters(url, form_data=""):
     """Extract parameters from the URL"""
