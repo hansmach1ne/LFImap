@@ -253,11 +253,11 @@ def main():
                 print(Colors().red("[-]") + " Failed to establish connection to " + url, flush = True)
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt detected. Exiting...", flush = True)
-                lfimap_cleanup(config.webDir, stats)
+                lfimap_cleanup(config.webDir)
             except:
                 raise
 
-        lfimap_cleanup(config.webDir, stats)
+        lfimap_cleanup(config.webDir)
 
     # If single URL is specified
     else:
@@ -437,7 +437,7 @@ def main():
                 sys.exit(-1)
 
         if not r and not args['no_stop']:
-            lfimap_cleanup(config.webDir, stats)
+            lfimap_cleanup(config.webDir)
 
         if csrf_r:
             input_fields = extract_input_fields(csrf_r.text)
@@ -762,7 +762,7 @@ def main():
                         flush = True
                     )
 
-        lfimap_cleanup(config.webDir, stats)
+        lfimap_cleanup(config.webDir)
 
 
 if __name__ == "__main__":

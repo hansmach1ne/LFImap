@@ -407,7 +407,7 @@ def REQUEST(
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...", flush = True)
-        lfimap_cleanup(config.webDir, stats)
+        lfimap_cleanup(config.webDir)
     except requests.exceptions.InvalidSchema:
         if not args['no_stop']:
             print(
