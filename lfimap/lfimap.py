@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
+import os
+
+# Needed because of the availability of the src modules after installation
+if '__file__' in globals():
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+else:
+    sys.path.append(os.path.dirname(os.path.abspath(__name__)))
 
 from urllib3.exceptions import NewConnectionError
 from requests.exceptions import ConnectTimeout
@@ -8,6 +15,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Disable/Mute TLS errors
 from requests.packages.urllib3 import disable_warnings
+disable_warnings(InsecureRequestWarning)
 
 # Import configurations
 from src.configs import config
@@ -21,8 +29,6 @@ from src.utils.stats import stats
 # Import custom request functionality
 from src.httpreqs.request import prepareRequest
 from src.httpreqs.request import REQUEST
-
-disable_warnings(InsecureRequestWarning)
 
 # Import attack modules
 from src.attacks.heur import test_heuristics
@@ -41,7 +47,6 @@ from src.utils.parseurl import getHeadersToTest
 from src.utils.parseurl import is_valid_url
 from src.httpreqs.request import extract_all_parameters
 from src.httpreqs.request import extract_input_fields
-
 
 def main():
     
