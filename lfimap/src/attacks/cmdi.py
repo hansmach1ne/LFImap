@@ -105,7 +105,7 @@ def test_cmd_injection(url, post):
                 print(
                     Colors().blue("[i]")
                     + " Trying to provoke an external callback to '"
-                    + args.callback
+                    + args['callback']
                     + "'. Check your listener logs...",
                     flush = True
                 )
