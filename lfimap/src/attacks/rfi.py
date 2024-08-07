@@ -90,7 +90,7 @@ def test_rfi(url, post):
     if args['verbose']:
         print(Colors().blue("[i]") + " Trying to include internet-hosted file...", flush = True)
 
-    base_uri = "https://raw.githubusercontent.com/hansmach1ne/LFImap/main/lfimap/src/exploits"
+    base_uri = "https://raw.githubusercontent.com/hansmach1ne/LFImap/main/lfimap/src/exploits/"
 
     pylds = []
 
