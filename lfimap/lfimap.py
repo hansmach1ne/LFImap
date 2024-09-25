@@ -437,8 +437,8 @@ def main():
                 flush = True
                 sys.exit(-1)
 
-        # This check needs to contain r.status_code, isntead of just r, because in edge cases like 404 Response if(r) yields false for some reason
-        # This might be a bug in requests library, bug fix #115
+        # This check needs to contain r.status_code, instead of just r, because in edge cases like 404 Response if(r) yields false for some reason
+        # Might be a bug in requests library, workaround fix #115
         if not r.status_code and not args['no_stop']:
             print(
                     Colors().red("[-]")
@@ -603,6 +603,9 @@ def main():
                         flush = True
                     )
 
+                # Needed to handle -i
+                args['is_tested_param_post'] = False  
+
             if args['param'] in url:
                 print(
                     "\n"
@@ -612,7 +615,9 @@ def main():
                     + "' parameter...",
                     flush = True
                 )
-                args['is_tested_param_post'] = False  # Needed to handle -i
+
+                # Needed to handle -i
+                args['is_tested_param_post'] = False 
 
             elif args['postreq'] and args['param'] in post:
                 print(
@@ -623,7 +628,10 @@ def main():
                     + "' parameter...",
                     flush = True
                 )
-                args['is_tested_param_post'] = True  # Needed to handle -i
+
+                # Needed to handle -i
+                args['is_tested_param_post'] = True
+
             else:
                 is_tested_param_post = False
 
