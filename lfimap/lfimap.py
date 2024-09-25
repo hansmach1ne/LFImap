@@ -350,19 +350,6 @@ def main():
             print(Colors().red("[-]") + " No arguments to test. Exiting...", flush = True)
             sys.exit(-1)
 
-        # Test request to see if the site is accessible
-        # r,_ = REQUEST(tempUrl, headers, postTest, config.proxies, "test", "test")
-
-        # print(config.url)
-        # print(tempUrl)
-
-        # print(postTest)
-        # print(config.postreq)
-
-        # Check if csrf token is being used.
-        # print(args['csrfData'])
-        # print(config.postreq)
-
         # TODO edge case where the url is not specified, but the csrf token is inside the request.?
         csrf_r = ""
         if args['csrfUrl']:
@@ -386,6 +373,7 @@ def main():
                 isCsrfRequest=True,
             )
 
+        # Test request to see if the site is accessible
         r, _ = REQUEST(
             config.url,
             headers,
@@ -397,18 +385,26 @@ def main():
             followRedirect=True,
             isCsrfRequest=False,
         )
+        # Specify which response statuses to always treat as valid
         if not args['http_valid']:
             args['http_valid'] = [200, 204, 301, 302, 303]
 
-        if (isinstance(r, bool) and not r) or (isinstance(r, str) and not r.text):
-            print(
-                Colors().red("[-]")
-                + " Something unexpected has happened, initial testing response is not clearly received. Please check your switches and url endpoint(s). Exiting...",
-                flush = True
-            )
-            sys.exit(-1)
+        # Client-side error happened for HTTP status >=400 and <500
+        if r.status_code and r.status_code >= 400 and r.status_code < 500:
+            if r.status_code not in args['http_valid']:
+                print(
+                    Colors().red("[-]")
+                    + " Initial request yielded "
+                    + str(r.status_code)
+                    + " response. Request might not be correctly specified. To force-continue specify '--http-ok "
+                    + str(r.status_code)
+                    + "' to treat it as expected.",
+                    flush = True
+                )
+                sys.exit(-1)
 
-        if r and r.status_code >= 500:
+        # Server-side error happened for HTTP status >= 500
+        elif r and r.status_code >= 500:
             if r.status_code not in args['http_valid']:
                 print(
                     Colors().red("[-]")
@@ -416,7 +412,7 @@ def main():
                     + str(r.status_code)
                     + " response. Application might not be available. To force-continue specify '--http-ok "
                     + str(r.status_code)
-                    + "' to treat it as valid.",
+                    + "' to treat it as expected.",
                     flush = True
                 )
                 sys.exit(-1)
@@ -441,13 +437,18 @@ def main():
                 flush = True
                 sys.exit(-1)
 
-        if not r and not args['no_stop']:
+        # This check needs to contain r.status_code, isntead of just r, because in edge cases like 404 Response if(r) yields false for some reason
+        # This might be a bug in requests library, bug fix #115
+        if not r.status_code and not args['no_stop']:
+            print(
+                    Colors().red("[-]")
+                    + " Response object is not clearly received. Application might not be available, as response's status_code is None. Check if request is correctly specified...",
+                    flush = True
+                )
             lfimap_cleanup(config.webDir)
 
         if csrf_r:
             input_fields = extract_input_fields(csrf_r.text)
-            # Post request[0] is enough, because it's a list of permutations anyways, we need parameter names
-
             parameters = extract_all_parameters(config.url, config.postreq)
         else:
             input_fields = extract_input_fields(r.text)
