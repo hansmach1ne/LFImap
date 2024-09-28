@@ -392,6 +392,15 @@ def main():
             args['http_valid'] = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 301, 302, 303, 307]
 
         if("Location" in r.headers and r.headers["Location"] != None):
+            
+            # if testing is done via -R (request file) and the site redirects to https, but --force-ssl is not specified
+            if(r.headers["Location"].startswith("https") and not args['force_ssl']):
+                print(
+                    Colors().yellow("[i]")
+                    + " Warning: The application redirects to https endpoint, but '--force-ssl' is not specified. LFImap could have troubles with testing.",
+                    flush = True
+                )
+            
             inp = input(
                 "\n"
                 + Colors().yellow("[?]")
