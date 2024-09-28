@@ -60,6 +60,8 @@ def main():
     config.proxies["https"] = args['proxyAddr']
 
     config.lastPrintedStringLen = 1
+    args['follow_redirect'] = False
+
     # If multiple URLS are specified from a file
     if args['f']:
 
@@ -387,7 +389,21 @@ def main():
         )
         # Specify which response statuses to always treat as valid
         if not args['http_valid']:
-            args['http_valid'] = [200, 204, 301, 302, 303]
+            args['http_valid'] = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 301, 302, 303, 307]
+
+        if("Location" in r.headers and r.headers["Location"] != None):
+            inp = input(
+                "\n"
+                + Colors().yellow("[?]")
+                + " The application responded to initial request with redirect to '"
+                + r.headers["Location"]
+                + "' . Do you want to always follow the redirect [Y/n] "
+            )
+        else: inp = None
+
+        # Follow redirect for all subsequent requests that are called by REQUEST fun
+        if inp and inp in ["y", "Y", ""]:
+            args['follow_redirect'] = True
 
         # Client-side error happened for HTTP status >=400 and <500
         if r.status_code and r.status_code >= 400 and r.status_code < 500:
@@ -429,8 +445,7 @@ def main():
             inp = input(
                 "\n"
                 + Colors().yellow("[?]")
-                + " Web application might not be available. Do you still want to force-continue [y/N] ",
-                flush = True
+                + " Web application might not be available. Do you still want to force-continue [y/N] "
             )
             if inp in ["n", "N", ""]:
                 print("User interrupt, exiting..."),

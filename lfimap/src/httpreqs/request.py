@@ -215,11 +215,12 @@ def REQUEST(
     exploitType,
     exploitMethod,
     exploit=False,
-    followRedirect=True,
+    followRedirect=False,
     isCsrfRequest=False,
 ):
     """Send out a request"""
     args  = init_args()
+    followRedirect = args['follow_redirect']
     doContinue = True
     res = None
     if not postData:
@@ -258,7 +259,7 @@ def REQUEST(
                 input_fields = extract_input_fields(r.text)
                 parameters = extract_all_parameters(config.url, config.postreq)
             else:
-                # CSRF token request.
+                # TODO CSRF token request.
                 # csrf_r,_ = REQUEST(args['csrfUrl'], headers, args['csrfData'], config.proxies, "test", "test", exploit = False, followRedirect = True, isCsrfRequest = True)
                 r = requests.request(
                     method,
