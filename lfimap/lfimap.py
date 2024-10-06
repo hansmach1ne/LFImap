@@ -15,6 +15,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Disable/Mute TLS errors
 from requests.packages.urllib3 import disable_warnings
+from requests import Response
 disable_warnings(InsecureRequestWarning)
 
 # Import configurations
@@ -60,8 +61,6 @@ def main():
     config.proxies["https"] = args['proxyAddr']
 
     config.lastPrintedStringLen = 1
-    args['follow_redirect'] = False
-
     # If multiple URLS are specified from a file
     if args['f']:
 
@@ -389,34 +388,11 @@ def main():
         )
         # Specify which response statuses to always treat as valid
         if not args['http_valid']:
-            args['http_valid'] = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 301, 302, 303, 307]
-
-        if("Location" in r.headers and r.headers["Location"] != None):
-            
-            # if testing is done via -R (request file) and the site redirects to https, but --force-ssl is not specified
-            if(r.headers["Location"].startswith("https") and not args['force_ssl']):
-                print(
-                    Colors().yellow("[i]")
-                    + " Warning: The application redirects to https endpoint, but '--force-ssl' is not specified. LFImap could have troubles with testing.",
-                    flush = True
-                )
-            
-            inp = input(
-                "\n"
-                + Colors().yellow("[?]")
-                + " The application responded to initial request with redirect to '"
-                + r.headers["Location"]
-                + "' . Do you want to always follow the redirect [Y/n] "
-            )
-        else: inp = None
-
-        # Follow redirect for all subsequent requests that are called by REQUEST fun
-        if inp and inp in ["y", "Y", ""]:
-            args['follow_redirect'] = True
+            args['http_valid'] = [200, 204, 301, 302, 303]
 
         # Client-side error happened for HTTP status >=400 and <500
-        if r.status_code and r.status_code >= 400 and r.status_code < 500:
-            if r.status_code not in args['http_valid']:
+        if hasattr(r, 'status_code'):
+            if r.status_code >= 400 and r.status_code < 500 and r.status_code not in args['http_valid']:
                 print(
                     Colors().red("[-]")
                     + " Initial request yielded "
@@ -442,7 +418,7 @@ def main():
                 )
                 sys.exit(-1)
 
-        if (
+        if(isinstance(r, Response) and
             "no&#32;response&#32;received&#32;from&#32;remote&#32;server&#46;"
             in r.text.lower()
         ):
@@ -454,7 +430,8 @@ def main():
             inp = input(
                 "\n"
                 + Colors().yellow("[?]")
-                + " Web application might not be available. Do you still want to force-continue [y/N] "
+                + " Web application might not be available. Do you still want to force-continue [y/N] ",
+                flush = True
             )
             if inp in ["n", "N", ""]:
                 print("User interrupt, exiting..."),
@@ -463,12 +440,22 @@ def main():
 
         # This check needs to contain r.status_code, instead of just r, because in edge cases like 404 Response if(r) yields false for some reason
         # Might be a bug in requests library, workaround fix #115
-        if not r.status_code and not args['no_stop']:
+        if isinstance(r, Response):
+            if not r.status_code and not args['no_stop']:
+                print(
+                    Colors().red("[-]")
+                    + " Response object is not clearly received. Application might not be available, as response's status_code is None. Check if request is correctly specified...",
+                    flush = True
+                )
+
+                lfimap_cleanup(config.webDir)
+        else:
             print(
                     Colors().red("[-]")
                     + " Response object is not clearly received. Application might not be available, as response's status_code is None. Check if request is correctly specified...",
                     flush = True
                 )
+            
             lfimap_cleanup(config.webDir)
 
         if csrf_r:

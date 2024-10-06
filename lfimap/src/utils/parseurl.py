@@ -26,26 +26,23 @@ def is_file_ending_with_newline(file_path):
 
 def is_valid_url(url):
     """
-    Return if the provided `url` valid
+    Return if the provided `url` is valid.
     Returns boolean.
     """
-    if url == "" or url is None:
+    if not url:
         return False
 
     urlRegex = re.compile(
-        r"^(?:http|ftp)s?://"  # http:// or https:// or ftp://
-        r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # domain...
-        r"localhost|"  # localhost...
-        r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # ...or ip
+        r"^(?:http)s?://"  # http://, https://
+        r"(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)*?[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]?|"  # domain
+        r"localhost|"  # localhost
+        r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # IP address
         r"(?::\d+)?"  # optional port
-        r"(?:/?|[/?]\S+)$",
+        r"(?:/?|[/?]\S*)$",  # optional trailing slash or path
         re.IGNORECASE,
     )
 
-    if re.match(urlRegex, url):
-        return True
-
-    return False
+    return re.match(urlRegex, url) is not None
 
 
 def is_valid_json(data):

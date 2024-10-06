@@ -72,6 +72,7 @@ def prepareHeaders():
 def checkArgs():
     """Check Args"""
     args  = init_args()
+    args['follow_redirect'] = False
 
     urlfile = args['f']
     agent = args['agent']
