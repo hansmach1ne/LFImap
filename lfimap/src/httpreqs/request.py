@@ -1,6 +1,7 @@
 """Request"""
 import socket
 import time
+import sys
 import urllib.parse as urlparse
 from urllib.parse import urlparse, parse_qs
 
@@ -131,6 +132,7 @@ def init(
                 if postVal == "" and explType:
                     print(Colors().green("[+]") + " " + explType + " -> '" + getVal + "'", flush = True)
                     stats["vulns"] += 1
+
                 elif explType:
                     print(
                         Colors().green("[+]")
@@ -283,7 +285,7 @@ def REQUEST(
                     url = url.replace(curr_csrf, new_csrf)
 
                 if isinstance(postData, bytes):
-                    postData = postData.decode("latin-1", errors="replace")
+                    postData = postData.decode("utf-8", errors="replace")
 
                 if args['csrfParameter'] and args['csrfParameter'] in postData:
                     curr_csrf = parameters[args['csrfParameter']]
@@ -362,7 +364,7 @@ def REQUEST(
                 doContinue = False
 
         if args['log']:
-            with open(args['log'], "a+", encoding="latin1") as fp:
+            with open(args['log'], "a+", encoding="utf-8") as fp:
 
                 # Log request
                 splitted = url.split("/")
@@ -371,7 +373,7 @@ def REQUEST(
                     + " "
                     + url.replace(
                         "".join(splitted[0] + "/" + splitted[1] + "/" + splitted[2]), ""
-                    )
+                    ).encode('utf-8', errors='ignore').decode('utf-8')
                     + " HTTP/1.1\n"
                 )
                 fp.write("Host: " + splitted[2] + "\n")
@@ -384,7 +386,7 @@ def REQUEST(
 
                 if res.request.body:
                     fp.write("\n" * 2)
-                    fp.write(res.request.body.decode("utf-8"))
+                    fp.write(res.request.body)
                 fp.write("\n" * 3)
 
                 # Log response
@@ -395,7 +397,7 @@ def REQUEST(
                 )
                 for k, v in res.headers.items():
                     if not (isinstance(k, str)):
-                        k = k.decode("utf-8")
+                        k = k.decode("lutf-8")
                     if not (isinstance(v, str)):
                         v = v.decode("utf-8")
                     fp.write(k + ": " + v + "\n")
@@ -409,6 +411,17 @@ def REQUEST(
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Exiting...", flush = True)
         lfimap_cleanup(config.webDir)
+    except FileNotFoundError:
+        if(args['log']):
+            print(Colors().red("[-]") 
+                 + " Specified log directory doesn't exist. Alternatively," +
+                "to create a folder specify an absolute path. Exiting...", flush = True)
+            sys.exit(-1)
+        if(args['log']):
+            print(Colors().red("[-]") + 
+                " Specified output directory doesn't exist. Alternatively," +
+                "to create a folder specify an absolute path. Exiting...", flush = True)
+            sys.exit(-1)
     except requests.exceptions.InvalidSchema:
         if not args['no_stop']:
             print(

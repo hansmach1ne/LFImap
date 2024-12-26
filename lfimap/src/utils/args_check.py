@@ -188,7 +188,7 @@ def checkArgs():
         else:
             # Check if every line has defined protocol, if not modify the file and prepend it
             # Also check if every line has at least one parameter to test
-            with open(args['f'], "r", encoding="latin1") as rf:
+            with open(args['f'], "r", encoding="utf-8") as rf:
                 lines = rf.readlines()
             for index, line in enumerate(lines):
                 line = line.strip()
@@ -356,34 +356,105 @@ def checkArgs():
                 else:
                     print("", flush = True)
             else:
+                # If the path is relative
                 if not os.path.isabs(args['log']):
-                    script_dir = os.path.dirname(__file__)
+                    script_dir = os.getcwd()
                     rel_path = args['log']
                     abs_file_path = os.path.join(script_dir, rel_path)
+                
+                #If the path is absolute
                 else:
                     abs_file_path = args['log']
+                
+                # If the path is relative and folder doesn't exist, create it
                 if not os.path.isdir(os.path.dirname(os.path.abspath(abs_file_path))):
                     os.mkdir(os.path.dirname(os.path.abspath(abs_file_path)))
-                else:
-                    with open(abs_file_path, "a", encoding="latin1") as fp:
-                        fp.write("-----------START-----------\n")
-                        fp.write(
-                            "# Starting log: "
-                            + str(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-                            + "\n"
-                        )
-                        fp.write("# Arguments: " + " ".join(sys.argv) + "\n")
-                        fp.write("---------------------------")
-                        fp.write("\n\n")
+
+                args['log'] = abs_file_path
+
+                print(
+                    Colors().blue("[i]")
+                    + " Creating log file: "
+                    + args['log'],
+                    flush = True
+                )
+            if('abs_file_path' in vars() or 'abs_file_path' in globals()):
+                args['log'] = abs_file_path
+
+            with open(args['log'], "a+", encoding="utf-8") as fp:
+                fp.write("-----------START-----------\n")
+                fp.write(
+                    "# Starting log: "
+                    + str(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+                    + "\n"
+                )
+                fp.write("# Arguments: " + " ".join(sys.argv) + "\n")
+                fp.write("---------------------------")
+                fp.write("\n\n")
+
         except:
-            print(
-                Colors().red("[-]")
-                + " Failed creating log file: "
-                + args['log']
-                + ". Check if you specified correct path and have correct permissions...",
-                flush = True
-            )
+            if(args['verbose']):
+                raise
             sys.exit(-1)
+
+    #if(args['txtfile']):
+    #    try:
+    #        if os.path.exists(args['txtfile']):
+    #            print(
+    #                Colors().blue("[i]")
+    #                + " Txt output file '"
+    #                + args['txtfile']
+    #                + "' already exists",
+    #                flush = True
+    #            )
+    #            users_input = input(
+    #                "[?] Do you want to continue and append to it? Y/n: "
+    #            )
+    #            if users_input == "n" and users_input != "N":
+    #                print("User exit...", flush = True)
+    #                sys.exit(-1)
+    #            else:
+    #                print("", flush = True)
+
+    #        else:
+    #            # If the path is relative
+    #            if not os.path.isabs(args['txtfile']):
+    #                script_dir = os.getcwd()
+    #                rel_path = args['txtfile']
+    #                abs_file_path = os.path.join(script_dir, rel_path)
+
+                # If the path is absolute
+    #            else:
+    #                abs_file_path = args['txtfile']
+
+                # If the path is relative and folder doesn't exist, create it
+    #            if not os.path.isdir(os.path.dirname(os.path.abspath(abs_file_path))):
+    #                os.mkdir(os.path.dirname(os.path.abspath(abs_file_path)))
+
+     #           print(
+     #               Colors().blue("[i]")
+     #               + " Creating output text file: "
+     #               + args['txtfile'],
+     #               flush = True
+     #           )
+
+      #      if('abs_file_path' in vars() or 'abs_file_path' in globals()):
+      #          args['txtfile'] = abs_file_path
+            
+      #      with open(args['txtfile'], "a+", encoding="utf-8") as fp:
+      #          fp.write("-----------START-----------\n")
+      #          fp.write(
+      #              "# LFImap started at: "
+      #              + str(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+      #              + "\n"
+      #          )
+      #          fp.write("# Arguments: " + " ".join(sys.argv) + "\n")
+      #          fp.write("---------------------------")
+      #          fp.write("\n\n")
+      #  except:
+      #      if(args['verbose']):
+      #          raise
+      #      sys.exit(-1)
 
     # Checks if '--lhost' and '--lport' are provided with '-x'
     if args['revshell']:
@@ -501,7 +572,7 @@ def checkArgs():
                 config.tempArg = item
                 break
     else:
-        with open(args['f'], "r", encoding="latin1") as fi:
+        with open(args['f'], "r", encoding="utf-8") as fi:
             lines = fi.read().splitlines()
             for item in TEMP:
                 for line in lines:

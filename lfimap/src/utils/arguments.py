@@ -398,13 +398,13 @@ def init_args() -> dict:
     #     dest="htmlfile",
     #     help="\t\t Output findings to html file",
     # )
-    # outputOptions.add_argument(
+    #outputOptions.add_argument(
     #     "-oT",
     #     type=str,
-    #     metavar="<TXTfile>",
+    #     metavar="<txtfile>",
     #     dest="txtfile",
     #     help="\t\t Output findings to txt file",
-    # )
+    #)
     # outputOptions.add_argument(
     #     "-oX",
     #     type=str,

@@ -135,8 +135,8 @@ def prepareRfiExploit(payloadFile, temporaryFile, ip, port):
         return
     else:
         # Prepare file that will be included
-        with open(payloadFile, "r", encoding="latin1") as f:
-            with open(temporaryFile, "w", encoding="latin1") as r:
+        with open(payloadFile, "r", encoding="utf-8") as f:
+            with open(temporaryFile, "w", encoding="utf-8") as r:
                 lines = f.readlines()
                 for line in lines:
                     line = line[:-1]

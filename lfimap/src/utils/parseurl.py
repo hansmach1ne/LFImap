@@ -12,7 +12,7 @@ def is_file_ending_with_newline(file_path):
     Check if there is a new line after the headers in reqfile.
     Return boolean.
     """
-    with open(file_path, "r", encoding="latin1") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         content = file.read()
 
     # Find the index of the first empty line, which indicates the end of headers
@@ -98,7 +98,7 @@ def parse_http_request_file(file_path):
     Returns `method, headers_dict, form_data` 
     """
     try:
-        with open(file_path, "r", encoding="latin1") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             http_request = file.read()
             headers, post_data = http_request.split(
                 "\n\n", 1
@@ -155,7 +155,7 @@ def parse_url_from_request_file(file_path, force_ssl=False):
     """
     args  = init_args()
     try:
-        with open(file_path, "r", encoding="latin1") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             http_request = file.read()
             lines = http_request.split("\n")
             get_request_line = lines[0]
