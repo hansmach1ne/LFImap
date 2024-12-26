@@ -180,13 +180,18 @@ def prepareRequest(parameter, payload, url, postData):
     """
 
     args  = init_args()
+
+    # Preparing URL
     if parameter in url:
         reqUrl = url.replace(parameter, encode(payload))
     else:
         reqUrl = url
 
+    # Preparing form-line data
+    
     # if postData and args['json'] and not is_valid_json(args['json']):
     #    reqData = convert_http_formdata_to_json(postData.replace(parameter, encode(payload)).lstrip())
+    
     if postData:
         reqData = postData.replace(parameter, encode(payload)).lstrip()
     elif postData:
@@ -194,8 +199,9 @@ def prepareRequest(parameter, payload, url, postData):
     else:
         reqData = ""
 
+    # Preparing headers
     reqHeaders = {}
-    if parameter in args['httpheaders'].values():
+    if any(parameter in str(value) for value in args['httpheaders'].values()):
         for key, value in args['httpheaders'].items():
             if parameter in value:
                 reqHeaders[key.strip()] = value.replace(

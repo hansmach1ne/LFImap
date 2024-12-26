@@ -45,7 +45,8 @@ def prepareHeaders():
         for _, httpheader in enumerate(args['httpheaders']):
             if ":" not in httpheader:
                 print(
-                    Colors().red("[-] '")
+                    Colors().red("[-]")
+                    + "'"
                     + httpheader
                     + "'"
                     + " has no ':' to distinguish parameter name from value. Exiting...",
@@ -622,7 +623,8 @@ def checkArgs():
             for _, httpheader in enumerate(args['httpheaders']):
                 if ":" not in httpheader:
                     print(
-                        Colors().red("[-] '")
+                        Colors().red("[-]")
+                        + "'"
                         + httpheader
                         + "'"
                         + " has no ':' to distinguish parameter name from value. Exiting...",

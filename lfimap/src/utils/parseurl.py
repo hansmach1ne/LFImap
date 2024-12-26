@@ -357,11 +357,12 @@ def getHeadersToTest(dictionary):
 
     Returns str (delimiter used ', ')
     """
-    args  = init_args()
+    args = init_args()
+    param = args['param']  # Example: 'PWN'
     matching_keys = [
         key
         for key, value in dictionary.items()
-        if isinstance(value, bytes) and args['param'].encode() in value
+        if param.lower() in (value.decode(errors="ignore").lower() if isinstance(value, bytes) else str(value).lower())
     ]
     return ", ".join(matching_keys)
 

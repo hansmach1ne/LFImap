@@ -283,9 +283,7 @@ def main():
             pwnInPostExists = False
 
         found_in_headkeys = args['param'] in args['httpheaders'].keys()
-        found_in_headvalues = args['param'] in (
-            str(value) for value in args['httpheaders'].values()
-        )
+        found_in_headvalues = any(args['param'] in str(value) for value in args['httpheaders'].values())
 
         if found_in_headkeys or found_in_headvalues:
             pwnInHeadersExists = True
@@ -300,6 +298,7 @@ def main():
 
         # Test header
         if pwnInHeadersExists:
+            print(args['param'],)
             tempUrl, headers, postTest = prepareRequest(
                 args['param'], args['param'], config.url, config.postreq
             )
