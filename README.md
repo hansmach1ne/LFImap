@@ -1,7 +1,8 @@
 # LFImap
 ### Local file inclusion discovery and exploitation tool
 
-This project is in pre-alpha stage. Major release 1.0 coming soon with plenty of new abilities and modules.
+This project is in pre-alpha stage. Major release 1.0 coming soon with plenty of new abilities and modules.  
+Inspired by [SQLmap](https://github.com/sqlmapproject/sqlmap).
 
 #### Main features
 - Attack with different modules
